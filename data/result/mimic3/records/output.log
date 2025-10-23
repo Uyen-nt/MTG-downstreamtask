@@ -1,0 +1,1600 @@
+1000 / 100000 iterations: D_Loss -- -12.899637 -- G_Loss -- 14.060259 -- W_dist -- 13.465622 -- Test_D_Loss -- 0.947695
+Generating 1500 samples -- code types: 2869 -- code num: 2118907.0 -- avg code num: 494.4940, avg visit len: 2.8567
+--------------------------------------------------
+Atrial fibrillation ; 1753
+Congestive heart failure, unspecified ; 1343
+Unspecified essential hypertension ; 1243
+Closed fracture of lumbar spine with spinal cord injury ; 1126
+Venous embolism and thrombosis of superficial vessels of lower extremity ; 911
+Malignant neoplasm of other specified part of esophagus ; 822
+Secondary malignant neoplasm of other respiratory organs ; 808
+Open wound of finger(s), complicated ; 808
+Concussion with no loss of consciousness ; 806
+Pressure ulcer, other site ; 802
+--------------------------------------------------
+
+
+2000 / 100000 iterations: D_Loss -- -19.334528 -- G_Loss -- 26.590656 -- W_dist -- 25.073624 -- Test_D_Loss -- 1.480994
+Generating 1500 samples -- code types: 2869 -- code num: 2004321.0 -- avg code num: 477.3329, avg visit len: 2.7993
+--------------------------------------------------
+Unspecified essential hypertension ; 1401
+Congestive heart failure, unspecified ; 1212
+Atrial fibrillation ; 1047
+Malignant neoplasm of other specified part of esophagus ; 769
+Unspecified hereditary and idiopathic peripheral neuropathy ; 767
+Orthostatic hypotension ; 766
+Abscess of liver ; 761
+Other convulsions ; 761
+Staphylococcal septicemia, unspecified ; 760
+Carrier or suspected carrier of other specified bacterial diseases ; 760
+--------------------------------------------------
+
+
+3000 / 100000 iterations: D_Loss -- -16.719728 -- G_Loss -- 24.687002 -- W_dist -- 22.460234 -- Test_D_Loss -- 1.204392
+Generating 1500 samples -- code types: 2869 -- code num: 1916311.0 -- avg code num: 459.9882, avg visit len: 2.7773
+--------------------------------------------------
+Congestive heart failure, unspecified ; 1460
+Unspecified essential hypertension ; 1346
+Atrial fibrillation ; 911
+Acute kidney failure, unspecified ; 877
+Infection of cystostomy ; 744
+Disturbances of sensation of smell and taste ; 735
+Secondary malignant neoplasm of mediastinum ; 734
+Mechanical complication due to other implant and internal device, not elsewhere classified ; 729
+Lack of coordination ; 728
+Allergic urticaria ; 728
+--------------------------------------------------
+
+
+4000 / 100000 iterations: D_Loss -- -18.277225 -- G_Loss -- 23.663521 -- W_dist -- 23.409470 -- Test_D_Loss -- 0.616223
+Generating 1500 samples -- code types: 2869 -- code num: 1860850.0 -- avg code num: 461.7494, avg visit len: 2.6867
+--------------------------------------------------
+Unspecified essential hypertension ; 1402
+Congestive heart failure, unspecified ; 996
+Atrial fibrillation ; 849
+Acute kidney failure, unspecified ; 768
+Unilateral paralysis of vocal cords or larynx, complete ; 728
+Congenital pigmentary anomalies of skin ; 727
+Human immunodeficiency virus [HIV] disease ; 725
+Other specified causes of urethral stricture ; 724
+Impotence of organic origin ; 716
+Nephrotic syndrome in diseases classified elsewhere ; 712
+--------------------------------------------------
+
+
+5000 / 100000 iterations: D_Loss -- -15.772390 -- G_Loss -- 23.323521 -- W_dist -- 20.472458 -- Test_D_Loss -- 0.685098
+Generating 1500 samples -- code types: 2869 -- code num: 1700995.0 -- avg code num: 419.5844, avg visit len: 2.7027
+--------------------------------------------------
+Congestive heart failure, unspecified ; 1432
+Unspecified essential hypertension ; 1264
+Atrial fibrillation ; 942
+Acute kidney failure, unspecified ; 804
+Closed fracture of lower end of femur, unspecified part ; 673
+Coronary atherosclerosis of native coronary artery ; 672
+Calcaneal spur ; 668
+Sixth or abducens nerve palsy ; 661
+Poisoning by parasympatholytics (anticholinergics and antimuscarinics) and spasmolytics ; 660
+Chronic gastric ulcer without mention of hemorrhage or perforation, without mention of obstruction ; 659
+--------------------------------------------------
+
+
+6000 / 100000 iterations: D_Loss -- -15.331581 -- G_Loss -- 20.281958 -- W_dist -- 19.709339 -- Test_D_Loss -- 0.838827
+Generating 1500 samples -- code types: 2869 -- code num: 1592996.0 -- avg code num: 389.2001, avg visit len: 2.7287
+--------------------------------------------------
+Unspecified essential hypertension ; 1467
+Congestive heart failure, unspecified ; 1283
+Atrial fibrillation ; 926
+Acute kidney failure, unspecified ; 830
+Acute respiratory failure ; 684
+Coronary atherosclerosis of native coronary artery ; 643
+Other motor vehicle traffic accident involving collision on the highway injuring driver of motor vehicle other than motorcycle ; 626
+Fall from other slipping, tripping, or stumbling ; 624
+Folate-deficiency anemia ; 623
+Urinary tract infection, site not specified ; 619
+--------------------------------------------------
+
+
+7000 / 100000 iterations: D_Loss -- -14.750303 -- G_Loss -- 19.235525 -- W_dist -- 18.597540 -- Test_D_Loss -- 0.971489
+Generating 1500 samples -- code types: 2869 -- code num: 1544390.0 -- avg code num: 378.0636, avg visit len: 2.7233
+--------------------------------------------------
+Unspecified essential hypertension ; 1207
+Congestive heart failure, unspecified ; 1074
+Atrial fibrillation ; 946
+Acute kidney failure, unspecified ; 771
+Urinary tract infection, site not specified ; 654
+Coronary atherosclerosis of native coronary artery ; 645
+Acute respiratory failure ; 642
+Other specified causes of urethral stricture ; 614
+Panniculitis, unspecified site ; 611
+Burkitt's tumor or lymphoma, lymph nodes of head, face, and neck ; 609
+--------------------------------------------------
+
+
+8000 / 100000 iterations: D_Loss -- -12.022105 -- G_Loss -- 17.051397 -- W_dist -- 15.355550 -- Test_D_Loss -- 1.071891
+Generating 1500 samples -- code types: 2869 -- code num: 1428588.0 -- avg code num: 356.7902, avg visit len: 2.6693
+--------------------------------------------------
+Unspecified essential hypertension ; 1318
+Congestive heart failure, unspecified ; 1301
+Atrial fibrillation ; 920
+Acute kidney failure, unspecified ; 852
+Coronary atherosclerosis of native coronary artery ; 680
+Acute respiratory failure ; 671
+Urinary tract infection, site not specified ; 637
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 596
+History of physical abuse ; 573
+Other motor vehicle traffic accident involving collision on the highway injuring driver of motor vehicle other than motorcycle ; 561
+--------------------------------------------------
+
+
+9000 / 100000 iterations: D_Loss -- -11.473049 -- G_Loss -- 15.391506 -- W_dist -- 14.378926 -- Test_D_Loss -- 1.124264
+Generating 1500 samples -- code types: 2869 -- code num: 1334954.0 -- avg code num: 320.3633, avg visit len: 2.7780
+--------------------------------------------------
+Unspecified essential hypertension ; 1631
+Congestive heart failure, unspecified ; 1230
+Atrial fibrillation ; 949
+Acute kidney failure, unspecified ; 917
+Coronary atherosclerosis of native coronary artery ; 681
+Acute respiratory failure ; 646
+Urinary tract infection, site not specified ; 640
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 594
+Hypertensive heart and chronic kidney disease, unspecified, without heart failure and with chronic kidney disease stage V or end stage renal disease ; 544
+Multiple sclerosis ; 537
+--------------------------------------------------
+
+
+10000 / 100000 iterations: D_Loss -- -10.746480 -- G_Loss -- 14.250961 -- W_dist -- 13.462994 -- Test_D_Loss -- 1.138251
+Generating 1500 samples -- code types: 2869 -- code num: 1258444.0 -- avg code num: 301.9299, avg visit len: 2.7787
+--------------------------------------------------
+Unspecified essential hypertension ; 1187
+Congestive heart failure, unspecified ; 1078
+Atrial fibrillation ; 911
+Acute kidney failure, unspecified ; 775
+Acute respiratory failure ; 707
+Urinary tract infection, site not specified ; 649
+Coronary atherosclerosis of native coronary artery ; 641
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 625
+Abdominal pain, right upper quadrant ; 520
+Fall from other slipping, tripping, or stumbling ; 517
+--------------------------------------------------
+
+
+11000 / 100000 iterations: D_Loss -- -8.966230 -- G_Loss -- 12.886295 -- W_dist -- 11.134916 -- Test_D_Loss -- 1.112416
+Generating 1500 samples -- code types: 2869 -- code num: 1183500.0 -- avg code num: 272.3194, avg visit len: 2.8973
+--------------------------------------------------
+Unspecified essential hypertension ; 1524
+Congestive heart failure, unspecified ; 1164
+Atrial fibrillation ; 975
+Acute kidney failure, unspecified ; 754
+Coronary atherosclerosis of native coronary artery ; 699
+Acute respiratory failure ; 666
+Urinary tract infection, site not specified ; 660
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 608
+Other injury of external genitals ; 478
+Other specified septicemias ; 477
+--------------------------------------------------
+
+
+12000 / 100000 iterations: D_Loss -- -8.786102 -- G_Loss -- 11.470982 -- W_dist -- 10.629253 -- Test_D_Loss -- 1.081870
+Generating 1500 samples -- code types: 2869 -- code num: 1125126.0 -- avg code num: 275.0919, avg visit len: 2.7267
+--------------------------------------------------
+Unspecified essential hypertension ; 1280
+Congestive heart failure, unspecified ; 1080
+Atrial fibrillation ; 992
+Acute kidney failure, unspecified ; 794
+Coronary atherosclerosis of native coronary artery ; 660
+Urinary tract infection, site not specified ; 649
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 649
+Acute respiratory failure ; 611
+Pneumonia, organism unspecified ; 499
+Other specified causes of urethral stricture ; 463
+--------------------------------------------------
+
+
+13000 / 100000 iterations: D_Loss -- -7.139425 -- G_Loss -- 10.531610 -- W_dist -- 8.994314 -- Test_D_Loss -- 1.045675
+Generating 1500 samples -- code types: 2869 -- code num: 1018573.0 -- avg code num: 244.7904, avg visit len: 2.7740
+--------------------------------------------------
+Unspecified essential hypertension ; 1237
+Congestive heart failure, unspecified ; 1129
+Atrial fibrillation ; 944
+Acute kidney failure, unspecified ; 805
+Acute respiratory failure ; 665
+Coronary atherosclerosis of native coronary artery ; 665
+Urinary tract infection, site not specified ; 636
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 627
+Unspecified acquired hypothyroidism ; 467
+Pneumonia, organism unspecified ; 443
+--------------------------------------------------
+
+
+14000 / 100000 iterations: D_Loss -- -6.709131 -- G_Loss -- 9.745704 -- W_dist -- 8.416010 -- Test_D_Loss -- 0.986764
+Generating 1500 samples -- code types: 2869 -- code num: 957721.0 -- avg code num: 225.6647, avg visit len: 2.8293
+--------------------------------------------------
+Unspecified essential hypertension ; 1365
+Congestive heart failure, unspecified ; 1226
+Atrial fibrillation ; 942
+Acute kidney failure, unspecified ; 847
+Acute respiratory failure ; 668
+Coronary atherosclerosis of native coronary artery ; 647
+Urinary tract infection, site not specified ; 625
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 580
+Pneumonia, organism unspecified ; 454
+Esophageal reflux ; 445
+--------------------------------------------------
+
+
+15000 / 100000 iterations: D_Loss -- -6.804870 -- G_Loss -- 9.546663 -- W_dist -- 8.447228 -- Test_D_Loss -- 0.935891
+Generating 1500 samples -- code types: 2869 -- code num: 893171.0 -- avg code num: 215.5856, avg visit len: 2.7620
+--------------------------------------------------
+Unspecified essential hypertension ; 1145
+Congestive heart failure, unspecified ; 1115
+Atrial fibrillation ; 915
+Acute kidney failure, unspecified ; 767
+Acute respiratory failure ; 671
+Urinary tract infection, site not specified ; 663
+Coronary atherosclerosis of native coronary artery ; 649
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 608
+Esophageal reflux ; 462
+Unspecified acquired hypothyroidism ; 446
+--------------------------------------------------
+
+
+16000 / 100000 iterations: D_Loss -- -5.600635 -- G_Loss -- 8.479668 -- W_dist -- 6.986823 -- Test_D_Loss -- 0.870954
+Generating 1500 samples -- code types: 2869 -- code num: 799162.0 -- avg code num: 196.1134, avg visit len: 2.7167
+--------------------------------------------------
+Unspecified essential hypertension ; 1311
+Congestive heart failure, unspecified ; 1058
+Atrial fibrillation ; 935
+Acute kidney failure, unspecified ; 810
+Acute respiratory failure ; 673
+Urinary tract infection, site not specified ; 630
+Coronary atherosclerosis of native coronary artery ; 614
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 610
+Pneumonia, organism unspecified ; 454
+Unspecified acquired hypothyroidism ; 429
+--------------------------------------------------
+
+
+17000 / 100000 iterations: D_Loss -- -5.450909 -- G_Loss -- 7.799474 -- W_dist -- 6.756876 -- Test_D_Loss -- 0.823826
+Generating 1500 samples -- code types: 2869 -- code num: 746677.0 -- avg code num: 184.5470, avg visit len: 2.6973
+--------------------------------------------------
+Unspecified essential hypertension ; 1328
+Congestive heart failure, unspecified ; 1125
+Atrial fibrillation ; 915
+Acute kidney failure, unspecified ; 790
+Acute respiratory failure ; 684
+Coronary atherosclerosis of native coronary artery ; 672
+Urinary tract infection, site not specified ; 640
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 609
+Pneumonia, organism unspecified ; 436
+Unspecified acquired hypothyroidism ; 432
+--------------------------------------------------
+
+
+18000 / 100000 iterations: D_Loss -- -5.022774 -- G_Loss -- 6.985777 -- W_dist -- 6.123765 -- Test_D_Loss -- 0.753951
+Generating 1500 samples -- code types: 2869 -- code num: 697882.0 -- avg code num: 171.8075, avg visit len: 2.7080
+--------------------------------------------------
+Unspecified essential hypertension ; 1188
+Congestive heart failure, unspecified ; 1137
+Atrial fibrillation ; 931
+Acute kidney failure, unspecified ; 746
+Coronary atherosclerosis of native coronary artery ; 643
+Acute respiratory failure ; 643
+Urinary tract infection, site not specified ; 614
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 602
+Pneumonia, organism unspecified ; 435
+Unspecified acquired hypothyroidism ; 427
+--------------------------------------------------
+
+
+19000 / 100000 iterations: D_Loss -- -4.363577 -- G_Loss -- 6.065987 -- W_dist -- 5.334534 -- Test_D_Loss -- 0.687522
+Generating 1500 samples -- code types: 2869 -- code num: 648836.0 -- avg code num: 157.2555, avg visit len: 2.7507
+--------------------------------------------------
+Unspecified essential hypertension ; 1294
+Congestive heart failure, unspecified ; 1159
+Atrial fibrillation ; 936
+Acute kidney failure, unspecified ; 777
+Acute respiratory failure ; 663
+Urinary tract infection, site not specified ; 650
+Coronary atherosclerosis of native coronary artery ; 640
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 587
+Unspecified acquired hypothyroidism ; 484
+Pneumonia, organism unspecified ; 481
+--------------------------------------------------
+
+
+20000 / 100000 iterations: D_Loss -- -3.769385 -- G_Loss -- 5.650035 -- W_dist -- 4.760886 -- Test_D_Loss -- 0.633848
+Generating 1500 samples -- code types: 2869 -- code num: 588593.0 -- avg code num: 144.8310, avg visit len: 2.7093
+--------------------------------------------------
+Unspecified essential hypertension ; 1421
+Congestive heart failure, unspecified ; 1035
+Atrial fibrillation ; 912
+Acute kidney failure, unspecified ; 790
+Coronary atherosclerosis of native coronary artery ; 676
+Urinary tract infection, site not specified ; 658
+Acute respiratory failure ; 624
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 602
+Pneumonia, organism unspecified ; 493
+Unspecified acquired hypothyroidism ; 476
+--------------------------------------------------
+
+
+21000 / 100000 iterations: D_Loss -- -3.877625 -- G_Loss -- 5.116010 -- W_dist -- 4.740932 -- Test_D_Loss -- 0.564797
+Generating 1500 samples -- code types: 2869 -- code num: 549855.0 -- avg code num: 130.9802, avg visit len: 2.7987
+--------------------------------------------------
+Unspecified essential hypertension ; 1275
+Congestive heart failure, unspecified ; 1110
+Atrial fibrillation ; 964
+Acute kidney failure, unspecified ; 806
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 665
+Acute respiratory failure ; 659
+Urinary tract infection, site not specified ; 643
+Coronary atherosclerosis of native coronary artery ; 629
+Pneumonia, organism unspecified ; 464
+Other and unspecified hyperlipidemia ; 430
+--------------------------------------------------
+
+
+22000 / 100000 iterations: D_Loss -- -2.887453 -- G_Loss -- 4.344265 -- W_dist -- 3.710958 -- Test_D_Loss -- 0.516425
+Generating 1500 samples -- code types: 2869 -- code num: 510110.0 -- avg code num: 121.9484, avg visit len: 2.7887
+--------------------------------------------------
+Unspecified essential hypertension ; 1266
+Congestive heart failure, unspecified ; 1159
+Atrial fibrillation ; 920
+Acute kidney failure, unspecified ; 820
+Coronary atherosclerosis of native coronary artery ; 672
+Acute respiratory failure ; 670
+Urinary tract infection, site not specified ; 656
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 581
+Pneumonia, organism unspecified ; 467
+Unspecified acquired hypothyroidism ; 423
+--------------------------------------------------
+
+
+23000 / 100000 iterations: D_Loss -- -2.983893 -- G_Loss -- 3.983410 -- W_dist -- 3.731011 -- Test_D_Loss -- 0.457404
+Generating 1500 samples -- code types: 2869 -- code num: 464591.0 -- avg code num: 111.5732, avg visit len: 2.7760
+--------------------------------------------------
+Unspecified essential hypertension ; 1289
+Congestive heart failure, unspecified ; 1137
+Atrial fibrillation ; 922
+Acute kidney failure, unspecified ; 816
+Acute respiratory failure ; 662
+Coronary atherosclerosis of native coronary artery ; 648
+Urinary tract infection, site not specified ; 630
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 616
+Unspecified acquired hypothyroidism ; 455
+Esophageal reflux ; 433
+--------------------------------------------------
+
+
+24000 / 100000 iterations: D_Loss -- -2.547150 -- G_Loss -- 3.807202 -- W_dist -- 3.299278 -- Test_D_Loss -- 0.403617
+Generating 1500 samples -- code types: 2869 -- code num: 417940.0 -- avg code num: 95.1161, avg visit len: 2.9293
+--------------------------------------------------
+Unspecified essential hypertension ; 1266
+Congestive heart failure, unspecified ; 1060
+Atrial fibrillation ; 963
+Acute kidney failure, unspecified ; 721
+Acute respiratory failure ; 691
+Coronary atherosclerosis of native coronary artery ; 638
+Urinary tract infection, site not specified ; 617
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 564
+Esophageal reflux ; 476
+Unspecified acquired hypothyroidism ; 433
+--------------------------------------------------
+
+
+25000 / 100000 iterations: D_Loss -- -2.186792 -- G_Loss -- 3.373003 -- W_dist -- 2.899347 -- Test_D_Loss -- 0.361978
+Generating 1500 samples -- code types: 2869 -- code num: 388622.0 -- avg code num: 93.3739, avg visit len: 2.7747
+--------------------------------------------------
+Congestive heart failure, unspecified ; 1111
+Unspecified essential hypertension ; 1107
+Atrial fibrillation ; 939
+Acute kidney failure, unspecified ; 850
+Acute respiratory failure ; 678
+Urinary tract infection, site not specified ; 651
+Coronary atherosclerosis of native coronary artery ; 628
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 607
+Pneumonia, organism unspecified ; 459
+Other and unspecified hyperlipidemia ; 442
+--------------------------------------------------
+
+
+26000 / 100000 iterations: D_Loss -- -1.825376 -- G_Loss -- 3.081482 -- W_dist -- 2.526698 -- Test_D_Loss -- 0.314157
+Generating 1500 samples -- code types: 2869 -- code num: 358304.0 -- avg code num: 84.9666, avg visit len: 2.8113
+--------------------------------------------------
+Unspecified essential hypertension ; 1353
+Congestive heart failure, unspecified ; 1132
+Atrial fibrillation ; 1001
+Acute kidney failure, unspecified ; 846
+Coronary atherosclerosis of native coronary artery ; 665
+Urinary tract infection, site not specified ; 633
+Acute respiratory failure ; 630
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 606
+Unspecified acquired hypothyroidism ; 454
+Pneumonia, organism unspecified ; 443
+--------------------------------------------------
+
+
+27000 / 100000 iterations: D_Loss -- -1.745117 -- G_Loss -- 2.692757 -- W_dist -- 2.409266 -- Test_D_Loss -- 0.276191
+Generating 1500 samples -- code types: 2869 -- code num: 324494.0 -- avg code num: 78.7225, avg visit len: 2.7480
+--------------------------------------------------
+Congestive heart failure, unspecified ; 1212
+Unspecified essential hypertension ; 1195
+Atrial fibrillation ; 943
+Acute kidney failure, unspecified ; 803
+Coronary atherosclerosis of native coronary artery ; 645
+Acute respiratory failure ; 639
+Urinary tract infection, site not specified ; 635
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 602
+Other and unspecified hyperlipidemia ; 476
+Pneumonia, organism unspecified ; 468
+--------------------------------------------------
+
+
+28000 / 100000 iterations: D_Loss -- -1.361645 -- G_Loss -- 2.381190 -- W_dist -- 2.030451 -- Test_D_Loss -- 0.228862
+Generating 1500 samples -- code types: 2869 -- code num: 300780.0 -- avg code num: 71.7167, avg visit len: 2.7960
+--------------------------------------------------
+Unspecified essential hypertension ; 1345
+Congestive heart failure, unspecified ; 1180
+Atrial fibrillation ; 898
+Acute kidney failure, unspecified ; 793
+Coronary atherosclerosis of native coronary artery ; 672
+Acute respiratory failure ; 635
+Urinary tract infection, site not specified ; 622
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 590
+Esophageal reflux ; 474
+Pneumonia, organism unspecified ; 460
+--------------------------------------------------
+
+
+29000 / 100000 iterations: D_Loss -- -1.087965 -- G_Loss -- 1.984840 -- W_dist -- 1.741318 -- Test_D_Loss -- 0.192163
+Generating 1500 samples -- code types: 2869 -- code num: 275398.0 -- avg code num: 67.8655, avg visit len: 2.7053
+--------------------------------------------------
+Unspecified essential hypertension ; 1220
+Congestive heart failure, unspecified ; 1145
+Atrial fibrillation ; 885
+Acute kidney failure, unspecified ; 854
+Coronary atherosclerosis of native coronary artery ; 677
+Urinary tract infection, site not specified ; 631
+Acute respiratory failure ; 621
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 620
+Pneumonia, organism unspecified ; 441
+Esophageal reflux ; 416
+--------------------------------------------------
+
+
+30000 / 100000 iterations: D_Loss -- -0.948331 -- G_Loss -- 1.789169 -- W_dist -- 1.615127 -- Test_D_Loss -- 0.156750
+Generating 1500 samples -- code types: 2869 -- code num: 256338.0 -- avg code num: 60.3006, avg visit len: 2.8340
+--------------------------------------------------
+Unspecified essential hypertension ; 1475
+Congestive heart failure, unspecified ; 1183
+Atrial fibrillation ; 1007
+Acute kidney failure, unspecified ; 762
+Acute respiratory failure ; 680
+Coronary atherosclerosis of native coronary artery ; 675
+Urinary tract infection, site not specified ; 667
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 632
+Pneumonia, organism unspecified ; 448
+Esophageal reflux ; 422
+--------------------------------------------------
+
+
+31000 / 100000 iterations: D_Loss -- -1.091374 -- G_Loss -- 1.728087 -- W_dist -- 1.580661 -- Test_D_Loss -- 0.126530
+Generating 1500 samples -- code types: 2869 -- code num: 235140.0 -- avg code num: 57.0867, avg visit len: 2.7460
+--------------------------------------------------
+Unspecified essential hypertension ; 1191
+Congestive heart failure, unspecified ; 1166
+Atrial fibrillation ; 892
+Acute kidney failure, unspecified ; 819
+Urinary tract infection, site not specified ; 646
+Acute respiratory failure ; 630
+Coronary atherosclerosis of native coronary artery ; 621
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 607
+Pneumonia, organism unspecified ; 444
+Esophageal reflux ; 443
+--------------------------------------------------
+
+
+32000 / 100000 iterations: D_Loss -- -0.818355 -- G_Loss -- 1.538970 -- W_dist -- 1.391066 -- Test_D_Loss -- 0.093355
+Generating 1500 samples -- code types: 2869 -- code num: 209728.0 -- avg code num: 49.7812, avg visit len: 2.8087
+--------------------------------------------------
+Unspecified essential hypertension ; 1122
+Congestive heart failure, unspecified ; 1070
+Atrial fibrillation ; 984
+Acute kidney failure, unspecified ; 806
+Acute respiratory failure ; 637
+Urinary tract infection, site not specified ; 631
+Coronary atherosclerosis of native coronary artery ; 626
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 608
+Unspecified acquired hypothyroidism ; 427
+Other and unspecified hyperlipidemia ; 417
+--------------------------------------------------
+
+
+33000 / 100000 iterations: D_Loss -- -0.754761 -- G_Loss -- 1.338060 -- W_dist -- 1.236943 -- Test_D_Loss -- 0.074721
+Generating 1500 samples -- code types: 2869 -- code num: 197541.0 -- avg code num: 48.2160, avg visit len: 2.7313
+--------------------------------------------------
+Unspecified essential hypertension ; 1408
+Congestive heart failure, unspecified ; 1099
+Atrial fibrillation ; 974
+Acute kidney failure, unspecified ; 812
+Acute respiratory failure ; 643
+Urinary tract infection, site not specified ; 629
+Coronary atherosclerosis of native coronary artery ; 627
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 565
+Esophageal reflux ; 460
+Unspecified septicemia ; 442
+--------------------------------------------------
+
+
+34000 / 100000 iterations: D_Loss -- -0.441846 -- G_Loss -- 1.140016 -- W_dist -- 1.015312 -- Test_D_Loss -- 0.050186
+Generating 1500 samples -- code types: 2869 -- code num: 182217.0 -- avg code num: 44.0990, avg visit len: 2.7547
+--------------------------------------------------
+Unspecified essential hypertension ; 1389
+Congestive heart failure, unspecified ; 1036
+Atrial fibrillation ; 904
+Acute kidney failure, unspecified ; 799
+Acute respiratory failure ; 676
+Coronary atherosclerosis of native coronary artery ; 639
+Urinary tract infection, site not specified ; 621
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 575
+Pneumonia, organism unspecified ; 425
+Unspecified acquired hypothyroidism ; 410
+--------------------------------------------------
+
+
+35000 / 100000 iterations: D_Loss -- -0.383471 -- G_Loss -- 1.077028 -- W_dist -- 0.938966 -- Test_D_Loss -- 0.024358
+Generating 1500 samples -- code types: 2869 -- code num: 168046.0 -- avg code num: 39.9634, avg visit len: 2.8033
+--------------------------------------------------
+Unspecified essential hypertension ; 1408
+Congestive heart failure, unspecified ; 1066
+Atrial fibrillation ; 882
+Acute kidney failure, unspecified ; 811
+Coronary atherosclerosis of native coronary artery ; 671
+Acute respiratory failure ; 623
+Urinary tract infection, site not specified ; 617
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 544
+Esophageal reflux ; 473
+Severe sepsis ; 429
+--------------------------------------------------
+
+
+36000 / 100000 iterations: D_Loss -- -0.167295 -- G_Loss -- 0.970315 -- W_dist -- 0.845956 -- Test_D_Loss -- 0.009864
+Generating 1500 samples -- code types: 2869 -- code num: 157923.0 -- avg code num: 37.3076, avg visit len: 2.8220
+--------------------------------------------------
+Unspecified essential hypertension ; 1362
+Congestive heart failure, unspecified ; 1175
+Atrial fibrillation ; 920
+Acute kidney failure, unspecified ; 793
+Coronary atherosclerosis of native coronary artery ; 716
+Acute respiratory failure ; 678
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 671
+Urinary tract infection, site not specified ; 645
+Pneumonia, organism unspecified ; 480
+Other and unspecified hyperlipidemia ; 440
+--------------------------------------------------
+
+
+37000 / 100000 iterations: D_Loss -- -0.162871 -- G_Loss -- 0.792606 -- W_dist -- 0.708635 -- Test_D_Loss -- -0.015406
+Generating 1500 samples -- code types: 2869 -- code num: 146465.0 -- avg code num: 36.0929, avg visit len: 2.7053
+--------------------------------------------------
+Unspecified essential hypertension ; 1409
+Congestive heart failure, unspecified ; 1175
+Atrial fibrillation ; 862
+Acute kidney failure, unspecified ; 765
+Acute respiratory failure ; 711
+Urinary tract infection, site not specified ; 632
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 613
+Coronary atherosclerosis of native coronary artery ; 601
+Esophageal reflux ; 446
+Unspecified acquired hypothyroidism ; 442
+--------------------------------------------------
+
+
+38000 / 100000 iterations: D_Loss -- -0.111832 -- G_Loss -- 0.697841 -- W_dist -- 0.636886 -- Test_D_Loss -- -0.036173
+Generating 1500 samples -- code types: 2869 -- code num: 136677.0 -- avg code num: 32.0462, avg visit len: 2.8433
+--------------------------------------------------
+Unspecified essential hypertension ; 1412
+Congestive heart failure, unspecified ; 1242
+Atrial fibrillation ; 978
+Acute kidney failure, unspecified ; 753
+Coronary atherosclerosis of native coronary artery ; 747
+Acute respiratory failure ; 726
+Urinary tract infection, site not specified ; 648
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 592
+Anemia, unspecified ; 508
+Unspecified acquired hypothyroidism ; 452
+--------------------------------------------------
+
+
+39000 / 100000 iterations: D_Loss -- 0.036379 -- G_Loss -- 0.596973 -- W_dist -- 0.558631 -- Test_D_Loss -- -0.051958
+Generating 1500 samples -- code types: 2869 -- code num: 127925.0 -- avg code num: 30.7512, avg visit len: 2.7733
+--------------------------------------------------
+Unspecified essential hypertension ; 1252
+Congestive heart failure, unspecified ; 1099
+Atrial fibrillation ; 900
+Acute kidney failure, unspecified ; 743
+Acute respiratory failure ; 736
+Coronary atherosclerosis of native coronary artery ; 681
+Urinary tract infection, site not specified ; 654
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 569
+Esophageal reflux ; 466
+Pneumonia, organism unspecified ; 456
+--------------------------------------------------
+
+
+40000 / 100000 iterations: D_Loss -- -0.030632 -- G_Loss -- 0.541331 -- W_dist -- 0.569364 -- Test_D_Loss -- -0.063774
+Generating 1500 samples -- code types: 2869 -- code num: 119925.0 -- avg code num: 28.6081, avg visit len: 2.7947
+--------------------------------------------------
+Unspecified essential hypertension ; 1333
+Congestive heart failure, unspecified ; 1306
+Atrial fibrillation ; 918
+Acute kidney failure, unspecified ; 813
+Coronary atherosclerosis of native coronary artery ; 740
+Acute respiratory failure ; 693
+Urinary tract infection, site not specified ; 629
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 566
+Pneumonia, organism unspecified ; 439
+Esophageal reflux ; 437
+--------------------------------------------------
+
+
+41000 / 100000 iterations: D_Loss -- 0.043986 -- G_Loss -- 0.455447 -- W_dist -- 0.475860 -- Test_D_Loss -- -0.077491
+Generating 1500 samples -- code types: 2869 -- code num: 109951.0 -- avg code num: 26.4878, avg visit len: 2.7673
+--------------------------------------------------
+Unspecified essential hypertension ; 1240
+Congestive heart failure, unspecified ; 1112
+Atrial fibrillation ; 887
+Acute kidney failure, unspecified ; 805
+Acute respiratory failure ; 671
+Coronary atherosclerosis of native coronary artery ; 642
+Urinary tract infection, site not specified ; 628
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 558
+Unspecified acquired hypothyroidism ; 438
+Pneumonia, organism unspecified ; 416
+--------------------------------------------------
+
+
+42000 / 100000 iterations: D_Loss -- 0.210068 -- G_Loss -- 0.366908 -- W_dist -- 0.422066 -- Test_D_Loss -- -0.087402
+Generating 1500 samples -- code types: 2869 -- code num: 104416.0 -- avg code num: 25.8648, avg visit len: 2.6913
+--------------------------------------------------
+Unspecified essential hypertension ; 1209
+Congestive heart failure, unspecified ; 1141
+Acute kidney failure, unspecified ; 828
+Atrial fibrillation ; 820
+Urinary tract infection, site not specified ; 648
+Acute respiratory failure ; 637
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 616
+Coronary atherosclerosis of native coronary artery ; 614
+Unspecified acquired hypothyroidism ; 512
+Esophageal reflux ; 469
+--------------------------------------------------
+
+
+43000 / 100000 iterations: D_Loss -- 0.123160 -- G_Loss -- 0.309412 -- W_dist -- 0.357922 -- Test_D_Loss -- -0.104590
+Generating 1500 samples -- code types: 2869 -- code num: 98828.0 -- avg code num: 24.5109, avg visit len: 2.6880
+--------------------------------------------------
+Unspecified essential hypertension ; 1434
+Congestive heart failure, unspecified ; 1106
+Atrial fibrillation ; 869
+Acute kidney failure, unspecified ; 849
+Acute respiratory failure ; 786
+Urinary tract infection, site not specified ; 647
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 633
+Coronary atherosclerosis of native coronary artery ; 616
+Pneumonia, organism unspecified ; 459
+Unspecified acquired hypothyroidism ; 456
+--------------------------------------------------
+
+
+44000 / 100000 iterations: D_Loss -- 0.304677 -- G_Loss -- 0.259405 -- W_dist -- 0.321435 -- Test_D_Loss -- -0.103695
+Generating 1500 samples -- code types: 2869 -- code num: 92549.0 -- avg code num: 22.6005, avg visit len: 2.7300
+--------------------------------------------------
+Congestive heart failure, unspecified ; 1294
+Unspecified essential hypertension ; 1248
+Atrial fibrillation ; 949
+Acute kidney failure, unspecified ; 848
+Acute respiratory failure ; 655
+Coronary atherosclerosis of native coronary artery ; 624
+Urinary tract infection, site not specified ; 623
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 613
+Other and unspecified hyperlipidemia ; 440
+Pneumonia, organism unspecified ; 436
+--------------------------------------------------
+
+
+45000 / 100000 iterations: D_Loss -- 0.409180 -- G_Loss -- 0.214547 -- W_dist -- 0.268863 -- Test_D_Loss -- -0.119853
+Generating 1500 samples -- code types: 2869 -- code num: 88860.0 -- avg code num: 21.1069, avg visit len: 2.8067
+--------------------------------------------------
+Unspecified essential hypertension ; 1310
+Congestive heart failure, unspecified ; 1275
+Atrial fibrillation ; 1029
+Acute kidney failure, unspecified ; 891
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 752
+Coronary atherosclerosis of native coronary artery ; 662
+Urinary tract infection, site not specified ; 643
+Acute respiratory failure ; 641
+Pneumonia, organism unspecified ; 456
+Unspecified acquired hypothyroidism ; 450
+--------------------------------------------------
+
+
+46000 / 100000 iterations: D_Loss -- 0.315251 -- G_Loss -- 0.160710 -- W_dist -- 0.259469 -- Test_D_Loss -- -0.127778
+Generating 1500 samples -- code types: 2869 -- code num: 84414.0 -- avg code num: 19.8808, avg visit len: 2.8307
+--------------------------------------------------
+Unspecified essential hypertension ; 1263
+Congestive heart failure, unspecified ; 1218
+Atrial fibrillation ; 862
+Acute kidney failure, unspecified ; 754
+Coronary atherosclerosis of native coronary artery ; 676
+Urinary tract infection, site not specified ; 627
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 597
+Acute respiratory failure ; 570
+Pneumonia, organism unspecified ; 481
+Unspecified acquired hypothyroidism ; 414
+--------------------------------------------------
+
+
+47000 / 100000 iterations: D_Loss -- 0.277786 -- G_Loss -- 0.132523 -- W_dist -- 0.224649 -- Test_D_Loss -- -0.136310
+Generating 1500 samples -- code types: 2869 -- code num: 79300.0 -- avg code num: 19.1870, avg visit len: 2.7553
+--------------------------------------------------
+Unspecified essential hypertension ; 1268
+Congestive heart failure, unspecified ; 1069
+Atrial fibrillation ; 981
+Acute kidney failure, unspecified ; 756
+Acute respiratory failure ; 685
+Coronary atherosclerosis of native coronary artery ; 662
+Urinary tract infection, site not specified ; 616
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 573
+Pneumonia, organism unspecified ; 467
+Unspecified acquired hypothyroidism ; 457
+--------------------------------------------------
+
+
+48000 / 100000 iterations: D_Loss -- 0.458405 -- G_Loss -- 0.084220 -- W_dist -- 0.191055 -- Test_D_Loss -- -0.141556
+Generating 1500 samples -- code types: 2869 -- code num: 77348.0 -- avg code num: 18.4734, avg visit len: 2.7913
+--------------------------------------------------
+Unspecified essential hypertension ; 1290
+Congestive heart failure, unspecified ; 1085
+Atrial fibrillation ; 849
+Acute kidney failure, unspecified ; 810
+Acute respiratory failure ; 667
+Coronary atherosclerosis of native coronary artery ; 642
+Urinary tract infection, site not specified ; 630
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 599
+Pneumonia, organism unspecified ; 499
+Esophageal reflux ; 433
+--------------------------------------------------
+
+
+49000 / 100000 iterations: D_Loss -- 0.457734 -- G_Loss -- 0.055877 -- W_dist -- 0.180621 -- Test_D_Loss -- -0.146903
+Generating 1500 samples -- code types: 2869 -- code num: 74306.0 -- avg code num: 17.9137, avg visit len: 2.7653
+--------------------------------------------------
+Unspecified essential hypertension ; 1468
+Congestive heart failure, unspecified ; 1058
+Atrial fibrillation ; 875
+Acute kidney failure, unspecified ; 844
+Coronary atherosclerosis of native coronary artery ; 672
+Acute respiratory failure ; 630
+Urinary tract infection, site not specified ; 617
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 598
+Unspecified acquired hypothyroidism ; 483
+Pneumonia, organism unspecified ; 482
+--------------------------------------------------
+
+
+50000 / 100000 iterations: D_Loss -- 0.372681 -- G_Loss -- 0.030513 -- W_dist -- 0.168346 -- Test_D_Loss -- -0.155215
+Generating 1500 samples -- code types: 2869 -- code num: 72041.0 -- avg code num: 16.8754, avg visit len: 2.8460
+--------------------------------------------------
+Unspecified essential hypertension ; 1255
+Congestive heart failure, unspecified ; 1104
+Acute kidney failure, unspecified ; 862
+Atrial fibrillation ; 859
+Acute respiratory failure ; 652
+Urinary tract infection, site not specified ; 651
+Coronary atherosclerosis of native coronary artery ; 631
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 603
+Esophageal reflux ; 538
+Pneumonia, organism unspecified ; 456
+--------------------------------------------------
+
+
+51000 / 100000 iterations: D_Loss -- 0.435946 -- G_Loss -- 0.020475 -- W_dist -- 0.137687 -- Test_D_Loss -- -0.158909
+Generating 1500 samples -- code types: 2869 -- code num: 69861.0 -- avg code num: 16.2581, avg visit len: 2.8647
+--------------------------------------------------
+Congestive heart failure, unspecified ; 1359
+Unspecified essential hypertension ; 1351
+Atrial fibrillation ; 965
+Acute kidney failure, unspecified ; 809
+Acute respiratory failure ; 642
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 628
+Urinary tract infection, site not specified ; 607
+Coronary atherosclerosis of native coronary artery ; 595
+Unspecified acquired hypothyroidism ; 480
+Esophageal reflux ; 429
+--------------------------------------------------
+
+
+52000 / 100000 iterations: D_Loss -- 0.452332 -- G_Loss -- -0.009828 -- W_dist -- 0.123084 -- Test_D_Loss -- -0.166292
+Generating 1500 samples -- code types: 2869 -- code num: 66549.0 -- avg code num: 16.3954, avg visit len: 2.7060
+--------------------------------------------------
+Unspecified essential hypertension ; 1221
+Congestive heart failure, unspecified ; 1108
+Atrial fibrillation ; 955
+Acute kidney failure, unspecified ; 811
+Coronary atherosclerosis of native coronary artery ; 665
+Acute respiratory failure ; 650
+Urinary tract infection, site not specified ; 634
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 570
+Pneumonia, organism unspecified ; 455
+Other and unspecified hyperlipidemia ; 423
+--------------------------------------------------
+
+
+53000 / 100000 iterations: D_Loss -- 0.439359 -- G_Loss -- -0.033253 -- W_dist -- 0.100990 -- Test_D_Loss -- -0.165811
+Generating 1500 samples -- code types: 2869 -- code num: 65639.0 -- avg code num: 15.8625, avg visit len: 2.7587
+--------------------------------------------------
+Unspecified essential hypertension ; 1366
+Congestive heart failure, unspecified ; 1283
+Atrial fibrillation ; 915
+Acute kidney failure, unspecified ; 752
+Acute respiratory failure ; 632
+Coronary atherosclerosis of native coronary artery ; 630
+Urinary tract infection, site not specified ; 618
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 578
+Pneumonia, organism unspecified ; 455
+Severe sepsis ; 424
+--------------------------------------------------
+
+
+54000 / 100000 iterations: D_Loss -- 0.364715 -- G_Loss -- -0.042103 -- W_dist -- 0.109046 -- Test_D_Loss -- -0.169844
+Generating 1500 samples -- code types: 2869 -- code num: 64141.0 -- avg code num: 15.2862, avg visit len: 2.7973
+--------------------------------------------------
+Unspecified essential hypertension ; 1541
+Congestive heart failure, unspecified ; 1065
+Atrial fibrillation ; 1017
+Acute kidney failure, unspecified ; 849
+Urinary tract infection, site not specified ; 659
+Coronary atherosclerosis of native coronary artery ; 606
+Acute respiratory failure ; 600
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 581
+Pneumonia, organism unspecified ; 530
+Unspecified acquired hypothyroidism ; 453
+--------------------------------------------------
+
+
+55000 / 100000 iterations: D_Loss -- 0.430203 -- G_Loss -- -0.052102 -- W_dist -- 0.084032 -- Test_D_Loss -- -0.174993
+Generating 1500 samples -- code types: 2867 -- code num: 62992.0 -- avg code num: 14.9341, avg visit len: 2.8120
+--------------------------------------------------
+Congestive heart failure, unspecified ; 1283
+Unspecified essential hypertension ; 1222
+Atrial fibrillation ; 881
+Acute kidney failure, unspecified ; 760
+Coronary atherosclerosis of native coronary artery ; 703
+Acute respiratory failure ; 688
+Urinary tract infection, site not specified ; 640
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 587
+Pneumonia, organism unspecified ; 444
+Anemia, unspecified ; 426
+--------------------------------------------------
+
+
+56000 / 100000 iterations: D_Loss -- 0.494694 -- G_Loss -- -0.078020 -- W_dist -- 0.076993 -- Test_D_Loss -- -0.172115
+Generating 1500 samples -- code types: 2865 -- code num: 61131.0 -- avg code num: 14.6527, avg visit len: 2.7813
+--------------------------------------------------
+Unspecified essential hypertension ; 1355
+Congestive heart failure, unspecified ; 1084
+Atrial fibrillation ; 1028
+Acute kidney failure, unspecified ; 831
+Coronary atherosclerosis of native coronary artery ; 755
+Urinary tract infection, site not specified ; 666
+Acute respiratory failure ; 628
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 609
+Unspecified septicemia ; 454
+Other and unspecified hyperlipidemia ; 437
+--------------------------------------------------
+
+
+57000 / 100000 iterations: D_Loss -- 0.433875 -- G_Loss -- -0.094581 -- W_dist -- 0.055149 -- Test_D_Loss -- -0.177376
+Generating 1500 samples -- code types: 2867 -- code num: 59938.0 -- avg code num: 14.3909, avg visit len: 2.7767
+--------------------------------------------------
+Unspecified essential hypertension ; 1365
+Congestive heart failure, unspecified ; 1294
+Atrial fibrillation ; 855
+Acute kidney failure, unspecified ; 751
+Coronary atherosclerosis of native coronary artery ; 719
+Acute respiratory failure ; 656
+Urinary tract infection, site not specified ; 627
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 599
+Pneumonia, organism unspecified ; 478
+Unspecified acquired hypothyroidism ; 469
+--------------------------------------------------
+
+
+58000 / 100000 iterations: D_Loss -- 0.480154 -- G_Loss -- -0.110893 -- W_dist -- 0.057214 -- Test_D_Loss -- -0.184878
+Generating 1500 samples -- code types: 2864 -- code num: 58089.0 -- avg code num: 14.0278, avg visit len: 2.7607
+--------------------------------------------------
+Unspecified essential hypertension ; 1450
+Congestive heart failure, unspecified ; 1060
+Atrial fibrillation ; 890
+Acute respiratory failure ; 744
+Acute kidney failure, unspecified ; 696
+Coronary atherosclerosis of native coronary artery ; 661
+Urinary tract infection, site not specified ; 625
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 551
+Pneumonia, organism unspecified ; 471
+Other and unspecified hyperlipidemia ; 437
+--------------------------------------------------
+
+
+59000 / 100000 iterations: D_Loss -- 0.480972 -- G_Loss -- -0.122234 -- W_dist -- 0.039476 -- Test_D_Loss -- -0.189705
+Generating 1500 samples -- code types: 2865 -- code num: 58554.0 -- avg code num: 14.0316, avg visit len: 2.7820
+--------------------------------------------------
+Congestive heart failure, unspecified ; 1445
+Unspecified essential hypertension ; 1095
+Atrial fibrillation ; 1057
+Acute kidney failure, unspecified ; 772
+Urinary tract infection, site not specified ; 666
+Acute respiratory failure ; 662
+Coronary atherosclerosis of native coronary artery ; 658
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 549
+Unspecified acquired hypothyroidism ; 517
+Other and unspecified hyperlipidemia ; 453
+--------------------------------------------------
+
+
+60000 / 100000 iterations: D_Loss -- 0.540610 -- G_Loss -- -0.124169 -- W_dist -- 0.037358 -- Test_D_Loss -- -0.189888
+Generating 1500 samples -- code types: 2855 -- code num: 58310.0 -- avg code num: 14.0337, avg visit len: 2.7700
+--------------------------------------------------
+Congestive heart failure, unspecified ; 1320
+Unspecified essential hypertension ; 1264
+Atrial fibrillation ; 1091
+Acute kidney failure, unspecified ; 902
+Acute respiratory failure ; 748
+Coronary atherosclerosis of native coronary artery ; 745
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 697
+Urinary tract infection, site not specified ; 664
+Unspecified acquired hypothyroidism ; 484
+Acidosis ; 448
+--------------------------------------------------
+
+
+61000 / 100000 iterations: D_Loss -- 0.558902 -- G_Loss -- -0.140738 -- W_dist -- 0.034429 -- Test_D_Loss -- -0.193497
+Generating 1500 samples -- code types: 2850 -- code num: 56500.0 -- avg code num: 13.9128, avg visit len: 2.7073
+--------------------------------------------------
+Unspecified essential hypertension ; 1363
+Congestive heart failure, unspecified ; 1081
+Atrial fibrillation ; 948
+Acute kidney failure, unspecified ; 850
+Coronary atherosclerosis of native coronary artery ; 671
+Acute respiratory failure ; 669
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 636
+Urinary tract infection, site not specified ; 623
+Anemia, unspecified ; 469
+Unspecified septicemia ; 448
+--------------------------------------------------
+
+
+62000 / 100000 iterations: D_Loss -- 0.460619 -- G_Loss -- -0.147988 -- W_dist -- 0.032001 -- Test_D_Loss -- -0.195665
+Generating 1500 samples -- code types: 2837 -- code num: 55970.0 -- avg code num: 14.0699, avg visit len: 2.6520
+--------------------------------------------------
+Unspecified essential hypertension ; 1407
+Congestive heart failure, unspecified ; 1108
+Atrial fibrillation ; 914
+Acute kidney failure, unspecified ; 742
+Urinary tract infection, site not specified ; 686
+Coronary atherosclerosis of native coronary artery ; 679
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 588
+Acute respiratory failure ; 574
+Unspecified acquired hypothyroidism ; 438
+Pneumonia, organism unspecified ; 434
+--------------------------------------------------
+
+
+63000 / 100000 iterations: D_Loss -- 0.529078 -- G_Loss -- -0.150863 -- W_dist -- 0.025441 -- Test_D_Loss -- -0.193514
+Generating 1500 samples -- code types: 2834 -- code num: 56852.0 -- avg code num: 13.3581, avg visit len: 2.8373
+--------------------------------------------------
+Unspecified essential hypertension ; 1444
+Congestive heart failure, unspecified ; 1177
+Atrial fibrillation ; 877
+Acute kidney failure, unspecified ; 735
+Coronary atherosclerosis of native coronary artery ; 676
+Acute respiratory failure ; 641
+Urinary tract infection, site not specified ; 633
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 543
+Unspecified acquired hypothyroidism ; 455
+Pure hypercholesterolemia ; 441
+--------------------------------------------------
+
+
+64000 / 100000 iterations: D_Loss -- 0.549415 -- G_Loss -- -0.159240 -- W_dist -- 0.022367 -- Test_D_Loss -- -0.196711
+Generating 1500 samples -- code types: 2819 -- code num: 55234.0 -- avg code num: 13.6179, avg visit len: 2.7040
+--------------------------------------------------
+Congestive heart failure, unspecified ; 1377
+Unspecified essential hypertension ; 1135
+Acute kidney failure, unspecified ; 846
+Atrial fibrillation ; 841
+Coronary atherosclerosis of native coronary artery ; 751
+Urinary tract infection, site not specified ; 617
+Acute respiratory failure ; 587
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 524
+Pneumonia, organism unspecified ; 490
+Aortocoronary bypass status ; 425
+--------------------------------------------------
+
+
+65000 / 100000 iterations: D_Loss -- 0.531603 -- G_Loss -- -0.158006 -- W_dist -- 0.016105 -- Test_D_Loss -- -0.191390
+Generating 1500 samples -- code types: 2802 -- code num: 54660.0 -- avg code num: 13.5096, avg visit len: 2.6973
+--------------------------------------------------
+Unspecified essential hypertension ; 1212
+Congestive heart failure, unspecified ; 1029
+Atrial fibrillation ; 1001
+Acute kidney failure, unspecified ; 723
+Acute respiratory failure ; 661
+Coronary atherosclerosis of native coronary artery ; 638
+Urinary tract infection, site not specified ; 621
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 591
+Pneumonia, organism unspecified ; 461
+Pure hypercholesterolemia ; 454
+--------------------------------------------------
+
+
+66000 / 100000 iterations: D_Loss -- 0.547080 -- G_Loss -- -0.172467 -- W_dist -- 0.015240 -- Test_D_Loss -- -0.199731
+Generating 1500 samples -- code types: 2804 -- code num: 56369.0 -- avg code num: 13.6388, avg visit len: 2.7553
+--------------------------------------------------
+Unspecified essential hypertension ; 1406
+Congestive heart failure, unspecified ; 1091
+Atrial fibrillation ; 972
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 755
+Acute kidney failure, unspecified ; 738
+Coronary atherosclerosis of native coronary artery ; 714
+Acute respiratory failure ; 667
+Urinary tract infection, site not specified ; 627
+Pneumonia, organism unspecified ; 561
+Esophageal reflux ; 553
+--------------------------------------------------
+
+
+67000 / 100000 iterations: D_Loss -- 0.584650 -- G_Loss -- -0.169675 -- W_dist -- 0.015140 -- Test_D_Loss -- -0.197376
+Generating 1500 samples -- code types: 2786 -- code num: 55080.0 -- avg code num: 13.3592, avg visit len: 2.7487
+--------------------------------------------------
+Unspecified essential hypertension ; 1164
+Congestive heart failure, unspecified ; 1040
+Atrial fibrillation ; 963
+Acute kidney failure, unspecified ; 765
+Acute respiratory failure ; 719
+Urinary tract infection, site not specified ; 660
+Coronary atherosclerosis of native coronary artery ; 643
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 603
+Esophageal reflux ; 464
+Pneumonia, organism unspecified ; 413
+--------------------------------------------------
+
+
+68000 / 100000 iterations: D_Loss -- 0.478249 -- G_Loss -- -0.175911 -- W_dist -- 0.013047 -- Test_D_Loss -- -0.197317
+Generating 1500 samples -- code types: 2753 -- code num: 54389.0 -- avg code num: 13.0148, avg visit len: 2.7860
+--------------------------------------------------
+Congestive heart failure, unspecified ; 1442
+Unspecified essential hypertension ; 1255
+Atrial fibrillation ; 849
+Acute kidney failure, unspecified ; 780
+Coronary atherosclerosis of native coronary artery ; 755
+Acute respiratory failure ; 635
+Urinary tract infection, site not specified ; 572
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 565
+Other and unspecified hyperlipidemia ; 471
+Anemia, unspecified ; 440
+--------------------------------------------------
+
+
+69000 / 100000 iterations: D_Loss -- 0.552972 -- G_Loss -- -0.180055 -- W_dist -- 0.008011 -- Test_D_Loss -- -0.200269
+Generating 1500 samples -- code types: 2732 -- code num: 54694.0 -- avg code num: 13.1035, avg visit len: 2.7827
+--------------------------------------------------
+Unspecified essential hypertension ; 1147
+Congestive heart failure, unspecified ; 1078
+Atrial fibrillation ; 859
+Acute kidney failure, unspecified ; 801
+Acute respiratory failure ; 703
+Coronary atherosclerosis of native coronary artery ; 645
+Urinary tract infection, site not specified ; 643
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 559
+Unspecified acquired hypothyroidism ; 492
+Pneumonia, organism unspecified ; 456
+--------------------------------------------------
+
+
+70000 / 100000 iterations: D_Loss -- 0.488905 -- G_Loss -- -0.183588 -- W_dist -- 0.008834 -- Test_D_Loss -- -0.203563
+Generating 1500 samples -- code types: 2725 -- code num: 55225.0 -- avg code num: 13.1332, avg visit len: 2.8033
+--------------------------------------------------
+Unspecified essential hypertension ; 1402
+Congestive heart failure, unspecified ; 1114
+Atrial fibrillation ; 1049
+Acute respiratory failure ; 714
+Acute kidney failure, unspecified ; 713
+Coronary atherosclerosis of native coronary artery ; 694
+Urinary tract infection, site not specified ; 650
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 570
+Unspecified acquired hypothyroidism ; 539
+Hypertensive chronic kidney disease, unspecified, with chronic kidney disease stage V or end stage renal disease ; 510
+--------------------------------------------------
+
+
+71000 / 100000 iterations: D_Loss -- 0.592131 -- G_Loss -- -0.185807 -- W_dist -- 0.005991 -- Test_D_Loss -- -0.201268
+Generating 1500 samples -- code types: 2698 -- code num: 54506.0 -- avg code num: 13.1848, avg visit len: 2.7560
+--------------------------------------------------
+Congestive heart failure, unspecified ; 1297
+Unspecified essential hypertension ; 1223
+Atrial fibrillation ; 897
+Acute kidney failure, unspecified ; 823
+Coronary atherosclerosis of native coronary artery ; 650
+Urinary tract infection, site not specified ; 620
+Acute respiratory failure ; 575
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 540
+Esophageal reflux ; 499
+Severe sepsis ; 493
+--------------------------------------------------
+
+
+72000 / 100000 iterations: D_Loss -- 0.623737 -- G_Loss -- -0.196594 -- W_dist -- 0.004332 -- Test_D_Loss -- -0.211590
+Generating 1500 samples -- code types: 2697 -- code num: 54770.0 -- avg code num: 13.2615, avg visit len: 2.7533
+--------------------------------------------------
+Unspecified essential hypertension ; 1202
+Congestive heart failure, unspecified ; 1065
+Atrial fibrillation ; 904
+Acute kidney failure, unspecified ; 747
+Coronary atherosclerosis of native coronary artery ; 691
+Urinary tract infection, site not specified ; 679
+Acute respiratory failure ; 673
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 610
+Esophageal reflux ; 455
+Unspecified acquired hypothyroidism ; 417
+--------------------------------------------------
+
+
+73000 / 100000 iterations: D_Loss -- 0.598183 -- G_Loss -- -0.201984 -- W_dist -- 0.004559 -- Test_D_Loss -- -0.212340
+Generating 1500 samples -- code types: 2682 -- code num: 52694.0 -- avg code num: 12.8585, avg visit len: 2.7320
+--------------------------------------------------
+Unspecified essential hypertension ; 1262
+Congestive heart failure, unspecified ; 1070
+Atrial fibrillation ; 953
+Acute kidney failure, unspecified ; 834
+Urinary tract infection, site not specified ; 663
+Acute respiratory failure ; 592
+Coronary atherosclerosis of native coronary artery ; 579
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 577
+Unspecified acquired hypothyroidism ; 527
+Esophageal reflux ; 465
+--------------------------------------------------
+
+
+74000 / 100000 iterations: D_Loss -- 0.533715 -- G_Loss -- -0.188372 -- W_dist -- 0.000947 -- Test_D_Loss -- -0.200611
+Generating 1500 samples -- code types: 2657 -- code num: 55258.0 -- avg code num: 13.0019, avg visit len: 2.8333
+--------------------------------------------------
+Unspecified essential hypertension ; 1324
+Congestive heart failure, unspecified ; 1042
+Atrial fibrillation ; 928
+Acute kidney failure, unspecified ; 761
+Acute respiratory failure ; 697
+Coronary atherosclerosis of native coronary artery ; 594
+Urinary tract infection, site not specified ; 588
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 543
+Esophageal reflux ; 519
+Pneumonia, organism unspecified ; 471
+--------------------------------------------------
+
+
+75000 / 100000 iterations: D_Loss -- 0.427843 -- G_Loss -- -0.189748 -- W_dist -- 0.000833 -- Test_D_Loss -- -0.199166
+Generating 1500 samples -- code types: 2634 -- code num: 54591.0 -- avg code num: 13.0538, avg visit len: 2.7880
+--------------------------------------------------
+Unspecified essential hypertension ; 1576
+Atrial fibrillation ; 992
+Congestive heart failure, unspecified ; 992
+Acute kidney failure, unspecified ; 774
+Coronary atherosclerosis of native coronary artery ; 680
+Acute respiratory failure ; 662
+Urinary tract infection, site not specified ; 645
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 512
+Pneumonia, organism unspecified ; 489
+Unspecified acquired hypothyroidism ; 482
+--------------------------------------------------
+
+
+76000 / 100000 iterations: D_Loss -- 0.461243 -- G_Loss -- -0.196079 -- W_dist -- 0.000087 -- Test_D_Loss -- -0.205376
+Generating 1500 samples -- code types: 2640 -- code num: 53607.0 -- avg code num: 13.2494, avg visit len: 2.6973
+--------------------------------------------------
+Unspecified essential hypertension ; 1391
+Congestive heart failure, unspecified ; 1144
+Atrial fibrillation ; 960
+Acute kidney failure, unspecified ; 832
+Acute respiratory failure ; 750
+Coronary atherosclerosis of native coronary artery ; 704
+Urinary tract infection, site not specified ; 618
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 576
+Other and unspecified hyperlipidemia ; 460
+Anemia, unspecified ; 436
+--------------------------------------------------
+
+
+77000 / 100000 iterations: D_Loss -- 0.595194 -- G_Loss -- -0.187147 -- W_dist -- 0.000287 -- Test_D_Loss -- -0.196852
+Generating 1500 samples -- code types: 2613 -- code num: 52770.0 -- avg code num: 13.0490, avg visit len: 2.6960
+--------------------------------------------------
+Unspecified essential hypertension ; 1346
+Congestive heart failure, unspecified ; 1207
+Atrial fibrillation ; 861
+Acute kidney failure, unspecified ; 819
+Acute respiratory failure ; 689
+Urinary tract infection, site not specified ; 650
+Coronary atherosclerosis of native coronary artery ; 558
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 541
+Hypertensive chronic kidney disease, unspecified, with chronic kidney disease stage V or end stage renal disease ; 424
+Unspecified acquired hypothyroidism ; 404
+--------------------------------------------------
+
+
+78000 / 100000 iterations: D_Loss -- 0.659810 -- G_Loss -- -0.203158 -- W_dist -- -0.001529 -- Test_D_Loss -- -0.208448
+Generating 1500 samples -- code types: 2599 -- code num: 53758.0 -- avg code num: 13.0798, avg visit len: 2.7400
+--------------------------------------------------
+Unspecified essential hypertension ; 1321
+Congestive heart failure, unspecified ; 1215
+Atrial fibrillation ; 932
+Acute kidney failure, unspecified ; 846
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 653
+Urinary tract infection, site not specified ; 653
+Coronary atherosclerosis of native coronary artery ; 616
+Acute respiratory failure ; 572
+Other and unspecified hyperlipidemia ; 454
+Pneumonia, organism unspecified ; 449
+--------------------------------------------------
+
+
+79000 / 100000 iterations: D_Loss -- 0.583652 -- G_Loss -- -0.198308 -- W_dist -- -0.003002 -- Test_D_Loss -- -0.204716
+Generating 1500 samples -- code types: 2609 -- code num: 53387.0 -- avg code num: 12.8861, avg visit len: 2.7620
+--------------------------------------------------
+Unspecified essential hypertension ; 1365
+Congestive heart failure, unspecified ; 1077
+Atrial fibrillation ; 940
+Acute kidney failure, unspecified ; 748
+Acute respiratory failure ; 651
+Coronary atherosclerosis of native coronary artery ; 628
+Urinary tract infection, site not specified ; 605
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 569
+Severe sepsis ; 471
+Unspecified acquired hypothyroidism ; 468
+--------------------------------------------------
+
+
+80000 / 100000 iterations: D_Loss -- 0.573950 -- G_Loss -- -0.203165 -- W_dist -- -0.004102 -- Test_D_Loss -- -0.207962
+Generating 1500 samples -- code types: 2602 -- code num: 56588.0 -- avg code num: 13.2432, avg visit len: 2.8487
+--------------------------------------------------
+Unspecified essential hypertension ; 1447
+Congestive heart failure, unspecified ; 1307
+Atrial fibrillation ; 887
+Acute kidney failure, unspecified ; 837
+Coronary atherosclerosis of native coronary artery ; 803
+Urinary tract infection, site not specified ; 672
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 635
+Acute respiratory failure ; 635
+Pneumonia, organism unspecified ; 567
+Anemia, unspecified ; 502
+--------------------------------------------------
+
+
+81000 / 100000 iterations: D_Loss -- 0.490884 -- G_Loss -- -0.206112 -- W_dist -- -0.001696 -- Test_D_Loss -- -0.210850
+Generating 1500 samples -- code types: 2581 -- code num: 54285.0 -- avg code num: 13.4435, avg visit len: 2.6920
+--------------------------------------------------
+Unspecified essential hypertension ; 1350
+Congestive heart failure, unspecified ; 1179
+Atrial fibrillation ; 913
+Acute kidney failure, unspecified ; 890
+Acute respiratory failure ; 699
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 632
+Coronary atherosclerosis of native coronary artery ; 628
+Urinary tract infection, site not specified ; 624
+Severe sepsis ; 469
+Unspecified acquired hypothyroidism ; 457
+--------------------------------------------------
+
+
+82000 / 100000 iterations: D_Loss -- 0.563816 -- G_Loss -- -0.203388 -- W_dist -- -0.002769 -- Test_D_Loss -- -0.208757
+Generating 1500 samples -- code types: 2581 -- code num: 54067.0 -- avg code num: 13.1774, avg visit len: 2.7353
+--------------------------------------------------
+Unspecified essential hypertension ; 1365
+Congestive heart failure, unspecified ; 1163
+Atrial fibrillation ; 973
+Coronary atherosclerosis of native coronary artery ; 798
+Acute kidney failure, unspecified ; 764
+Acute respiratory failure ; 734
+Urinary tract infection, site not specified ; 684
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 582
+Pneumonia, organism unspecified ; 501
+Unspecified acquired hypothyroidism ; 459
+--------------------------------------------------
+
+
+83000 / 100000 iterations: D_Loss -- 0.488534 -- G_Loss -- -0.210887 -- W_dist -- -0.001693 -- Test_D_Loss -- -0.214448
+Generating 1500 samples -- code types: 2526 -- code num: 54971.0 -- avg code num: 13.1510, avg visit len: 2.7867
+--------------------------------------------------
+Congestive heart failure, unspecified ; 1361
+Unspecified essential hypertension ; 1358
+Atrial fibrillation ; 907
+Acute kidney failure, unspecified ; 748
+Urinary tract infection, site not specified ; 662
+Acute respiratory failure ; 639
+Coronary atherosclerosis of native coronary artery ; 583
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 579
+Pneumonia, organism unspecified ; 462
+Anemia, unspecified ; 453
+--------------------------------------------------
+
+
+84000 / 100000 iterations: D_Loss -- 0.477479 -- G_Loss -- -0.198770 -- W_dist -- -0.002026 -- Test_D_Loss -- -0.202590
+Generating 1500 samples -- code types: 2528 -- code num: 53905.0 -- avg code num: 13.1991, avg visit len: 2.7227
+--------------------------------------------------
+Unspecified essential hypertension ; 1333
+Congestive heart failure, unspecified ; 1130
+Atrial fibrillation ; 840
+Acute kidney failure, unspecified ; 760
+Acute respiratory failure ; 666
+Urinary tract infection, site not specified ; 638
+Coronary atherosclerosis of native coronary artery ; 637
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 624
+Esophageal reflux ; 470
+Severe sepsis ; 449
+--------------------------------------------------
+
+
+85000 / 100000 iterations: D_Loss -- 0.504297 -- G_Loss -- -0.205955 -- W_dist -- -0.004424 -- Test_D_Loss -- -0.208757
+Generating 1500 samples -- code types: 2531 -- code num: 53501.0 -- avg code num: 12.8949, avg visit len: 2.7660
+--------------------------------------------------
+Congestive heart failure, unspecified ; 1066
+Unspecified essential hypertension ; 1065
+Atrial fibrillation ; 862
+Acute kidney failure, unspecified ; 727
+Coronary atherosclerosis of native coronary artery ; 689
+Acute respiratory failure ; 675
+Urinary tract infection, site not specified ; 662
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 535
+Pneumonia, organism unspecified ; 477
+Other and unspecified hyperlipidemia ; 455
+--------------------------------------------------
+
+
+86000 / 100000 iterations: D_Loss -- 0.569630 -- G_Loss -- -0.201078 -- W_dist -- -0.004306 -- Test_D_Loss -- -0.203600
+Generating 1500 samples -- code types: 2531 -- code num: 56687.0 -- avg code num: 13.3131, avg visit len: 2.8387
+--------------------------------------------------
+Congestive heart failure, unspecified ; 1287
+Unspecified essential hypertension ; 1246
+Atrial fibrillation ; 912
+Acute kidney failure, unspecified ; 867
+Acute respiratory failure ; 731
+Urinary tract infection, site not specified ; 636
+Coronary atherosclerosis of native coronary artery ; 591
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 540
+Anemia, unspecified ; 529
+Pneumonia, organism unspecified ; 487
+--------------------------------------------------
+
+
+87000 / 100000 iterations: D_Loss -- 0.540794 -- G_Loss -- -0.221712 -- W_dist -- -0.002389 -- Test_D_Loss -- -0.224311
+Generating 1500 samples -- code types: 2507 -- code num: 54520.0 -- avg code num: 13.1184, avg visit len: 2.7707
+--------------------------------------------------
+Unspecified essential hypertension ; 1218
+Congestive heart failure, unspecified ; 1127
+Atrial fibrillation ; 922
+Acute kidney failure, unspecified ; 921
+Coronary atherosclerosis of native coronary artery ; 684
+Urinary tract infection, site not specified ; 672
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 621
+Acute respiratory failure ; 593
+Other and unspecified hyperlipidemia ; 507
+Unspecified septicemia ; 487
+--------------------------------------------------
+
+
+88000 / 100000 iterations: D_Loss -- 0.544871 -- G_Loss -- -0.201980 -- W_dist -- -0.003019 -- Test_D_Loss -- -0.204723
+Generating 1500 samples -- code types: 2529 -- code num: 56516.0 -- avg code num: 13.5921, avg visit len: 2.7720
+--------------------------------------------------
+Unspecified essential hypertension ; 1351
+Congestive heart failure, unspecified ; 1289
+Atrial fibrillation ; 1138
+Acute respiratory failure ; 769
+Acute kidney failure, unspecified ; 729
+Urinary tract infection, site not specified ; 669
+Coronary atherosclerosis of native coronary artery ; 608
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 591
+Unspecified acquired hypothyroidism ; 521
+Other and unspecified hyperlipidemia ; 512
+--------------------------------------------------
+
+
+89000 / 100000 iterations: D_Loss -- 0.604671 -- G_Loss -- -0.218984 -- W_dist -- -0.005262 -- Test_D_Loss -- -0.220691
+Generating 1500 samples -- code types: 2530 -- code num: 54450.0 -- avg code num: 13.2902, avg visit len: 2.7313
+--------------------------------------------------
+Unspecified essential hypertension ; 1260
+Congestive heart failure, unspecified ; 1231
+Atrial fibrillation ; 1068
+Acute respiratory failure ; 791
+Acute kidney failure, unspecified ; 764
+Coronary atherosclerosis of native coronary artery ; 687
+Urinary tract infection, site not specified ; 627
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 622
+Pneumonia, organism unspecified ; 546
+Unspecified acquired hypothyroidism ; 443
+--------------------------------------------------
+
+
+90000 / 100000 iterations: D_Loss -- 0.526588 -- G_Loss -- -0.216507 -- W_dist -- -0.002856 -- Test_D_Loss -- -0.218992
+Generating 1500 samples -- code types: 2520 -- code num: 55880.0 -- avg code num: 13.4651, avg visit len: 2.7667
+--------------------------------------------------
+Congestive heart failure, unspecified ; 1242
+Unspecified essential hypertension ; 1191
+Acute kidney failure, unspecified ; 900
+Atrial fibrillation ; 858
+Coronary atherosclerosis of native coronary artery ; 777
+Urinary tract infection, site not specified ; 648
+Acute respiratory failure ; 621
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 574
+Unspecified acquired hypothyroidism ; 528
+Pneumonia, organism unspecified ; 460
+--------------------------------------------------
+
+
+91000 / 100000 iterations: D_Loss -- 0.600514 -- G_Loss -- -0.192934 -- W_dist -- -0.003866 -- Test_D_Loss -- -0.193750
+Generating 1500 samples -- code types: 2492 -- code num: 55183.0 -- avg code num: 13.3324, avg visit len: 2.7593
+--------------------------------------------------
+Unspecified essential hypertension ; 1299
+Congestive heart failure, unspecified ; 1240
+Atrial fibrillation ; 851
+Acute kidney failure, unspecified ; 832
+Urinary tract infection, site not specified ; 655
+Coronary atherosclerosis of native coronary artery ; 612
+Acute respiratory failure ; 608
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 503
+Pneumonia, organism unspecified ; 479
+Esophageal reflux ; 472
+--------------------------------------------------
+
+
+92000 / 100000 iterations: D_Loss -- 0.592977 -- G_Loss -- -0.217813 -- W_dist -- -0.004979 -- Test_D_Loss -- -0.218342
+Generating 1500 samples -- code types: 2502 -- code num: 56270.0 -- avg code num: 13.3247, avg visit len: 2.8153
+--------------------------------------------------
+Unspecified essential hypertension ; 1319
+Congestive heart failure, unspecified ; 1190
+Atrial fibrillation ; 981
+Coronary atherosclerosis of native coronary artery ; 826
+Acute kidney failure, unspecified ; 738
+Acute respiratory failure ; 683
+Urinary tract infection, site not specified ; 646
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 625
+Pneumonia, organism unspecified ; 458
+Esophageal reflux ; 455
+--------------------------------------------------
+
+
+93000 / 100000 iterations: D_Loss -- 0.593875 -- G_Loss -- -0.201155 -- W_dist -- -0.003112 -- Test_D_Loss -- -0.203906
+Generating 1500 samples -- code types: 2528 -- code num: 54433.0 -- avg code num: 13.1385, avg visit len: 2.7620
+--------------------------------------------------
+Unspecified essential hypertension ; 1422
+Congestive heart failure, unspecified ; 1077
+Acute kidney failure, unspecified ; 924
+Atrial fibrillation ; 876
+Acute respiratory failure ; 676
+Urinary tract infection, site not specified ; 642
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 576
+Coronary atherosclerosis of native coronary artery ; 558
+Unspecified acquired hypothyroidism ; 519
+Anemia, unspecified ; 494
+--------------------------------------------------
+
+
+94000 / 100000 iterations: D_Loss -- 0.487312 -- G_Loss -- -0.206505 -- W_dist -- -0.002888 -- Test_D_Loss -- -0.207118
+Generating 1500 samples -- code types: 2481 -- code num: 54956.0 -- avg code num: 13.0073, avg visit len: 2.8167
+--------------------------------------------------
+Unspecified essential hypertension ; 1415
+Congestive heart failure, unspecified ; 1246
+Acute kidney failure, unspecified ; 880
+Atrial fibrillation ; 861
+Coronary atherosclerosis of native coronary artery ; 665
+Urinary tract infection, site not specified ; 661
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 640
+Acute respiratory failure ; 558
+Anemia, unspecified ; 492
+Pneumonia, organism unspecified ; 469
+--------------------------------------------------
+
+
+95000 / 100000 iterations: D_Loss -- 0.532138 -- G_Loss -- -0.188890 -- W_dist -- -0.004608 -- Test_D_Loss -- -0.191478
+Generating 1500 samples -- code types: 2487 -- code num: 55159.0 -- avg code num: 13.1050, avg visit len: 2.8060
+--------------------------------------------------
+Unspecified essential hypertension ; 1337
+Congestive heart failure, unspecified ; 1075
+Atrial fibrillation ; 844
+Acute kidney failure, unspecified ; 815
+Acute respiratory failure ; 765
+Urinary tract infection, site not specified ; 654
+Coronary atherosclerosis of native coronary artery ; 642
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 536
+Unspecified septicemia ; 509
+Unspecified acquired hypothyroidism ; 492
+--------------------------------------------------
+
+
+96000 / 100000 iterations: D_Loss -- 0.596985 -- G_Loss -- -0.203172 -- W_dist -- -0.005552 -- Test_D_Loss -- -0.202341
+Generating 1500 samples -- code types: 2499 -- code num: 54746.0 -- avg code num: 12.8512, avg visit len: 2.8400
+--------------------------------------------------
+Unspecified essential hypertension ; 1337
+Congestive heart failure, unspecified ; 1107
+Atrial fibrillation ; 811
+Coronary atherosclerosis of native coronary artery ; 806
+Acute respiratory failure ; 799
+Acute kidney failure, unspecified ; 753
+Urinary tract infection, site not specified ; 616
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 485
+Anemia, unspecified ; 457
+Pneumonia, organism unspecified ; 411
+--------------------------------------------------
+
+
+97000 / 100000 iterations: D_Loss -- 0.515858 -- G_Loss -- -0.205185 -- W_dist -- -0.003476 -- Test_D_Loss -- -0.205296
+Generating 1500 samples -- code types: 2493 -- code num: 57421.0 -- avg code num: 13.7568, avg visit len: 2.7827
+--------------------------------------------------
+Unspecified essential hypertension ; 1481
+Congestive heart failure, unspecified ; 1225
+Atrial fibrillation ; 878
+Acute kidney failure, unspecified ; 841
+Coronary atherosclerosis of native coronary artery ; 678
+Urinary tract infection, site not specified ; 646
+Acute respiratory failure ; 596
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 564
+Esophageal reflux ; 498
+Unspecified septicemia ; 458
+--------------------------------------------------
+
+
+98000 / 100000 iterations: D_Loss -- 0.434553 -- G_Loss -- -0.192722 -- W_dist -- -0.001898 -- Test_D_Loss -- -0.197616
+Generating 1500 samples -- code types: 2506 -- code num: 55193.0 -- avg code num: 13.2612, avg visit len: 2.7747
+--------------------------------------------------
+Unspecified essential hypertension ; 1297
+Congestive heart failure, unspecified ; 1135
+Atrial fibrillation ; 884
+Acute kidney failure, unspecified ; 831
+Coronary atherosclerosis of native coronary artery ; 749
+Acute respiratory failure ; 698
+Urinary tract infection, site not specified ; 651
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 605
+Severe sepsis ; 499
+Unspecified acquired hypothyroidism ; 469
+--------------------------------------------------
+
+
+99000 / 100000 iterations: D_Loss -- 0.459980 -- G_Loss -- -0.206147 -- W_dist -- -0.003798 -- Test_D_Loss -- -0.206735
+Generating 1500 samples -- code types: 2483 -- code num: 57331.0 -- avg code num: 13.3019, avg visit len: 2.8733
+--------------------------------------------------
+Unspecified essential hypertension ; 1522
+Congestive heart failure, unspecified ; 1346
+Atrial fibrillation ; 1061
+Acute kidney failure, unspecified ; 774
+Coronary atherosclerosis of native coronary artery ; 771
+Acute respiratory failure ; 648
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 644
+Urinary tract infection, site not specified ; 633
+Pneumonia, organism unspecified ; 494
+Hypertensive chronic kidney disease, unspecified, with chronic kidney disease stage V or end stage renal disease ; 489
+--------------------------------------------------
+
+
+100000 / 100000 iterations: D_Loss -- 0.595827 -- G_Loss -- -0.208974 -- W_dist -- -0.004029 -- Test_D_Loss -- -0.208564
+Generating 1500 samples -- code types: 2502 -- code num: 57263.0 -- avg code num: 13.9055, avg visit len: 2.7453
+--------------------------------------------------
+Unspecified essential hypertension ; 1582
+Congestive heart failure, unspecified ; 1351
+Atrial fibrillation ; 939
+Acute kidney failure, unspecified ; 721
+Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled ; 685
+Urinary tract infection, site not specified ; 624
+Pneumonia, organism unspecified ; 613
+Coronary atherosclerosis of native coronary artery ; 605
+Urethral stricture, unspecified ; 581
+Acute respiratory failure ; 575
+--------------------------------------------------
+
+
