@@ -3,7 +3,7 @@ import numpy as np
 import pickle
 import os
 
-SYNTH_NPZ = "data/result/mimic3/synthetic_mimic3.npz"
+SYNTH_NPZ = "data/result/synthetic_mimic3.npz"
 DATA_DIR = "gram/data"
 
 os.makedirs(DATA_DIR, exist_ok=True)
