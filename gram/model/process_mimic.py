@@ -35,7 +35,7 @@ if __name__ == '__main__':
     diagnosisFile = sys.argv[2]
     outFile = sys.argv[3]
 
-    print 'Building pid-admission mapping, admission-date mapping'
+    print('Building pid-admission mapping, admission-date mapping')
     pidAdmMap = {}
     admDateMap = {}
     infd = open(admissionFile, 'r')
@@ -50,7 +50,7 @@ if __name__ == '__main__':
         else: pidAdmMap[pid] = [admId]
     infd.close()
 
-    print 'Building admission-dxList mapping'
+    print('Building admission-dxList mapping')
     admDxMap = {}
     admDxMap_3digit = {}
     infd = open(diagnosisFile, 'r')
@@ -72,7 +72,7 @@ if __name__ == '__main__':
             admDxMap_3digit[admId] = [dxStr_3digit]
     infd.close()
 
-    print 'Building pid-sortedVisits mapping'
+    print('Building pid-sortedVisits mapping')
     pidSeqMap = {}
     pidSeqMap_3digit = {}
     for pid, admIdList in pidAdmMap.iteritems():
@@ -84,7 +84,7 @@ if __name__ == '__main__':
         sortedList_3digit = sorted([(admDateMap[admId], admDxMap_3digit[admId]) for admId in admIdList])
         pidSeqMap_3digit[pid] = sortedList_3digit
     
-    print 'Building pids, dates, strSeqs'
+    print('Building pids, dates, strSeqs')
     pids = []
     dates = []
     seqs = []
@@ -98,7 +98,7 @@ if __name__ == '__main__':
         dates.append(date)
         seqs.append(seq)
     
-    print 'Building pids, dates, strSeqs for 3digit ICD9 code'
+    print('Building pids, dates, strSeqs for 3digit ICD9 code')
     seqs_3digit = []
     for pid, visits in pidSeqMap_3digit.iteritems():
         seq = []
@@ -106,7 +106,7 @@ if __name__ == '__main__':
             seq.append(visit[1])
         seqs_3digit.append(seq)
     
-    print 'Converting strSeqs to intSeqs, and making types'
+    print('Converting strSeqs to intSeqs, and making types')
     types = {}
     newSeqs = []
     for patient in seqs:
@@ -122,7 +122,7 @@ if __name__ == '__main__':
             newPatient.append(newVisit)
         newSeqs.append(newPatient)
     
-    print 'Converting strSeqs to intSeqs, and making types for 3digit ICD9 code'
+    print('Converting strSeqs to intSeqs, and making types for 3digit ICD9 code')
     types_3digit = {}
     newSeqs_3digit = []
     for patient in seqs_3digit:
