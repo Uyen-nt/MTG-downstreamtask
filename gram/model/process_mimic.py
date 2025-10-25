@@ -11,7 +11,7 @@
 # <output file>.types: Python dictionary that maps string diagnosis codes to integer diagnosis codes.
 
 import sys
-import cPickle as pickle
+import pickle
 from datetime import datetime
 
 def convert_to_icd9(dxStr):
