@@ -1,4 +1,6 @@
 # scripts/01_convert_synthetic.py
+# ĐÃ SỬA: xử lý one-hot vector → chỉ lấy mã có giá trị 1
+
 import numpy as np
 import pickle
 import os
@@ -10,40 +12,36 @@ os.makedirs(DATA_DIR, exist_ok=True)
 
 print("Loading synthetic data...")
 data = np.load(SYNTH_NPZ, allow_pickle=True)
-
-# LẤY DỮ LIỆU
-x = data['x']        # shape: (N, max_len, num_codes) hoặc (N, T, C)
-lens = data['lens']  # shape: (N,) → số visit thật của mỗi bệnh nhân
+x = data['x']        # (6000, 34, 2869)
+lens = data['lens']  # (6000,)
 
 print(f"Loaded 'x': {x.shape}, 'lens': {lens.shape}")
 
-# Chuyển thành list of list of list
-patients = []
-for i in range(len(lens)):
-    real_len = lens[i]
-    patient = x[i, :real_len]  # cắt bỏ padding
-    patients.append(patient.tolist())  # chuyển thành list
-
-# Tạo types + seqs
-types = {}
+# Tạo seqs
+seqs = []
 code_to_id = {}
 next_id = 0
-seqs = []
 
-print("Converting to GRAM format (seqs)...")
-for patient in patients:
-    new_patient = []
-    for visit in patient:
-        new_visit = []
-        for code in visit:
-            # code là số nguyên → chuyển thành D_xxxx
-            code_str = f"D_{int(code):04d}"
-            if code_str not in code_to_id:
-                code_to_id[code_str] = next_id
-                next_id += 1
-            new_visit.append(code_to_id[code_str])
-        new_patient.append(new_visit)
-    seqs.append(new_patient)
+print("Converting one-hot to code indices...")
+for i in range(len(lens)):
+    real_len = lens[i]
+    patient = []
+    for j in range(real_len):
+        visit_vector = x[i, j]  # (2869,)
+        # Tìm chỉ số có giá trị 1
+        code_idx = np.where(visit_vector == 1)[0]
+        if len(code_idx) != 1:
+            print(f"Warning: visit {j} of patient {i} has {len(code_idx)} codes")
+            code_idx = code_idx[0] if len(code_idx) > 0 else 0
+        else:
+            code_idx = code_idx[0]
+        
+        code_str = f"D_{int(code_idx):04d}"
+        if code_str not in code_to_id:
+            code_to_id[code_str] = next_id
+            next_id += 1
+        patient.append([code_to_id[code_str]])  # visit = [mã]
+    seqs.append(patient)
 
 # Lưu
 synth_seqs = f"{DATA_DIR}/synth_mimic3.seqs"
@@ -55,4 +53,4 @@ with open(synth_types, 'wb') as f:
     pickle.dump(code_to_id, f, -1)
 
 print(f"Done! Saved {len(seqs)} patients → {synth_seqs}")
-print(f"       Total unique codes: {len(code_to_id)}")
+print(f"       Total unique codes: {len(code_to_id)} (should be 2869)")
