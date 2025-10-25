@@ -1,1 +1,15 @@
+data:
+  real_seqs: "data/real_mimic3.3digitICD9.seqs"
+  synth_seqs: "data/synth_mimic3.seqs"
+  tree: "data/tree_mimic3"
+  ratio: 2.0  # synthetic / real
 
+model:
+  batch_size: 100
+  n_epochs_pretrain: 30
+  n_epochs_finetune: 50
+  rnn_size: 128
+  dropout: 0.5
+
+paths:
+  results: "results"
