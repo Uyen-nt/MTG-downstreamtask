@@ -12,5 +12,5 @@
 ## Results
 | Method | AUC | w-F1 | Rare-F1 |
 |--------|-----|------|---------|
-| Real only | 0.82 | 0.45 | 0.21 |
-| Pretrain + Finetune | **0.85** | **0.48** | **0.29** |
+| Real only | xxx | xxx | xxx |
+| Pretrain + Finetune | **xxx** | **xxx** | **xxx** |
