@@ -31,7 +31,7 @@ print(f"📦 Copied to: {finetune_init}")
 
 # === CHẠY GRAM VỚI AESARA ===
 cmd = [
-    "python", "model/gram.py",
+    "python", "gram/model/gram.py",
     REAL_SEQS,
     REAL_LABELS,
     TREE,
