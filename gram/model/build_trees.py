@@ -1,5 +1,4 @@
-# gram/model/build_trees.py
-# TƯƠNG THÍCH VỚI icd9_hierarchy.csv (2 cột: parent,child)
+# gram/model/build_trees.py (TỐI ƯU)
 import sys
 import pickle
 from collections import defaultdict
@@ -10,20 +9,22 @@ def build_tree(hierarchy_file, seqs_file, types_file, output_prefix):
     code_set = set()
 
     with open(hierarchy_file, 'r', encoding='utf-8') as f:
-        next(f)  # skip header: parent,child
+        next(f)
         for line in f:
             line = line.strip()
-            if not line:
-                continue
+            if not line: continue
             parts = line.split(',')
-            if len(parts) < 2:
-                continue
+            if len(parts) < 2: continue
             parent, child = parts[0].strip(), parts[1].strip()
             parent_to_children[parent].append(child)
             code_set.add(parent)
             code_set.add(child)
 
-    print(f"Loaded {len(code_set)} unique codes from hierarchy.")
+    # TỐI ƯU: XÂY BẢNG CHA
+    parent_of = {}
+    for parent, children in parent_to_children.items():
+        for child in children:
+            parent_of[child] = parent
 
     print(f"Loading types from {types_file}...")
     with open(types_file, 'rb') as f:
@@ -34,53 +35,53 @@ def build_tree(hierarchy_file, seqs_file, types_file, output_prefix):
     with open(seqs_file, 'rb') as f:
         seqs = pickle.load(f)
 
-    print("Building tree structure from real data...")
-    tree = defaultdict(list)
+    print("Building tree from real data...")
+    tree = defaultdict(set)  # DÙNG SET ĐỂ TỰ LOẠI TRÙNG
+    total_codes = 0
+
     for seq in seqs:
         for visit in seq:
             for code_id in visit:
-                if code_id not in id_to_code3:
-                    continue
+                if code_id not in id_to_code3: continue
                 code3 = id_to_code3[code_id]
-                if code3 not in code_set:
-                    continue
-                # Tìm đường từ leaf → root
-                path = []
+                if code3 not in code_set: continue
+
+                # TRA CỨU NHANH
                 current = code3
+                ancestors = []
                 while current:
-                    path.append(current)
-                    if current not in parent_to_children:
+                    ancestors.append(current)
+                    if current not in parent_of:
                         break
-                    parents = parent_to_children[current]
-                    if not parents:
-                        break
-                    current = parents[0]  # giả sử 1 cha
+                    current = parent_of[current]
+
                 # Thêm cạnh
-                for i in range(len(path) - 1):
-                    tree[path[i+1]].append(path[i])
+                for i in range(len(ancestors) - 1):
+                    tree[ancestors[i+1]].add(ancestors[i])
+                total_codes += 1
 
-    # Loại trùng
-    for parent in tree:
-        tree[parent] = list(set(tree[parent]))
+    # Chuyển set → list
+    for k in tree:
+        tree[k] = list(tree[k])
 
-    # Phân cấp theo độ sâu
+    # Phân cấp
     levels = {}
     for code in code_set:
         depth = 0
         current = code
-        while current in parent_to_children and parent_to_children[current]:
+        while current in parent_of:
             depth += 1
-            current = parent_to_children[current][0]
+            current = parent_of[current]
         levels.setdefault(depth, []).append(code)
 
-    # Lưu theo level
+    # Lưu
     for level, codes in levels.items():
-        output_file = f"{output_prefix}.level{level}.pk"
-        with open(output_file, 'wb') as f:
+        with open(f"{output_prefix}.level{level}.pk", 'wb') as f:
             pickle.dump(codes, f)
-        print(f"Saved level {level}: {len(codes)} codes → {output_file}")
+        print(f"Saved level {level}: {len(codes)} codes")
 
     print(f"Tree saved to {output_prefix}.level*.pk")
+    print(f"Processed {total_codes} code occurrences")
 
 if __name__ == "__main__":
     if len(sys.argv) != 5:
