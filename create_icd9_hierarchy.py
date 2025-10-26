@@ -1,32 +1,34 @@
-# create_icd9_hierarchy.py
-# Tạo icd9_hierarchy.csv từ data/icd9.txt
-
+# tạo icd9_hierarchy.csv
 import os
 from pathlib import Path
 
-# ĐƯỜNG DẪN
-PROJECT_ROOT = Path(__file__).parent.resolve()
+PROJECT_ROOT = Path.cwd()
 ICD9_TXT = PROJECT_ROOT / "data" / "icd9.txt"
+TYPES_FILE = PROJECT_ROOT / "data" / "result" / "mimic3" / "real_mimic3.3digitICD9.types"
 OUTPUT_CSV = PROJECT_ROOT / "data" / "icd9_hierarchy.csv"
 
-# Kiểm tra file tồn tại
-if not ICD9_TXT.exists():
-    raise FileNotFoundError(f"Không tìm thấy: {ICD9_TXT}")
+# Đọc icd9.txt
+lines = [l.rstrip() for l in ICD9_TXT.read_text().splitlines() if l.strip()]
+seen_codes = set()
 
-print(f"Đọc từ: {ICD9_TXT}")
-print(f"Xuất ra: {OUTPUT_CSV}")
-
-# Đọc và xử lý
-lines = [line.rstrip() for line in ICD9_TXT.read_text().splitlines() if line.strip()]
-
-with open(OUTPUT_CSV, "w", encoding="utf-8") as f:
+with open(OUTPUT_CSV, "w") as f:
     f.write("parent,child\n")
     parent = None
     for line in lines:
-        if not line.startswith("    "):  # Cấp 1: 001-139
+        if not line.startswith("    "):
             parent = line.split("-")[0].strip()
-        else:  # Cấp 2: 001-009
+            seen_codes.add(parent)
+        else:
             child = line.strip().split("-")[0].strip()
             f.write(f"{parent},{child}\n")
+            seen_codes.add(child)
 
-print(f"HOÀN TẤT! Tạo {OUTPUT_CSV.name} với {sum(1 for _ in open(OUTPUT_CSV)) - 1} quan hệ cha-con.")
+# Thêm các mã 3-digit từ types nếu thiếu
+with open(TYPES_FILE) as f:
+    for line in f:
+        code = line.strip().split("\t")[0].split(".")[0]
+        if code not in seen_codes:
+            with open(OUTPUT_CSV, "a") as f2:
+                f2.write(f"{code},{code}\n")
+
+print(f"HOÀN TẤT: {OUTPUT_CSV} có {sum(1 for _ in open(OUTPUT_CSV))-1} dòng")
