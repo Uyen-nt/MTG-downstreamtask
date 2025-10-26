@@ -9,8 +9,7 @@ if __name__ == '__main__':
 
     # Thử mở file text; nếu lỗi -> mở dạng binary
     try:
-        infd = open(infile, 'r', encoding='utf-8')
-        _ = infd.readline()
+        infd = open(infile, 'r', encoding='utf-8')       
         infd.seek(0)
         is_binary = False
     except UnicodeDecodeError:
@@ -25,7 +24,6 @@ if __name__ == '__main__':
 
     # Đọc dữ liệu
     infd = open(infile, 'r', encoding='utf-8')
-    _ = infd.readline()
 
     seqs = pickle.load(open(seqFile, 'rb'))
     types = pickle.load(open(typeFile, 'rb'))
