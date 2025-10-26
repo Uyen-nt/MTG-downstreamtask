@@ -450,6 +450,8 @@ def parse_arguments(parser):
     parser.add_argument('--dropout_rate', type=float, default=0.5, help='Dropout rate used for the hidden layer of RNN (default value: 0.5)')
     parser.add_argument('--log_eps', type=float, default=1e-8, help='A small value to prevent log(0) (default value: 1e-8)')
     parser.add_argument('--verbose', action='store_true', help='Print output after every 100 mini-batches (default false)')
+    parser.add_argument("--embed_file", type=str, default=None, help="Đường dẫn đến pretrain embedding (.npz)")
+
     args = parser.parse_args()
     return args
 
