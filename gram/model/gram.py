@@ -20,7 +20,8 @@ import aesara.tensor as T
 from aesara import config
 from aesara.tensor.random import RandomStream
 import aesara.tensor.nnet as nnet
-from aesara.tensor.special import sigmoid
+from aesara.tensor.math import sigmoid
+
 
 _TEST_RATIO = 0.2
 _VALIDATION_RATIO = 0.1
