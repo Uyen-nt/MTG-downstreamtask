@@ -15,20 +15,20 @@ TREE = f"{DATA_DIR}/tree_mimic3"
 # Tạo thư mục finetune
 os.makedirs(FINETUNE_DIR, exist_ok=True)
 
-# === TÌM MODEL PRETRAIN (.pt) ===
-pretrain_models = glob.glob(f"{PRETRAIN_DIR}/model_best.pt")
+# === TÌM MODEL PRETRAIN (.npz) ===
+pretrain_models = glob.glob(f"{PRETRAIN_DIR}/*.npz")
 
 if not pretrain_models:
     raise FileNotFoundError(
-        f"Không tìm thấy model pretrain tại {PRETRAIN_DIR}/model_best.pt\n"
+        f"Không tìm thấy model pretrain (.npz) tại {PRETRAIN_DIR}\n"
         "Hãy chạy 04_pretrain.py trước!"
     )
 
-best_model = pretrain_models[0]  # Chỉ có 1 file .pt
-finetune_init = f"{FINETUNE_DIR}/pretrain_model.pt"
+best_model = sorted(pretrain_models)[-1]  # lấy model cuối (best epoch)
+finetune_init = f"{FINETUNE_DIR}/pretrain_model.npz"
 shutil.copy(best_model, finetune_init)
-print(f"Loaded pre-trained weights: {best_model}")
-print(f"Copied to: {finetune_init}")
+print(f"✅ Loaded pre-trained weights: {best_model}")
+print(f"📦 Copied to: {finetune_init}")
 
 # === CHẠY GRAM VỚI AESARA (hoặc Theano) ===
 cmd = [
