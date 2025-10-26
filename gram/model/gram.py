@@ -440,7 +440,7 @@ def parse_arguments(parser):
     parser.add_argument('label_file', type=str, metavar='<label_file>', help='The path to the Pickled file containing label information of patients')
     parser.add_argument('tree_file', type=str, metavar='<tree_file>', help='The path to the Pickled files containing the ancestor information of the input medical codes. Only use the prefix and exclude ".level#.pk".')
     parser.add_argument('out_file', metavar='<out_file>', help='The path to the output models. The models will be saved after every epoch')
-    parser.add_argument('--embed_file', type=str, default='', help='The path to the Pickled file containing the representation vectors of medical codes. If you are not using medical code representations, do not use this option')
+    #parser.add_argument('--embed_file', type=str, default='', help='The path to the Pickled file containing the representation vectors of medical codes. If you are not using medical code representations, do not use this option')
     parser.add_argument('--embed_size', type=int, default=128, help='The dimension size of the visit embedding. If you are providing your own medical code vectors, this value will be automatically decided. (default value: 128)')
     parser.add_argument('--rnn_size', type=int, default=128, help='The dimension size of the hidden layer of the GRU (default value: 128)')
     parser.add_argument('--attention_size', type=int, default=128, help='The dimension size of hidden layer of the MLP that generates the attention weights (default value: 128)')
@@ -450,7 +450,10 @@ def parse_arguments(parser):
     parser.add_argument('--dropout_rate', type=float, default=0.5, help='Dropout rate used for the hidden layer of RNN (default value: 0.5)')
     parser.add_argument('--log_eps', type=float, default=1e-8, help='A small value to prevent log(0) (default value: 1e-8)')
     parser.add_argument('--verbose', action='store_true', help='Print output after every 100 mini-batches (default false)')
-    parser.add_argument("--embed_file", type=str, default=None, help="Đường dẫn đến pretrain embedding (.npz)")
+    parser.add_argument('--embed_file', type=str, default=None,
+                    help='Đường dẫn đến pretrain embedding (.npz) hoặc pickle file chứa vector biểu diễn mã y tế. '
+                         'Nếu không sử dụng embedding, để trống.')
+
 
     args = parser.parse_args()
     return args
