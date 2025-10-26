@@ -3,15 +3,22 @@
 # For bug report, please contact author using the email address
 #################################################################
 
-import sys, random, time, argparse
-from collections import OrderedDict
-import pickle
-import numpy as np
+import aesara
+import aesara.tensor as T
+from aesara import config
+from aesara.tensor.random.utils import RandomStream as RandomStreams
 
-import theano
-import theano.tensor as T
-from theano import config
-from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
+# ⚙️ Ép backend chạy thuần Python, tránh compile lỗi trên Kaggle
+import os
+os.environ['AESARA_FLAGS'] = (
+    'floatX=float32,device=cpu,base_compiledir=/tmp/aesara_cache,'
+    'mode=FAST_RUN,'
+    'warn_float64=ignore,'
+    'cxx=,'          # không dùng g++
+    'linker=py,'     # ép dùng Python linker
+    'vm.lazy=False'
+)
+
 
 _TEST_RATIO = 0.2
 _VALIDATION_RATIO = 0.1
