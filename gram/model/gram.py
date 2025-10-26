@@ -65,9 +65,18 @@ def get_random_weight(dim1, dim2, left=-0.1, right=0.1):
     return np.random.uniform(left, right, (dim1, dim2)).astype(config.floatX)
 
 def load_embedding(options):
-    m = np.load(options['embFile'])
-    w = (m['w'] + m['w_tilde']) / 2.0
+    m = np.load(options['embed_file'])
+    if 'w' in m and 'w_tilde' in m:
+        w = (m['w'] + m['w_tilde']) / 2.0
+    elif 'W_emb' in m:
+        w = m['W_emb']
+    elif 'params' in m:
+        w = m['params'][0]
+    else:
+        raise KeyError("Không tìm thấy embedding trong file .npz — cần có 'w', 'w_tilde' hoặc 'W_emb'")
+    print(f"[INFO] Loaded embedding from {options['embed_file']}, shape={w.shape}")
     return w
+
 
 def init_params(options):
     params = OrderedDict()
