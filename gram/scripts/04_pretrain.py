@@ -14,7 +14,7 @@ GRAM_PY = GRAM_DIR / "model" / "gram.py"
 
 # DÙNG REAL thay vì SYNTH để đồng bộ với tree_mimic3.*
 REAL_SEQS   = DATA_DIR / "result" / "mimic3" / "real_mimic3.3digitICD9.seqs"
-REAL_LABELS = DATA_DIR / "result" / "mimic3" / "real_mimic3.3digitICD9.labels"
+REAL_LABELS = GRAM_DIR / "data" / "real_mimic3.labels"
 TREE_PREFIX = GRAM_DIR / "data" / "tree_mimic3"
 PRETRAIN_DIR = RESULTS_DIR / "pretrain"
 
