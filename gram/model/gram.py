@@ -26,7 +26,15 @@ if __name__ == '__main__':
     infd = open(infile, 'r', encoding='utf-8')
 
     seqs = pickle.load(open(seqFile, 'rb'))
-    types = pickle.load(open(typeFile, 'rb'))
+    # Nếu typeFile là prefix, tự động tìm file .types
+    if os.path.exists(typeFile):
+        # có thể là file thật
+        types = pickle.load(open(typeFile, 'rb'))
+    elif os.path.exists(typeFile + '.types'):
+        types = pickle.load(open(typeFile + '.types', 'rb'))
+    else:
+        raise FileNotFoundError(f"Không tìm thấy {typeFile} hoặc {typeFile}.types")
+
 
     startSet = set(types.keys())
     hitList, missList = [], []
