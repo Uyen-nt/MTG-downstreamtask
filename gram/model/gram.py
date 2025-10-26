@@ -66,40 +66,47 @@ def get_random_weight(dim1, dim2, left=-0.1, right=0.1):
 
 def load_embedding(options):
     # Lấy đường dẫn embedding một cách an toàn
-    embed_path = None
     if isinstance(options, dict):
         embed_path = options.get("embFile") or options.get("embed_file")
+        input_dim = options.get("inputDimSize")
+        n_anc = options.get("numAncestors", 0)
     else:
         embed_path = getattr(options, "embed_file", None)
+        input_dim = getattr(options, "inputDimSize", None)
+        n_anc = getattr(options, "numAncestors", 0)
+
     if not embed_path:
         raise KeyError("Không tìm thấy tham số embed_file hoặc embFile trong options!")
 
     print(f"[INFO] Loading embedding từ: {embed_path}")
     m = np.load(embed_path)
 
-    # Trường hợp model pretrain lưu theo npz chứa 2 keys: w và w_tilde
+    # Lấy embedding từ file .npz
     if "w" in m and "w_tilde" in m:
         w = (m["w"] + m["w_tilde"]) / 2.0
     elif "W_emb" in m:
         w = m["W_emb"]
     else:
-        # nếu không có các keys trên, in ra danh sách key để debug
         print(f"[WARN] Keys có trong {embed_path}: {list(m.keys())}")
         raise KeyError(f"Không tìm thấy 'w' hoặc 'W_emb' trong {embed_path}")
 
-    # ✅ Kiểm tra và tự động pad / cắt embedding cho khớp với inputDimSize
-    expected_dim = options['inputDimSize'] if isinstance(options, dict) and 'inputDimSize' in options else None
-    if expected_dim and w.shape[0] < expected_dim:
+    # 🔧 PAD/CẮT THEO TỔNG TỪ VỰNG: inputDimSize + numAncestors
+    expected_dim = None
+    if input_dim is not None:
+        expected_dim = int(input_dim) + int(n_anc)
+
+    if expected_dim is not None and w.shape[0] < expected_dim:
         diff = expected_dim - w.shape[0]
         print(f"[WARN] Padding embedding từ {w.shape[0]} → {expected_dim} (thêm {diff} vector ngẫu nhiên)")
-        extra = np.random.normal(scale=0.01, size=(diff, w.shape[1]))
+        extra = np.random.normal(scale=0.01, size=(diff, w.shape[1])).astype(w.dtype)
         w = np.vstack([w, extra])
-    elif expected_dim and w.shape[0] > expected_dim:
+    elif expected_dim is not None and w.shape[0] > expected_dim:
         print(f"[WARN] Cắt embedding từ {w.shape[0]} → {expected_dim}")
         w = w[:expected_dim]
 
     print(f"[INFO] Embedding shape: {w.shape}")
     return w.astype(np.float32)
+
 
 
 def init_params(options):
