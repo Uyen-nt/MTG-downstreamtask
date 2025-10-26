@@ -19,48 +19,48 @@ print(f"  - {TYPES_FILE}")
 print(f"  → {OUTPUT_9COL}")
 
 # 1. ĐỌC HIERARCHY 2 CỘT → XÂY BẢNG CHA
-parent_of = {}  # child → parent
+parent_of = {}
 with open(HIERARCHY_2COL, "r", encoding="utf-8") as f:
-    next(f)  # skip header
+    next(f)
     for line in f:
         line = line.strip()
         if not line:
             continue
-        parts = line.split(",")
+        parts = [p.strip() for p in line.split(",")]
         if len(parts) < 2:
             continue
-        parent, child = parts[0].strip(), parts[1].strip()
+        parent, child = parts[0], parts[1]
         parent_of[child] = parent
 
-# 2. ĐỌC TYPES → LẤY TẤT CẢ MÃ ICD-9
+# 2. ĐỌC TYPES
 with open(TYPES_FILE, "rb") as f:
     code_to_id = pickle.load(f)
 
-# 3. TẠO FILE 9 CỘT
+# 3. TẠO FILE 9 CỘT – ĐẢM BẢO 9 TRƯỜNG + DẤU "
 with open(OUTPUT_9COL, "w", encoding="utf-8") as f:
-    # Header
-    f.write("ICD9,cat1,desc1,cat2,desc2,cat3,desc3,cat4,desc4\n")
+    # Header đúng định dạng
+    f.write('"ICD9","cat1","desc1","cat2","desc2","cat3","desc3","cat4","desc4"\n')
     
     count = 0
-    for code_str in code_to_id.keys():
+    for code_str in code_to_id:
         if "." not in code_str:
-            continue  # bỏ mã không hợp lệ
+            continue
         
         code3 = code_str.split(".")[0]
         parent = parent_of.get(code3, "")
         
-        # Tạo dòng 9 cột
-        icd9 = f'"{code_str}"'
-        cat1 = f'"{parent}"' if parent else '""'
-        desc1 = f'"A_{parent}"' if parent else '""'
-        # Cấp cao hơn: để trống
-        cat2 = cat3 = cat4 = '""'
-        desc2 = desc3 = desc4 = '""'
-        
-        line = f"{icd9},{cat1},{desc1},{cat2},{desc2},{cat3},{desc3},{cat4},{desc4}\n"
-        f.write(line)
+        # Tạo 9 trường, tất cả có dấu "
+        fields = [
+            f'"{code_str}"',           # ICD9
+            f'"{parent}"',             # cat1
+            f'"A_{parent}"',           # desc1
+            '""', '""',                # cat2, desc2
+            '""', '""',                # cat3, desc3
+            '""', '""'                 # cat4, desc4
+        ]
+        f.write(",".join(fields) + "\n")
         count += 1
 
-print(f"HOÀN TẤT! Tạo {OUTPUT_9COL}")
-print(f"   → {count} dòng mã ICD-9")
-print(f"   → Sẵn sàng cho build_trees.py gốc")
+print(f"HOÀN TẬT! Tạo {OUTPUT_9COL}")
+print(f"   → {count} dòng")
+print(f"   → Mỗi dòng có đúng 9 trường + dấu ngoặc kép")
