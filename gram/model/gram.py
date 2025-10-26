@@ -163,7 +163,7 @@ def build_model(tparams, leavesList, ancestorsList, options):
 
 def load_data(seqFile, labelFile, timeFile=''):
     sequences = pickle.load(open(seqFile, 'rb'))
-    labels = np.array(pickle.load(open(labelFile, 'rb')))
+    labels = pickle.load(open(labelFile, 'rb'))
 
     if len(timeFile) > 0:
         times = pickle.load(open(timeFile, 'rb'))
