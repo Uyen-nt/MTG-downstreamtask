@@ -1,4 +1,4 @@
-# gram/scripts/04_pretrain.py
+# scripts/04_pretrain.py
 import os
 import subprocess
 from pathlib import Path
@@ -9,52 +9,52 @@ DATA_DIR = GRAM_DIR / "data"
 RESULTS_DIR = GRAM_DIR / "results"
 os.makedirs(RESULTS_DIR, exist_ok=True)
 
-# ĐƯỜNG DẪN
-GRAM_PY = GRAM_DIR / "model" / "gram.py"
+# ĐÚNG FILE TRAIN MODEL
+GRAM_MODEL_PY = GRAM_DIR / "model" / "gram.py"   # <-- ĐÚNG
 SYNTH_SEQS = DATA_DIR / "synth_mimic3.seqs"
 SYNTH_LABELS = DATA_DIR / "synth_mimic3.labels"
-TREE_PREFIX = DATA_DIR / "tree_mimic3"  # chỉ là prefix
+TREE_PREFIX = DATA_DIR / "tree_mimic3"
 PRETRAIN_DIR = RESULTS_DIR / "pretrain"
+os.makedirs(PRETRAIN_DIR, exist_ok=True)
 
-# KIỂM TRA FILE CẦN THIẾT
+# KIỂM TRA FILE
 missing = []
-for f in [GRAM_PY, SYNTH_SEQS, SYNTH_LABELS]:
+for f in [GRAM_MODEL_PY, SYNTH_SEQS, SYNTH_LABELS]:
     if not f.exists():
         missing.append(f)
 
-# KIỂM TRA CÁC FILE .level*.pk
 level_files = list(DATA_DIR.glob("tree_mimic3.level*.pk"))
 if not level_files:
-    missing.append("tree_mimic3.level*.pk (không tìm thấy file level)")
+    missing.append("tree_mimic3.level*.pk")
 
 if missing:
-    print("CẢNH BÁO: Thiếu file cần thiết!")
-    for item in missing:
-        if "level" in str(item):
-            print(f"  → Không tìm thấy file tree_mimic3.level*.pk")
-        else:
-            print(f"  → Không tìm thấy: {item}")
-    raise FileNotFoundError("Vui lòng chạy lại 03_build_tree.py!")
+    print("THIẾU FILE:")
+    for m in missing:
+        print(f"  → {m}")
+    raise FileNotFoundError("Chạy 03_build_tree.py trước!")
 
 print("Pre-training on synthetic data...")
 cmd = [
-    "python", str(GRAM_PY),
+    "python", str(GRAM_MODEL_PY),        # <-- GỌI ĐÚNG model/gram.py
     str(SYNTH_SEQS),
     str(SYNTH_LABELS),
-    str(TREE_PREFIX),  # gram.py sẽ tự tìm .level*.pk
+    str(TREE_PREFIX),
     str(PRETRAIN_DIR),
     "--n_epochs", "30",
     "--batch_size", "100",
     "--rnn_size", "128",
+    "--attention_size", "128",
+    "--dropout_rate", "0.5",
+    "--L2", "0.001",
     "--verbose"
 ]
 
 result = subprocess.run(cmd, capture_output=True, text=True)
 if result.returncode != 0:
-    print("LỖI TỪ gram.py:")
+    print("LỖI TỪ model/gram.py:")
     print(result.stderr)
     raise RuntimeError(f"Pretrain thất bại: {result.returncode}")
 
 print("HOÀN TẤT PRETRAIN!")
-print(f"→ Model saved: {PRETRAIN_DIR}/model_best.pt")
+print(f"→ Model saved: {PRETRAIN_DIR}/*.npz (Theano/Aesara)")
 print(f"→ Vocab saved: {PRETRAIN_DIR}/vocab.pkl")
