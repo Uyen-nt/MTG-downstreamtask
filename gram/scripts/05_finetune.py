@@ -67,6 +67,7 @@ print("────────────────────────�
 env = os.environ.copy()
 env["PYTHONUNBUFFERED"] = "1"
 
+env["AESARA_FLAGS"] = "device=cuda,floatX=float32,optimizer_including=cudnn"
 with subprocess.Popen(
     cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=env
 ) as p:
