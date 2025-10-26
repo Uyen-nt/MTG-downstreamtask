@@ -1,24 +1,49 @@
-# scripts/04_pretrain.py
+# gram/scripts/04_pretrain.py
+# ĐÃ SỬA: DÙNG model/gram.py TRONG KAGGLE
 import os
 import subprocess
+from pathlib import Path
 
-DATA_DIR = "data"
-RESULTS_DIR = "results/pretrain"
-SYNTH_SEQS = f"{DATA_DIR}/synth_mimic3.seqs"
-SYNTH_LABELS = f"{DATA_DIR}/synth_mimic3.labels"
-TREE = f"{DATA_DIR}/tree_mimic3"
-
+SCRIPT_DIR = Path(__file__).parent.resolve()
+GRAM_DIR = SCRIPT_DIR.parent
+PROJECT_ROOT = GRAM_DIR.parent
+DATA_DIR = PROJECT_ROOT / "data"
+RESULTS_DIR = PROJECT_ROOT / "results"
 os.makedirs(RESULTS_DIR, exist_ok=True)
 
+# ĐƯỜNG DẪN ĐÚNG TRONG KAGGLE
+GRAM_PY = GRAM_DIR / "model" / "gram.py"  # ĐÃ SỬA: model/gram.py
+SYNTH_SEQS = DATA_DIR / "synth_mimic3.seqs"
+SYNTH_LABELS = DATA_DIR / "synth_mimic3.labels"
+TREE_PREFIX = DATA_DIR / "tree_mimic3"
+PRETRAIN_DIR = RESULTS_DIR / "pretrain"
+
+# KIỂM TRA FILE
+missing = [f for f in [GRAM_PY, SYNTH_SEQS, SYNTH_LABELS, TREE_PREFIX] if not f.exists()]
+if missing:
+    for f in missing:
+        print(f"Không tìm thấy: {f}")
+    raise FileNotFoundError("Thiếu file cần thiết!")
+
+print("Pre-training on synthetic data...")
 cmd = [
-    "python", "model/gram.py",
-    SYNTH_SEQS, SYNTH_LABELS, TREE, RESULTS_DIR,
+    "python", str(GRAM_PY),
+    str(SYNTH_SEQS),
+    str(SYNTH_LABELS),
+    str(TREE_PREFIX),
+    str(PRETRAIN_DIR),
     "--n_epochs", "30",
     "--batch_size", "100",
     "--rnn_size", "128",
     "--verbose"
 ]
 
-print("Pre-training on synthetic data...")
-subprocess.run(cmd, check=True)
-print(f"Pre-trained model → {RESULTS_DIR}/*.npz")
+result = subprocess.run(cmd, capture_output=True, text=True)
+if result.returncode != 0:
+    print("LỖI TỪ gram.py:")
+    print(result.stderr)
+    raise RuntimeError(f"Pretrain thất bại: {result.returncode}")
+
+print("HOÀN TẤT PRETRAIN!")
+print(f"→ Model saved: {PRETRAIN_DIR}/model_best.pt")
+print(f"→ Vocab saved: {PRETRAIN_DIR}/vocab.pkl")
