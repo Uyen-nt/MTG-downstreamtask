@@ -7,14 +7,26 @@ from collections import OrderedDict
 import pickle
 import numpy as np
 import os
+# os.environ['AESARA_FLAGS'] = (
+#     'floatX=float32,device=cpu,base_compiledir=/tmp/aesara_cache,'
+#     'mode=FAST_RUN,'
+#     'warn_float64=ignore,'
+#     'cxx=,'
+#     'linker=py,'
+#     'blas__ldflags='  # ép bỏ flag BLAS
+# )
 os.environ['AESARA_FLAGS'] = (
     'floatX=float32,device=cpu,base_compiledir=/tmp/aesara_cache,'
-    'mode=FAST_RUN,'
+    'mode=FAST_COMPILE,'
     'warn_float64=ignore,'
     'cxx=,'
     'linker=py,'
-    'blas__ldflags='  # ép bỏ flag BLAS
+    'optimizer=fast_compile,'
+    'exception_verbosity=high,'
+    'blas__ldflags='
 )
+print("[DEBUG] AESARA_FLAGS = FAST_COMPILE mode activated (compile nhanh hơn, chạy chậm hơn một chút)")
+
 import aesara
 import aesara.tensor as T
 from aesara import config
@@ -339,6 +351,8 @@ def train_GRAM(
     params = init_params(options)
     tparams = init_tparams(params)
     use_noise, x, y, mask, lengths, cost, cost_noreg, y_hat =  build_model(tparams, leavesList, ancestorsList, options)
+    print(' → build_model done', flush=True)
+    print('Constructing the optimizer ... ', flush=True)
     get_cost = aesara.function(inputs=[x, y, mask, lengths], outputs=cost_noreg, name='get_cost')
     print('done!!')
     
