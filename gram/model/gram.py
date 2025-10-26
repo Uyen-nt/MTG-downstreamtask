@@ -18,7 +18,7 @@ os.environ['AESARA_FLAGS'] = (
 import aesara
 import aesara.tensor as T
 from aesara import config
-
+from aesara.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
 
 
 _TEST_RATIO = 0.2
