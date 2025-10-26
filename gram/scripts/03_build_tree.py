@@ -33,6 +33,11 @@ cmd = [
 ]
 
 print("Building ICD9 tree...")
-result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+result = subprocess.run(cmd, capture_output=True, text=True)
+if result.returncode != 0:
+    print("LỖI TỪ build_trees.py:")
+    print(result.stderr)  # IN RA LỖI CHI TIẾT
+    raise RuntimeError(f"build_trees.py thất bại: {result.returncode}")
 print(result.stdout)
+
 print(f"Tree saved → {TREE_PREFIX}.level*.pk")
