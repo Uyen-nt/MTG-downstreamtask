@@ -1,18 +1,16 @@
 # gram/scripts/04_pretrain.py
-# ĐÃ SỬA: DÙNG model/gram.py TRONG KAGGLE
 import os
 import subprocess
 from pathlib import Path
 
-SCRIPT_DIR = Path(__file__).parent.resolve()
-GRAM_DIR = SCRIPT_DIR.parent
-PROJECT_ROOT = GRAM_DIR.parent
-DATA_DIR = PROJECT_ROOT / "data"
-RESULTS_DIR = PROJECT_ROOT / "results"
+SCRIPT_DIR = Path(__file__).parent.resolve()      # gram/scripts/
+GRAM_DIR = SCRIPT_DIR.parent                        # gram/
+DATA_DIR = GRAM_DIR / "data"                        # ĐÃ SỬA: gram/data/
+RESULTS_DIR = GRAM_DIR / "results"                  # ĐÃ SỬA: gram/results/
 os.makedirs(RESULTS_DIR, exist_ok=True)
 
 # ĐƯỜNG DẪN ĐÚNG TRONG KAGGLE
-GRAM_PY = GRAM_DIR / "model" / "gram.py"  # ĐÃ SỬA: model/gram.py
+GRAM_PY = GRAM_DIR / "model" / "gram.py"  
 SYNTH_SEQS = DATA_DIR / "synth_mimic3.seqs"
 SYNTH_LABELS = DATA_DIR / "synth_mimic3.labels"
 TREE_PREFIX = DATA_DIR / "tree_mimic3"
