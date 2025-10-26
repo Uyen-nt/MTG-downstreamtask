@@ -113,7 +113,20 @@ def init_params(options):
     attentionDimSize = options['attentionDimSize']
     numClass = options['numClass']
 
-    params['W_emb'] = load_embedding({**vars(options), "inputDimSize": options.inputDimSize})
+    # ✅ Hỗ trợ cả Namespace và dict
+    if hasattr(options, "__dict__"):
+        opt_dict = {**vars(options)}
+    else:
+        opt_dict = dict(options)
+    
+    # ✅ Thêm inputDimSize để load_embedding() biết vocab size
+    if hasattr(options, "inputDimSize"):
+        opt_dict["inputDimSize"] = options.inputDimSize
+    elif "inputDimSize" not in opt_dict:
+        print("[WARN] Không tìm thấy inputDimSize trong options — có thể embedding sẽ không được pad/cắt tự động.")
+    
+    params["W_emb"] = load_embedding(opt_dict)
+
     if len(options['embFile']) > 0:
         params['W_emb'] = load_embedding(options)
         options['embDimSize'] = params['W_emb'].shape[1]
