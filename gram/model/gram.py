@@ -260,15 +260,15 @@ def adadelta(tparams, grads, x, y, mask, lengths, cost):
 
     zgup = [(zg, g) for zg, g in zip(zipped_grads, grads)]
     rg2up = [(rg2, 0.95 * rg2 + 0.05 * T.sqr(g)) for rg2, g in zip(running_grads2, grads)]
-
+    print('    [adadelta] compiling f_grad_shared ...', flush=True)
     f_grad_shared = aesara.function([x, y, mask, lengths], cost, updates=zgup + rg2up, name='adadelta_f_grad_shared')
-
+    print('    [adadelta] f_grad_shared compiled', flush=True)
     updir = [-T.sqrt(ru2 + 1e-6) / T.sqrt(rg2 + 1e-6) * zg for zg, ru2, rg2 in zip(zipped_grads, running_up2, running_grads2)]
     ru2up = [(ru2, 0.95 * ru2 + 0.05 * T.sqr(ud)) for ru2, ud in zip(running_up2, updir)]
     param_up = [(p, p + ud) for p, ud in zip(tparams.values(), updir)]
-
+    print('    [adadelta] compiling f_update ...', flush=True)
     f_update = aesara.function([], [], updates=ru2up + param_up, on_unused_input='ignore', name='adadelta_f_update')
-
+    print('    [adadelta] f_update compiled', flush=True)
     return f_grad_shared, f_update
 
 def padMatrix(seqs, labels, options):
@@ -348,6 +348,9 @@ def train_GRAM(
         ancestorsList.append(sharedAncestors)
     
     print('Building the model ... ',)
+    print('Constructing the optimizer ... ', flush=True)
+
+    print('  ↳ computing symbolic gradients ...', flush=True)
     params = init_params(options)
     tparams = init_tparams(params)
     use_noise, x, y, mask, lengths, cost, cost_noreg, y_hat =  build_model(tparams, leavesList, ancestorsList, options)
@@ -358,7 +361,9 @@ def train_GRAM(
     
     print('Constructing the optimizer ... ',)
     grads = T.grad(cost, wrt=list(tparams.values()))
+    print('    ✓ grads ready', flush=True)
     f_grad_shared, f_update = adadelta(tparams, grads, x, y, mask, lengths, cost)
+    print('    ✓ optimizer functions compiled', flush=True)
     print('done!!')
 
     print('Loading data ... ',)
@@ -386,7 +391,7 @@ def train_GRAM(
             f_update()
             costVec.append(costValue)
 
-            if iteration % 100 == 0 and verbose:
+            if iteration % 10 == 0 and verbose:
                 buf = 'Epoch:%d, Iteration:%d/%d, Train_Cost:%f' % (epoch, iteration, n_batches, costValue)
                 print(buf)
             iteration += 1
