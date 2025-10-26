@@ -3,32 +3,45 @@ import os
 import subprocess
 from pathlib import Path
 
-SCRIPT_DIR = Path(__file__).parent.resolve()      # gram/scripts/
-GRAM_DIR = SCRIPT_DIR.parent                        # gram/
-DATA_DIR = GRAM_DIR / "data"                        # ĐÃ SỬA: gram/data/
-RESULTS_DIR = GRAM_DIR / "results"                  # ĐÃ SỬA: gram/results/
+SCRIPT_DIR = Path(__file__).parent.resolve()
+GRAM_DIR = SCRIPT_DIR.parent
+DATA_DIR = GRAM_DIR / "data"
+RESULTS_DIR = GRAM_DIR / "results"
 os.makedirs(RESULTS_DIR, exist_ok=True)
 
-# ĐƯỜNG DẪN ĐÚNG TRONG KAGGLE
-GRAM_PY = GRAM_DIR / "model" / "gram.py"  
+# ĐƯỜNG DẪN
+GRAM_PY = GRAM_DIR / "model" / "gram.py"
 SYNTH_SEQS = DATA_DIR / "synth_mimic3.seqs"
 SYNTH_LABELS = DATA_DIR / "synth_mimic3.labels"
-TREE_PREFIX = DATA_DIR / "tree_mimic3"
+TREE_PREFIX = DATA_DIR / "tree_mimic3"  # chỉ là prefix
 PRETRAIN_DIR = RESULTS_DIR / "pretrain"
 
-# KIỂM TRA FILE
-missing = [f for f in [GRAM_PY, SYNTH_SEQS, SYNTH_LABELS, TREE_PREFIX] if not f.exists()]
+# KIỂM TRA FILE CẦN THIẾT
+missing = []
+for f in [GRAM_PY, SYNTH_SEQS, SYNTH_LABELS]:
+    if not f.exists():
+        missing.append(f)
+
+# KIỂM TRA CÁC FILE .level*.pk
+level_files = list(DATA_DIR.glob("tree_mimic3.level*.pk"))
+if not level_files:
+    missing.append("tree_mimic3.level*.pk (không tìm thấy file level)")
+
 if missing:
-    for f in missing:
-        print(f"Không tìm thấy: {f}")
-    raise FileNotFoundError("Thiếu file cần thiết!")
+    print("CẢNH BÁO: Thiếu file cần thiết!")
+    for item in missing:
+        if "level" in str(item):
+            print(f"  → Không tìm thấy file tree_mimic3.level*.pk")
+        else:
+            print(f"  → Không tìm thấy: {item}")
+    raise FileNotFoundError("Vui lòng chạy lại 03_build_tree.py!")
 
 print("Pre-training on synthetic data...")
 cmd = [
     "python", str(GRAM_PY),
     str(SYNTH_SEQS),
     str(SYNTH_LABELS),
-    str(TREE_PREFIX),
+    str(TREE_PREFIX),  # gram.py sẽ tự tìm .level*.pk
     str(PRETRAIN_DIR),
     "--n_epochs", "30",
     "--batch_size", "100",
