@@ -20,7 +20,7 @@ import aesara.tensor as T
 from aesara import config
 from aesara.tensor.random import RandomStream
 import aesara.tensor.nnet as nnet
-
+from aesara.tensor.special import sigmoid
 
 _TEST_RATIO = 0.2
 _VALIDATION_RATIO = 0.1
@@ -95,8 +95,8 @@ def gru_layer(tparams, emb, options):
 
     def stepFn(wx, h, U_gru):
         uh = T.dot(h, U_gru)
-        r = T.nnet.sigmoid(_slice(wx, 0, hiddenDimSize) + _slice(uh, 0, hiddenDimSize))
-        z = T.nnet.sigmoid(_slice(wx, 1, hiddenDimSize) + _slice(uh, 1, hiddenDimSize))
+        r = sigmoid(_slice(wx, 0, hiddenDimSize) + _slice(uh, 0, hiddenDimSize))
+        z = sigmoid(_slice(wx, 1, hiddenDimSize) + _slice(uh, 1, hiddenDimSize))
         h_tilde = T.tanh(_slice(wx, 2, hiddenDimSize) + r * _slice(uh, 2, hiddenDimSize))
         h_new = z * h + ((1. - z) * h_tilde)
         return h_new
