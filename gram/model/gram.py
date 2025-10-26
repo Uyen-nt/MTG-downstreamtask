@@ -431,10 +431,15 @@ if __name__ == '__main__':
 
     inputDimSize = calculate_dimSize(args.seq_file)
     numClass = calculate_dimSize(args.label_file)
-    # Lấy số lượng ancestor từ file .types (ổn định hơn nhiều)
+    
+    # ✅ Gán treeFile từ args
+    treeFile = args.tree_file
+    
+    # ✅ Lấy số lượng ancestor từ file .types (ổn định hơn nhiều)
     rootCode = get_rootCode_from_types(treeFile)
     numAncestors = rootCode - inputDimSize + 1
     print(f"[DEBUG] inputDimSize={inputDimSize}, rootCode={rootCode}, numAncestors={numAncestors}, total_vocab={inputDimSize + numAncestors}")
+
 
 
     train_GRAM(
