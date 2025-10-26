@@ -6,7 +6,7 @@ import glob
 
 # === CẤU HÌNH ĐƯỜNG DẪN ===
 DATA_DIR = "data"
-PRETRAIN_DIR = "/kaggle/working/MTG-downstreamtask/gram/results/pretrain_real"
+PRETRAIN_DIR = "/kaggle/working/MTG-downstreamtask/gram/results/pretrain"
 FINETUNE_DIR = "/kaggle/working/MTG-downstreamtask/gram/results/finetune"
 REAL_SEQS = "/kaggle/working/MTG-downstreamtask/data/result/mimic3/real_mimic3.3digitICD9.seqs"
 REAL_LABELS = f"{DATA_DIR}/real_mimic3.labels"
