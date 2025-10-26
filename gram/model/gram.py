@@ -394,10 +394,14 @@ def calculate_dimSize(seqFile):
                 codeSet.add(code)
     return max(codeSet) + 1
 
+
 def get_rootCode(treeFile):
     tree = pickle.load(open(treeFile, 'rb'))
-    rootCode = tree.values()[0][1]
+    # Lấy phần tử đầu tiên trong dict_values
+    first_value = next(iter(tree.values()))
+    rootCode = first_value[1]
     return rootCode
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
