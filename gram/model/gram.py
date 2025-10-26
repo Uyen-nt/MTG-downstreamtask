@@ -8,15 +8,14 @@ import aesara.tensor as T
 from aesara import config
 from aesara.tensor.random.utils import RandomStream as RandomStreams
 
-# ⚙️ Ép backend chạy thuần Python, tránh compile lỗi trên Kaggle
 import os
 os.environ['AESARA_FLAGS'] = (
     'floatX=float32,device=cpu,base_compiledir=/tmp/aesara_cache,'
     'mode=FAST_RUN,'
     'warn_float64=ignore,'
-    'cxx=,'          # không dùng g++
-    'linker=py,'     # ép dùng Python linker
-    'vm.lazy=False'
+    'cxx=,'
+    'linker=py,'
+    'blas__ldflags='  # ép bỏ flag BLAS
 )
 
 
