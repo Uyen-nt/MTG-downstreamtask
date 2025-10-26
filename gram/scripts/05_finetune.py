@@ -1,42 +1,53 @@
 # scripts/05_finetune.py
-import os
-import shutil
-import subprocess
-import glob
+import os, sys, subprocess, shutil, glob
+from pathlib import Path
 
-# === CẤU HÌNH ĐƯỜNG DẪN ===
-DATA_DIR = "data"
-PRETRAIN_DIR = "/kaggle/working/MTG-downstreamtask/gram/results"
-FINETUNE_DIR = "/kaggle/working/MTG-downstreamtask/gram/results/finetune"
-REAL_SEQS = "/kaggle/working/MTG-downstreamtask/data/result/mimic3/real_mimic3.3digitICD9.seqs"
-REAL_LABELS = f"{DATA_DIR}/real_mimic3.labels"
-TREE = f"{DATA_DIR}/tree_mimic3"
-
+# =========================
+# 🧭 CẤU HÌNH ĐƯỜNG DẪN
+# =========================
+PROJECT_ROOT = Path("/kaggle/working/MTG-downstreamtask")
+GRAM_DIR = PROJECT_ROOT / "gram"
+DATA_DIR = GRAM_DIR / "data"
+RESULTS_DIR = GRAM_DIR / "results"
+PRETRAIN_DIR = RESULTS_DIR / "pretrain_real"    # nơi chứa .npz từ pretrain
+FINETUNE_DIR = RESULTS_DIR / "finetune_synth"   # nơi lưu kết quả fine-tune
 os.makedirs(FINETUNE_DIR, exist_ok=True)
 
-# === TÌM MODEL PRETRAIN (.npz) ===
-pretrain_models = sorted(glob.glob(f"{PRETRAIN_DIR}/*.npz"))
+# =========================
+# 📂 FILE DỮ LIỆU SYNTHETIC (MTGAN)
+# =========================
+SYNTH_SEQS = DATA_DIR / "synth_mimic3.seqs"
+SYNTH_LABELS = DATA_DIR / "synth_mimic3.labels"
+TREE_PREFIX = DATA_DIR / "tree_mimic3"
+
+# =========================
+# 🔍 TÌM FILE PRETRAIN (.npz)
+# =========================
+pretrain_models = sorted(glob.glob(str(PRETRAIN_DIR / "*.npz")))
 if not pretrain_models:
     raise FileNotFoundError(
-        f"Không tìm thấy model pretrain (.npz) tại {PRETRAIN_DIR}\n"
-        "Hãy chạy 04_pretrain.py trước!"
+        f"❌ Không tìm thấy model pretrain (.npz) tại {PRETRAIN_DIR}\n"
+        "👉 Hãy chạy 04_pretrain.py trước!"
     )
 
-
-best_model = sorted(pretrain_models)[-1]
-finetune_init = f"{FINETUNE_DIR}/pretrain_model.npz"
+best_model = pretrain_models[-1]
+finetune_init = FINETUNE_DIR / "pretrain_model.npz"
 shutil.copy(best_model, finetune_init)
 print(f"✅ Loaded pre-trained weights: {best_model}")
 print(f"📦 Copied to: {finetune_init}")
 
-# === CHẠY GRAM VỚI AESARA ===
+# =========================
+# ⚙️ LỆNH CHẠY GRAM FINE-TUNE
+# =========================
+GRAM_PY = GRAM_DIR / "model" / "gram.py"
+
 cmd = [
-    "python", "gram/model/gram.py",
-    REAL_SEQS,
-    REAL_LABELS,
-    TREE,
-    FINETUNE_DIR,
-    "--embed_file", finetune_init,
+    "python", "-u", str(GRAM_PY),
+    str(SYNTH_SEQS),
+    str(SYNTH_LABELS),
+    str(TREE_PREFIX),
+    str(FINETUNE_DIR),
+    "--embed_file", str(finetune_init),
     "--n_epochs", "50",
     "--batch_size", "100",
     "--rnn_size", "128",
@@ -46,14 +57,27 @@ cmd = [
     "--verbose"
 ]
 
-print("\n🚀 Fine-tuning on real MIMIC-III data...")
+print("\n🚀 Fine-tuning on synthetic MTGAN data...")
 print("Command:", " ".join(cmd))
+print("─────────────────────────────────────────────────────────────")
 
-result = subprocess.run(cmd, capture_output=True, text=True)
-if result.returncode == 0:
-    print("✅ HOÀN TẤT FINETUNE!")
+# =========================
+# 📡 STREAM LOG TRỰC TIẾP
+# =========================
+env = os.environ.copy()
+env["PYTHONUNBUFFERED"] = "1"
+
+with subprocess.Popen(
+    cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=env
+) as p:
+    for line in p.stdout:
+        sys.stdout.write(line)
+        sys.stdout.flush()
+    ret = p.wait()
+
+if ret == 0:
+    print("\n✅ HOÀN TẤT FINE-TUNE!")
     print(f"→ Model saved in: {FINETUNE_DIR}")
 else:
-    print("❌ LỖI TỪ model/gram.py:")
-    print(result.stderr)
-    raise RuntimeError(f"Finetune thất bại: {result.returncode}")
+    print("\n❌ LỖI TRONG QUÁ TRÌNH FINE-TUNE!")
+    raise RuntimeError(f"Finetune thất bại (exit code {ret})")
