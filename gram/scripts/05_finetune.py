@@ -48,7 +48,7 @@ cmd = [
     str(TREE_PREFIX),
     str(FINETUNE_DIR),
     "--embed_file", str(finetune_init),
-    "--n_epochs", "20",
+    "--n_epochs", "5",
     "--batch_size", "64",
     "--rnn_size", "64",
     "--attention_size", "64",
