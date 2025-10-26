@@ -268,7 +268,7 @@ def calculate_cost(test_model, dataset, options):
     n_batches = int(np.ceil(float(len(dataset[0])) / float(batchSize)))
     costSum = 0.0
     dataCount = 0
-    for index in xrange(n_batches):
+    for index in range(n_batches):
         batchX = dataset[0][index*batchSize:(index+1)*batchSize]
         batchY = dataset[1][index*batchSize:(index+1)*batchSize]
         x, y, mask, lengths = padMatrix(batchX, batchY, options)
@@ -345,7 +345,7 @@ def train_GRAM(
     epochDuration = 0.0
     bestEpoch = 0
     logFile = outFile + '.log'
-    for epoch in xrange(max_epochs):
+    for epoch in range(max_epochs):
         iteration = 0
         costVec = []
         startTime = time.time()
