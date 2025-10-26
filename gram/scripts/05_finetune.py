@@ -10,7 +10,7 @@ GRAM_DIR = PROJECT_ROOT / "gram"
 DATA_DIR = GRAM_DIR / "data"
 RESULTS_DIR = GRAM_DIR / "results"
 PRETRAIN_DIR = RESULTS_DIR
-FINETUNE_DIR = RESULTS_DIR / "finetune_synth"   # nơi lưu kết quả fine-tune
+FINETUNE_DIR = RESULTS_DIR / "finetune_synth"
 os.makedirs(FINETUNE_DIR, exist_ok=True)
 
 # =========================
@@ -18,7 +18,7 @@ os.makedirs(FINETUNE_DIR, exist_ok=True)
 # =========================
 SYNTH_SEQS = DATA_DIR / "synth_mimic3.seqs"
 SYNTH_LABELS = DATA_DIR / "synth_mimic3.labels"
-TREE_PREFIX = DATA_DIR / "tree_mimic3"
+TREE_PREFIX = DATA_DIR / "tree_synth"  
 
 # =========================
 # 🔍 TÌM FILE PRETRAIN (.npz)
