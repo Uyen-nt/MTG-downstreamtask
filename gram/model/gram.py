@@ -66,9 +66,14 @@ def get_random_weight(dim1, dim2, left=-0.1, right=0.1):
 
 def load_embedding(options):
     # Lấy đường dẫn embedding một cách an toàn
-    embed_path = getattr(options, "embed_file", None)
+    embed_path = None
+    if isinstance(options, dict):
+        embed_path = options.get("embFile") or options.get("embed_file")
+    else:
+        embed_path = getattr(options, "embed_file", None)
     if not embed_path:
-        raise KeyError("Không tìm thấy tham số embed_file trong options hoặc giá trị None!")
+        raise KeyError("Không tìm thấy tham số embed_file hoặc embFile trong options!")
+        
 
     print(f"[INFO] Loading embedding từ: {embed_path}")
     m = np.load(embed_path)
