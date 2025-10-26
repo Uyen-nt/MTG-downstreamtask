@@ -102,7 +102,7 @@ def gru_layer(tparams, emb, options):
         return h_new
 
     Wx = T.dot(emb, tparams['W_gru']) + tparams['b_gru']
-    results, updates = theano.scan(fn=stepFn, sequences=[Wx], outputs_info=T.alloc(numpy_floatX(0.0), n_samples, hiddenDimSize), non_sequences=[tparams['U_gru']], name='gru_layer', n_steps=timesteps)
+    results, updates = aesara.scan(fn=stepFn, sequences=[Wx], outputs_info=T.alloc(numpy_floatX(0.0), n_samples, hiddenDimSize), non_sequences=[tparams['U_gru']], name='gru_layer', n_steps=timesteps)
 
     return results
 
@@ -220,13 +220,13 @@ def adadelta(tparams, grads, x, y, mask, lengths, cost):
     zgup = [(zg, g) for zg, g in zip(zipped_grads, grads)]
     rg2up = [(rg2, 0.95 * rg2 + 0.05 * (g ** 2)) for rg2, g in zip(running_grads2, grads)]
 
-    f_grad_shared = theano.function([x, y, mask, lengths], cost, updates=zgup + rg2up, name='adadelta_f_grad_shared')
+    f_grad_shared = aesara.function([x, y, mask, lengths], cost, updates=zgup + rg2up, name='adadelta_f_grad_shared')
 
     updir = [-T.sqrt(ru2 + 1e-6) / T.sqrt(rg2 + 1e-6) * zg for zg, ru2, rg2 in zip(zipped_grads, running_up2, running_grads2)]
     ru2up = [(ru2, 0.95 * ru2 + 0.05 * (ud ** 2)) for ru2, ud in zip(running_up2, updir)]
     param_up = [(p, p + ud) for p, ud in zip(tparams.values(), updir)]
 
-    f_update = theano.function([], [], updates=ru2up + param_up, on_unused_input='ignore', name='adadelta_f_update')
+    f_update = aesara.function([], [], updates=ru2up + param_up, on_unused_input='ignore', name='adadelta_f_update')
 
     return f_grad_shared, f_update
 
@@ -310,7 +310,7 @@ def train_GRAM(
     params = init_params(options)
     tparams = init_tparams(params)
     use_noise, x, y, mask, lengths, cost, cost_noreg, y_hat =  build_model(tparams, leavesList, ancestorsList, options)
-    get_cost = theano.function(inputs=[x, y, mask, lengths], outputs=cost_noreg, name='get_cost')
+    get_cost = aesara.function(inputs=[x, y, mask, lengths], outputs=cost_noreg, name='get_cost')
     print('done!!')
     
     print('Constructing the optimizer ... ',)
