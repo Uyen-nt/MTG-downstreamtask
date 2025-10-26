@@ -9,7 +9,7 @@ PROJECT_ROOT = Path("/kaggle/working/MTG-downstreamtask")
 GRAM_DIR = PROJECT_ROOT / "gram"
 DATA_DIR = GRAM_DIR / "data"
 RESULTS_DIR = GRAM_DIR / "results"
-PRETRAIN_DIR = RESULTS_DIR / "pretrain_real"    # nơi chứa .npz từ pretrain
+PRETRAIN_DIR = RESULTS_DIR
 FINETUNE_DIR = RESULTS_DIR / "finetune_synth"   # nơi lưu kết quả fine-tune
 os.makedirs(FINETUNE_DIR, exist_ok=True)
 
