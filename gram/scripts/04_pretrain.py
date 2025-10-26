@@ -16,8 +16,10 @@ LABELS = DATA_DIR / "tree_mimic3.labels"
 TREE_PREFIX = DATA_DIR / "tree_mimic3"
 OUT_DIR = RESULTS_DIR / "pretrain_real"
 
+print("Pre-training on remapped data...")
+
 cmd = [
-    "python", str(GRAM_PY),
+    "python", "-u", str(GRAM_PY),            # -u để unbuffered
     str(SEQS),
     str(LABELS),
     str(TREE_PREFIX),
@@ -28,17 +30,18 @@ cmd = [
     "--verbose"
 ]
 
-print("Pre-training on remapped data...")
-process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+# Truyền env để chắc chắn unbuffered
+env = os.environ.copy()
+env["PYTHONUNBUFFERED"] = "1"
 
-# 🔁 Hiển thị log theo thời gian thực
-for line in iter(process.stdout.readline, ''):
-    print(line, end='')
+with subprocess.Popen(
+    cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=env
+) as p:
+    for line in p.stdout:
+        sys.stdout.write(line)   # stream ngay lập tức
+        sys.stdout.flush()
+    ret = p.wait()
 
-process.wait()
-
-if process.returncode != 0:
-    print("\n❌ LỖI TỪ model/gram.py:")
+if ret != 0:
     raise RuntimeError("Pretrain thất bại!")
-else:
-    print("\n✅ Hoàn tất pretrain, model lưu trong:", OUT_DIR)
+print("✅ Hoàn tất pretrain, model lưu trong:", OUT_DIR)
