@@ -266,15 +266,14 @@ def print2file(buf, outFile):
     outfd.write(buf + '\n')
     outfd.close()
 
+
 def build_tree(treeFile):
     treeMap = pickle.load(open(treeFile, 'rb'))
-    ancestors = np.array(treeMap.values()).astype('int32')
+    ancestors = np.array(list(treeMap.values()), dtype=np.int32)
     ancSize = ancestors.shape[1]
-    leaves = []
-    for k in treeMap.keys():
-        leaves.append([k] * ancSize)
-    leaves = np.array(leaves).astype('int32')
+    leaves = np.array([[k] * ancSize for k in list(treeMap.keys())], dtype=np.int32)
     return leaves, ancestors
+
 
 def train_GRAM(
     seqFile = 'seqFile.txt',
