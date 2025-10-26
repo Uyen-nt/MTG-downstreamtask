@@ -7,7 +7,7 @@ from pathlib import Path
 # ĐƯỜNG DẪN
 PROJECT_ROOT = Path(__file__).parent.resolve()
 ICD9_TXT = PROJECT_ROOT / "data" / "icd9.txt"
-OUTPUT_CSV = PROJECT_ROOT / "icd9_hierarchy.csv"
+OUTPUT_CSV = PROJECT_ROOT / "data" / "icd9_hierarchy.csv"
 
 # Kiểm tra file tồn tại
 if not ICD9_TXT.exists():
