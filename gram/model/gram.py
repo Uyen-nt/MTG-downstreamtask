@@ -223,7 +223,8 @@ def build_model(tparams, leavesList, ancestorsList, options):
         tempEmb = (tparams['W_emb'][ancestors] * tempAttention[:,:,None]).sum(axis=1)
         embList.append(tempEmb)
 
-    emb = T.concatenate(embList, axis=0)
+    #emb = T.concatenate(embList, axis=0)
+    emb = sum(embList) / len(embList)
 
     x_emb = T.tanh(T.dot(x, emb))
     hidden = gru_layer(tparams, x_emb, options)
