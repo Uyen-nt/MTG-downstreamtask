@@ -162,10 +162,13 @@ def build_model(tparams, leavesList, ancestorsList, options):
     return use_noise, x, y, mask, lengths, cost, cost_noreg, y_hat
 
 def load_data(seqFile, labelFile, timeFile=''):
-    sequences = np.array(pickle.load(open(seqFile, 'rb')))
+    sequences = pickle.load(open(seqFile, 'rb'))
     labels = np.array(pickle.load(open(labelFile, 'rb')))
+
     if len(timeFile) > 0:
-        times = np.array(pickle.load(open(timeFile, 'rb')))
+        times = pickle.load(open(timeFile, 'rb'))
+    else:
+        times = None
 
     np.random.seed(0)
     dataSize = len(labels)
