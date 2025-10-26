@@ -18,7 +18,7 @@ os.environ['AESARA_FLAGS'] = (
 import aesara
 import aesara.tensor as T
 from aesara import config
-from aesara.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
+import aesara.tensor.random.basic as random
 
 
 _TEST_RATIO = 0.2
@@ -120,7 +120,7 @@ def softmax_layer(tparams, emb):
     
 def build_model(tparams, leavesList, ancestorsList, options):
     dropoutRate = options['dropoutRate']
-    trng = RandomStreams(123)
+    trng = random.RandomStream(123)
     use_noise = aesara.shared(numpy_floatX(0.))
 
     x = T.tensor3('x', dtype=config.floatX)
