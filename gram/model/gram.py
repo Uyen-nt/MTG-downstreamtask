@@ -26,7 +26,7 @@ _VALIDATION_RATIO = 0.1
 
 def unzip(zipped):
     new_params = OrderedDict()
-    for key, value in zipped.iteritems():
+    for key, value in zipped.items():
         new_params[key] = value.get_value()
     return new_params
 
@@ -73,7 +73,7 @@ def init_params(options):
 
 def init_tparams(params):
     tparams = OrderedDict()
-    for key, value in params.iteritems():
+    for key, value in params.items():
         tparams[key] = aesara.shared(value, name=key)
     return tparams
 
@@ -212,9 +212,9 @@ def load_data(seqFile, labelFile, timeFile=''):
     return train_set, valid_set, test_set
 
 def adadelta(tparams, grads, x, y, mask, lengths, cost):
-    zipped_grads = [aesara.shared(p.get_value() * numpy_floatX(0.), name='%s_grad' % k) for k, p in tparams.iteritems()]
-    running_up2 = [aesara.shared(p.get_value() * numpy_floatX(0.), name='%s_rup2' % k) for k, p in tparams.iteritems()]
-    running_grads2 = [aesara.shared(p.get_value() * numpy_floatX(0.), name='%s_rgrad2' % k) for k, p in tparams.iteritems()]
+    zipped_grads = [aesara.shared(p.get_value() * numpy_floatX(0.), name='%s_grad' % k) for k, p in tparams.items()]
+    running_up2 = [aesara.shared(p.get_value() * numpy_floatX(0.), name='%s_rup2' % k) for k, p in tparams.items()]
+    running_grads2 = [aesara.shared(p.get_value() * numpy_floatX(0.), name='%s_rgrad2' % k) for k, p in tparams.items()]
 
     zgup = [(zg, g) for zg, g in zip(zipped_grads, grads)]
     rg2up = [(rg2, 0.95 * rg2 + 0.05 * (g ** 2)) for rg2, g in zip(running_grads2, grads)]
