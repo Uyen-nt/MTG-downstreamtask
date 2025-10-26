@@ -162,6 +162,7 @@ def build_model(tparams, leavesList, ancestorsList, options):
     return use_noise, x, y, mask, lengths, cost, cost_noreg, y_hat
 
 def load_data(seqFile, labelFile, timeFile=''):
+    # ⚙️ Không ép thành np.array vì độ dài mỗi bệnh nhân khác nhau
     sequences = pickle.load(open(seqFile, 'rb'))
     labels = pickle.load(open(labelFile, 'rb'))
 
@@ -180,37 +181,38 @@ def load_data(seqFile, labelFile, timeFile=''):
     valid_indices = ind[nTest:nTest+nValid]
     train_indices = ind[nTest+nValid:]
 
-    train_set_x = sequences[train_indices]
-    train_set_y = labels[train_indices]
-    test_set_x = sequences[test_indices]
-    test_set_y = labels[test_indices]
-    valid_set_x = sequences[valid_indices]
-    valid_set_y = labels[valid_indices]
-    train_set_t = None
-    test_set_t = None
-    valid_set_t = None
+    # ✅ Dùng list comprehension thay vì numpy indexing
+    train_set_x = [sequences[i] for i in train_indices]
+    train_set_y = [labels[i] for i in train_indices]
+    valid_set_x = [sequences[i] for i in valid_indices]
+    valid_set_y = [labels[i] for i in valid_indices]
+    test_set_x = [sequences[i] for i in test_indices]
+    test_set_y = [labels[i] for i in test_indices]
 
-    if len(timeFile) > 0:
-        train_set_t = times[train_indices]
-        test_set_t = times[test_indices]
-        valid_set_t = times[valid_indices]
+    # Nếu có timeFile
+    if times is not None:
+        train_set_t = [times[i] for i in train_indices]
+        valid_set_t = [times[i] for i in valid_indices]
+        test_set_t = [times[i] for i in test_indices]
+    else:
+        train_set_t = valid_set_t = test_set_t = None
 
+    # ⚙️ Sắp xếp theo số lượt khám (giúp GRU batching)
     def len_argsort(seq):
         return sorted(range(len(seq)), key=lambda x: len(seq[x]))
 
     train_sorted_index = len_argsort(train_set_x)
+    valid_sorted_index = len_argsort(valid_set_x)
+    test_sorted_index = len_argsort(test_set_x)
+
     train_set_x = [train_set_x[i] for i in train_sorted_index]
     train_set_y = [train_set_y[i] for i in train_sorted_index]
-
-    valid_sorted_index = len_argsort(valid_set_x)
     valid_set_x = [valid_set_x[i] for i in valid_sorted_index]
     valid_set_y = [valid_set_y[i] for i in valid_sorted_index]
-
-    test_sorted_index = len_argsort(test_set_x)
     test_set_x = [test_set_x[i] for i in test_sorted_index]
     test_set_y = [test_set_y[i] for i in test_sorted_index]
 
-    if len(timeFile) > 0:
+    if times is not None:
         train_set_t = [train_set_t[i] for i in train_sorted_index]
         valid_set_t = [valid_set_t[i] for i in valid_sorted_index]
         test_set_t = [test_set_t[i] for i in test_sorted_index]
@@ -219,7 +221,11 @@ def load_data(seqFile, labelFile, timeFile=''):
     valid_set = (valid_set_x, valid_set_y, valid_set_t)
     test_set = (test_set_x, test_set_y, test_set_t)
 
+    print(f"[LOAD DATA] Tổng {len(sequences)} bệnh nhân → Train={len(train_set_x)}, Valid={len(valid_set_x)}, Test={len(test_set_x)}")
+    print(f"  ↳ Ví dụ: bệnh nhân đầu có {len(train_set_x[0])} lượt khám")
+
     return train_set, valid_set, test_set
+
 
 def adadelta(tparams, grads, x, y, mask, lengths, cost):
     zipped_grads = [aesara.shared(p.get_value() * numpy_floatX(0.), name='%s_grad' % k) for k, p in tparams.items()]
