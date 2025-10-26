@@ -19,6 +19,7 @@ import aesara
 import aesara.tensor as T
 from aesara import config
 from aesara.tensor.random import RandomStream
+import aesara.tensor.nnet as nnet
 
 
 _TEST_RATIO = 0.2
@@ -109,7 +110,7 @@ def generate_attention(tparams, leaves, ancestors):
     attentionInput = T.concatenate([tparams['W_emb'][leaves], tparams['W_emb'][ancestors]], axis=2)
     mlpOutput = T.tanh(T.dot(attentionInput, tparams['W_attention']) + tparams['b_attention']) 
     preAttention = T.dot(mlpOutput, tparams['v_attention'])
-    attention = T.nnet.softmax(preAttention)
+    attention = nnet.softmax(preAttention)
     return attention
     
 def softmax_layer(tparams, emb):
