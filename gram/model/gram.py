@@ -65,22 +65,28 @@ def get_random_weight(dim1, dim2, left=-0.1, right=0.1):
     return np.random.uniform(left, right, (dim1, dim2)).astype(config.floatX)
 
 def load_embedding(options):
-    # lấy đường dẫn đúng (Namespace hoặc dict)
-    embed_path = options.embed_file if hasattr(options, 'embed_file') else options['embed_file']
+    # Hỗ trợ cả Namespace (argparse) và dict
+    if hasattr(options, "embed_file"):
+        embed_path = getattr(options, "embed_file")
+    elif isinstance(options, dict) and "embed_file" in options:
+        embed_path = options["embed_file"]
+    else:
+        raise KeyError("Không tìm thấy tham số embed_file trong options!")
+
+    import numpy as np
     m = np.load(embed_path)
 
-    if 'w' in m and 'w_tilde' in m:
-        w = (m['w'] + m['w_tilde']) / 2.0
-    elif 'W_emb' in m:
-        w = m['W_emb']
-    elif 'params' in m:
-        w = m['params'][0]
+    if "w" in m and "w_tilde" in m:
+        w = (m["w"] + m["w_tilde"]) / 2.0
+    elif "W_emb" in m:
+        w = m["W_emb"]
+    elif "params" in m:
+        w = m["params"][0]
     else:
         raise KeyError(f"Không tìm thấy embedding trong file {embed_path}")
 
-    print(f"[INFO] Loaded embedding from {embed_path}, shape={w.shape}")
+    print(f"[INFO] Loaded embedding từ {embed_path}, shape={w.shape}")
     return w
-
 
 
 def init_params(options):
