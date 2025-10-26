@@ -15,13 +15,13 @@ TREE = f"{DATA_DIR}/tree_mimic3"
 os.makedirs(FINETUNE_DIR, exist_ok=True)
 
 # === TÌM MODEL PRETRAIN (.npz) ===
-pretrain_models = glob.glob(f"{PRETRAIN_DIR}/*.npz")
-
+pretrain_models = sorted(glob.glob(f"{PRETRAIN_DIR}/*.npz"))
 if not pretrain_models:
     raise FileNotFoundError(
         f"Không tìm thấy model pretrain (.npz) tại {PRETRAIN_DIR}\n"
         "Hãy chạy 04_pretrain.py trước!"
     )
+
 
 best_model = sorted(pretrain_models)[-1]
 finetune_init = f"{FINETUNE_DIR}/pretrain_model.npz"
