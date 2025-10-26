@@ -29,9 +29,16 @@ cmd = [
 ]
 
 print("Pre-training on remapped data...")
-result = subprocess.run(cmd, capture_output=True, text=True)
-if result.returncode != 0:
-    print("LỖI TỪ model/gram.py:")
-    print(result.stderr)
+process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+
+# 🔁 Hiển thị log theo thời gian thực
+for line in iter(process.stdout.readline, ''):
+    print(line, end='')
+
+process.wait()
+
+if process.returncode != 0:
+    print("\n❌ LỖI TỪ model/gram.py:")
     raise RuntimeError("Pretrain thất bại!")
-print("✅ Hoàn tất pretrain, model lưu trong:", OUT_DIR)
+else:
+    print("\n✅ Hoàn tất pretrain, model lưu trong:", OUT_DIR)
