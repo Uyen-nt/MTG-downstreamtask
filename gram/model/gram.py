@@ -1,40 +1,47 @@
-import sys, copy, pickle
-import sys, pickle, os
+import sys, os, pickle
 
 if __name__ == '__main__':
-    infile = sys.argv[1]       # synthetic seqs file
-    seqFile = sys.argv[2]      # labels
-    typeFile = sys.argv[3]     # tree prefix (types or pk)
+    infile = sys.argv[1]
+    seqFile = sys.argv[2]
+    typeFile = sys.argv[3]
     outFile = sys.argv[4]
 
-    # Thử mở file text; nếu lỗi -> mở dạng binary
-    try:
-        infd = open(infile, 'r', encoding='utf-8')       
-        infd.seek(0)
-        is_binary = False
-    except UnicodeDecodeError:
-        infd = open(infile, 'rb')
-        is_binary = True
+    # 🧭 1️⃣ Kiểm tra file đầu vào là text hay pickle
+    def try_open_text_or_pickle(path):
+        try:
+            with open(path, 'r', encoding='utf-8') as f:
+                f.readline()
+            print(f"📄 {path} là text (utf-8)")
+            return 'text'
+        except UnicodeDecodeError:
+            print(f"💾 {path} là pickle (binary)")
+            return 'pickle'
 
-    if is_binary:
-        print(f"⚙️ File {infile} là pickle, mở bằng 'rb'")
-    else:
-        print(f"⚙️ File {infile} là text, mở bằng 'utf-8'")
+    file_type = try_open_text_or_pickle(infile)
 
+    # 🧩 2️⃣ Load dữ liệu cơ bản
+    seqs = pickle.load(open(infile, 'rb')) if file_type == 'pickle' else None
 
-    # Đọc dữ liệu
-    infd = open(infile, 'r', encoding='utf-8')
-
-    seqs = pickle.load(open(seqFile, 'rb'))
-    # Nếu typeFile là prefix, tự động tìm file .types
+    # 🧩 3️⃣ Tìm và load typeFile (prefix .types)
     if os.path.exists(typeFile):
-        # có thể là file thật
         types = pickle.load(open(typeFile, 'rb'))
     elif os.path.exists(typeFile + '.types'):
         types = pickle.load(open(typeFile + '.types', 'rb'))
     else:
         raise FileNotFoundError(f"Không tìm thấy {typeFile} hoặc {typeFile}.types")
 
+    # ⚙️ 4️⃣ Nếu là pickle thì bỏ qua đọc dòng CSV
+    if file_type == 'pickle':
+        print("⚙️ Bỏ qua xử lý từng dòng — dữ liệu đã được nạp từ pickle.")
+        rootCode = len(types)
+        types['A_ROOT'] = rootCode
+        pickle.dump(types, open(outFile + '.types', 'wb'))
+        pickle.dump(seqs, open(outFile + '.seqs', 'wb'))
+        print(f"✅ Đã lưu {outFile}.types và {outFile}.seqs")
+        sys.exit(0)
+
+    # 🧩 5️⃣ Nếu là CSV thật → mở file text để xử lý
+    infd = open(infile, 'r', encoding='utf-8')
 
     startSet = set(types.keys())
     hitList, missList = [], []
