@@ -74,7 +74,7 @@ def init_params(options):
 def init_tparams(params):
     tparams = OrderedDict()
     for key, value in params.iteritems():
-        tparams[key] = theano.shared(value, name=key)
+        tparams[key] = aesara.shared(value, name=key)
     return tparams
 
 def dropout_layer(state_before, use_noise, trng, prob):
@@ -121,7 +121,7 @@ def softmax_layer(tparams, emb):
 def build_model(tparams, leavesList, ancestorsList, options):
     dropoutRate = options['dropoutRate']
     trng = RandomStreams(123)
-    use_noise = theano.shared(numpy_floatX(0.))
+    use_noise = aesara.shared(numpy_floatX(0.))
 
     x = T.tensor3('x', dtype=config.floatX)
     y = T.tensor3('y', dtype=config.floatX)
@@ -212,9 +212,9 @@ def load_data(seqFile, labelFile, timeFile=''):
     return train_set, valid_set, test_set
 
 def adadelta(tparams, grads, x, y, mask, lengths, cost):
-    zipped_grads = [theano.shared(p.get_value() * numpy_floatX(0.), name='%s_grad' % k) for k, p in tparams.iteritems()]
-    running_up2 = [theano.shared(p.get_value() * numpy_floatX(0.), name='%s_rup2' % k) for k, p in tparams.iteritems()]
-    running_grads2 = [theano.shared(p.get_value() * numpy_floatX(0.), name='%s_rgrad2' % k) for k, p in tparams.iteritems()]
+    zipped_grads = [aesara.shared(p.get_value() * numpy_floatX(0.), name='%s_grad' % k) for k, p in tparams.iteritems()]
+    running_up2 = [aesara.shared(p.get_value() * numpy_floatX(0.), name='%s_rup2' % k) for k, p in tparams.iteritems()]
+    running_grads2 = [aesara.shared(p.get_value() * numpy_floatX(0.), name='%s_rgrad2' % k) for k, p in tparams.iteritems()]
 
     zgup = [(zg, g) for zg, g in zip(zipped_grads, grads)]
     rg2up = [(rg2, 0.95 * rg2 + 0.05 * (g ** 2)) for rg2, g in zip(running_grads2, grads)]
@@ -300,8 +300,8 @@ def train_GRAM(
     ancestorsList = []
     for i in range(5, 0, -1): # An ICD9 diagnosis code can have at most five ancestors (including the artificial root) when using CCS multi-level grouper. 
         leaves, ancestors = build_tree(treeFile+'.level'+str(i)+'.pk')
-        sharedLeaves = theano.shared(leaves, name='leaves'+str(i))
-        sharedAncestors = theano.shared(ancestors, name='ancestors'+str(i))
+        sharedLeaves = aesara.shared(leaves, name='leaves'+str(i))
+        sharedAncestors = aesara.shared(ancestors, name='ancestors'+str(i))
         leavesList.append(sharedLeaves)
         ancestorsList.append(sharedAncestors)
     
