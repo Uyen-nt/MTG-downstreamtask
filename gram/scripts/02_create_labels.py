@@ -4,7 +4,6 @@ import os
 
 DATA_DIR = "data"
 REAL_SEQS = "../../data/result/mimic3/real_mimic3.3digitICD9.seqs"
-/data/result/mimic3/real_mimic3.3digitICD9.seqs
 SYNTH_SEQS = f"{DATA_DIR}/synth_mimic3.seqs"
 
 os.makedirs(DATA_DIR, exist_ok=True)
