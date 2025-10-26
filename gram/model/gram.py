@@ -73,7 +73,6 @@ def load_embedding(options):
         embed_path = getattr(options, "embed_file", None)
     if not embed_path:
         raise KeyError("Không tìm thấy tham số embed_file hoặc embFile trong options!")
-        
 
     print(f"[INFO] Loading embedding từ: {embed_path}")
     m = np.load(embed_path)
@@ -87,6 +86,17 @@ def load_embedding(options):
         # nếu không có các keys trên, in ra danh sách key để debug
         print(f"[WARN] Keys có trong {embed_path}: {list(m.keys())}")
         raise KeyError(f"Không tìm thấy 'w' hoặc 'W_emb' trong {embed_path}")
+
+    # ✅ Kiểm tra và tự động pad / cắt embedding cho khớp với inputDimSize
+    expected_dim = options['inputDimSize'] if isinstance(options, dict) and 'inputDimSize' in options else None
+    if expected_dim and w.shape[0] < expected_dim:
+        diff = expected_dim - w.shape[0]
+        print(f"[WARN] Padding embedding từ {w.shape[0]} → {expected_dim} (thêm {diff} vector ngẫu nhiên)")
+        extra = np.random.normal(scale=0.01, size=(diff, w.shape[1]))
+        w = np.vstack([w, extra])
+    elif expected_dim and w.shape[0] > expected_dim:
+        print(f"[WARN] Cắt embedding từ {w.shape[0]} → {expected_dim}")
+        w = w[:expected_dim]
 
     print(f"[INFO] Embedding shape: {w.shape}")
     return w.astype(np.float32)
