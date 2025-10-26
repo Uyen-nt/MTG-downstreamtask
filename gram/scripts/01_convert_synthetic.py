@@ -1,5 +1,5 @@
 # scripts/01_convert_synthetic.py
-# ĐÃ SỬA: Hỗ trợ multi-label per visit (nhiều mã = 1)
+# Hỗ trợ multi-label per visit (nhiều mã = 1)
 
 import numpy as np
 import pickle
