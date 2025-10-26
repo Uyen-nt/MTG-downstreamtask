@@ -320,7 +320,7 @@ def train_GRAM(
     print('done!!')
     
     print('Constructing the optimizer ... ',)
-    grads = T.grad(cost, wrt=tparams.values())
+    grads = T.grad(cost, wrt=list(tparams.values()))
     f_grad_shared, f_update = adadelta(tparams, grads, x, y, mask, lengths, cost)
     print('done!!')
 
