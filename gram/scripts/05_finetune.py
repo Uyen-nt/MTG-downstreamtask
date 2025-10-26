@@ -6,13 +6,12 @@ import glob
 
 # === CẤU HÌNH ĐƯỜNG DẪN ===
 DATA_DIR = "data"
-PRETRAIN_DIR = "/kaggle/working/MTG-downstreamtask/gram/results/pretrain"
+PRETRAIN_DIR = "/kaggle/working/MTG-downstreamtask/gram/results/pretrain_real"
 FINETUNE_DIR = "/kaggle/working/MTG-downstreamtask/gram/results/finetune"
 REAL_SEQS = "/kaggle/working/MTG-downstreamtask/data/result/mimic3/real_mimic3.3digitICD9.seqs"
 REAL_LABELS = f"{DATA_DIR}/real_mimic3.labels"
 TREE = f"{DATA_DIR}/tree_mimic3"
 
-# Tạo thư mục finetune
 os.makedirs(FINETUNE_DIR, exist_ok=True)
 
 # === TÌM MODEL PRETRAIN (.npz) ===
@@ -24,20 +23,20 @@ if not pretrain_models:
         "Hãy chạy 04_pretrain.py trước!"
     )
 
-best_model = sorted(pretrain_models)[-1]  # lấy model cuối (best epoch)
+best_model = sorted(pretrain_models)[-1]
 finetune_init = f"{FINETUNE_DIR}/pretrain_model.npz"
 shutil.copy(best_model, finetune_init)
 print(f"✅ Loaded pre-trained weights: {best_model}")
 print(f"📦 Copied to: {finetune_init}")
 
-# === CHẠY GRAM VỚI AESARA (hoặc Theano) ===
+# === CHẠY GRAM VỚI AESARA ===
 cmd = [
     "python", "model/gram.py",
     REAL_SEQS,
     REAL_LABELS,
     TREE,
     FINETUNE_DIR,
-    "--embed_file", finetune_init,        # Dùng .pt làm embedding
+    "--embed_file", finetune_init,
     "--n_epochs", "50",
     "--batch_size", "100",
     "--rnn_size", "128",
@@ -47,13 +46,14 @@ cmd = [
     "--verbose"
 ]
 
-print("\nFine-tuning on real MIMIC-III data...")
+print("\n🚀 Fine-tuning on real MIMIC-III data...")
 print("Command:", " ".join(cmd))
 
-result = subprocess.run(cmd, check=False)
-
+result = subprocess.run(cmd, capture_output=True, text=True)
 if result.returncode == 0:
-    print("HOÀN TẤT FINETUNE!")
+    print("✅ HOÀN TẤT FINETUNE!")
     print(f"→ Model saved in: {FINETUNE_DIR}")
 else:
+    print("❌ LỖI TỪ model/gram.py:")
+    print(result.stderr)
     raise RuntimeError(f"Finetune thất bại: {result.returncode}")
