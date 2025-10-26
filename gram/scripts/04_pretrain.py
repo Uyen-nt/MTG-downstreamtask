@@ -1,6 +1,6 @@
 # gram/scripts/04_pretrain.py
 
-import os, subprocess
+import os, sys, subprocess
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
