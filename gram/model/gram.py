@@ -80,7 +80,12 @@ def init_tparams(params):
     return tparams
 
 def dropout_layer(state_before, use_noise, trng, prob):
-    proj = T.switch(use_noise, (state_before * trng.binomial(state_before.shape, p=prob, n=1, dtype=state_before.dtype)), state_before * 0.5)
+    proj = T.switch(
+        use_noise,
+        state_before * trng.binomial(size=state_before.shape, p=prob, dtype=state_before.dtype),
+        state_before * 0.5
+    )
+
     return proj
 
 def _slice(_x, n, dim):
