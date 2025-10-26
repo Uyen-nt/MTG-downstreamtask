@@ -26,6 +26,13 @@ from aesara.tensor.math import sigmoid
 _TEST_RATIO = 0.2
 _VALIDATION_RATIO = 0.1
 
+def get_rootCode_from_types(tree_prefix):
+    import pickle
+    # tree_prefix ví dụ: "gram/data/tree_mimic3"
+    types = pickle.load(open(tree_prefix + '.types', 'rb'))
+    return types['A_ROOT']
+
+
 def unzip(zipped):
     new_params = OrderedDict()
     for key, value in zipped.items():
@@ -424,7 +431,11 @@ if __name__ == '__main__':
 
     inputDimSize = calculate_dimSize(args.seq_file)
     numClass = calculate_dimSize(args.label_file)
-    numAncestors = get_rootCode(args.tree_file+'.level2.pk') - inputDimSize + 1
+    # Lấy số lượng ancestor từ file .types (ổn định hơn nhiều)
+    rootCode = get_rootCode_from_types(treeFile)
+    numAncestors = rootCode - inputDimSize + 1
+    print(f"[DEBUG] inputDimSize={inputDimSize}, rootCode={rootCode}, numAncestors={numAncestors}, total_vocab={inputDimSize + numAncestors}")
+
 
     train_GRAM(
         seqFile=args.seq_file, 
