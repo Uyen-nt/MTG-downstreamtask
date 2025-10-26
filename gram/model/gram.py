@@ -113,7 +113,7 @@ def init_params(options):
     attentionDimSize = options['attentionDimSize']
     numClass = options['numClass']
 
-    params['W_emb'] = get_random_weight(inputDimSize+numAncestors, embDimSize)
+    params['W_emb'] = load_embedding({**vars(options), "inputDimSize": options.inputDimSize})
     if len(options['embFile']) > 0:
         params['W_emb'] = load_embedding(options)
         options['embDimSize'] = params['W_emb'].shape[1]
