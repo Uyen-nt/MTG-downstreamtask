@@ -65,13 +65,13 @@ if __name__ == '__main__':
     types['A_ROOT'] = rootCode
     print(rootCode)
 
-    print 'cat1count: %d' % cat1count
-    print 'cat2count: %d' % cat2count
-    print 'cat3count: %d' % cat3count
-    print 'cat4count: %d' % cat4count
-    print 'Number of total ancestors: %d' % (cat1count + cat2count + cat3count + cat4count + 1)
+    print('cat1count: %d' % cat1count)
+    print('cat2count: %d' % cat2count)
+    print('cat3count: %d' % cat3count)
+    print('cat4count: %d' % cat4count)
+    print('Number of total ancestors: %d' % (cat1count + cat2count + cat3count + cat4count + 1))
     #print 'hit count: %d' % len(set(hitList))
-    print 'miss count: %d' % len(startSet - set(hitList))
+    print('miss count: %d' % len(startSet - set(hitList)))
     missSet = startSet - set(hitList)
 
     #pickle.dump(types, open(outFile + '.types', 'wb'), -1)
