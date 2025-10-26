@@ -1,10 +1,27 @@
 import sys, copy, pickle
+import sys, pickle, os
 
 if __name__ == '__main__':
-    infile = sys.argv[1]
-    seqFile = sys.argv[2]
-    typeFile = sys.argv[3]
+    infile = sys.argv[1]       # synthetic seqs file
+    seqFile = sys.argv[2]      # labels
+    typeFile = sys.argv[3]     # tree prefix (types or pk)
     outFile = sys.argv[4]
+
+    # Thử mở file text; nếu lỗi -> mở dạng binary
+    try:
+        infd = open(infile, 'r', encoding='utf-8')
+        _ = infd.readline()
+        infd.seek(0)
+        is_binary = False
+    except UnicodeDecodeError:
+        infd = open(infile, 'rb')
+        is_binary = True
+
+    if is_binary:
+        print(f"⚙️ File {infile} là pickle, mở bằng 'rb'")
+    else:
+        print(f"⚙️ File {infile} là text, mở bằng 'utf-8'")
+
 
     # Đọc dữ liệu
     infd = open(infile, 'r', encoding='utf-8')
