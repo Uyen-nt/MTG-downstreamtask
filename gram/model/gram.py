@@ -2,7 +2,7 @@
 # Code written by Edward Choi (mp2893@gatech.edu)
 # For bug report, please contact author using the email address
 #################################################################
-
+import argparse
 import os
 os.environ['AESARA_FLAGS'] = (
     'floatX=float32,device=cpu,base_compiledir=/tmp/aesara_cache,'
