@@ -28,9 +28,16 @@ _VALIDATION_RATIO = 0.1
 
 def get_rootCode_from_types(tree_prefix):
     import pickle
-    # tree_prefix ví dụ: "gram/data/tree_mimic3"
     types = pickle.load(open(tree_prefix + '.types', 'rb'))
-    return types['A_ROOT']
+
+    # Nếu có key 'A_ROOT' (chuẩn GRAM gốc)
+    if 'A_ROOT' in types:
+        return types['A_ROOT']
+
+    # Nếu không có, lấy giá trị max ID (giá trị lớn nhất)
+    max_id = max(types.values())
+    print(f"[WARN] Không có khóa 'A_ROOT' trong file {tree_prefix}.types → dùng max_id={max_id} làm rootCode.")
+    return max_id
 
 
 def unzip(zipped):
