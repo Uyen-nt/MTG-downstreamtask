@@ -63,7 +63,7 @@ if __name__ == '__main__':
 
     rootCode = len(types)
     types['A_ROOT'] = rootCode
-    print rootCode
+    print(rootCode)
 
     print 'cat1count: %d' % cat1count
     print 'cat2count: %d' % cat2count
