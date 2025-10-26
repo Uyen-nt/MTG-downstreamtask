@@ -3,25 +3,29 @@ import os
 import subprocess
 from pathlib import Path
 
-SCRIPT_DIR = Path(__file__).parent.resolve()
-PROJECT_ROOT = SCRIPT_DIR.parent.parent
+SCRIPT_DIR = Path(__file__).parent.resolve()           # gram/scripts/
+GRAM_DIR = SCRIPT_DIR.parent                            # gram/
+PROJECT_ROOT = GRAM_DIR.parent                          # /kaggle/working/MTG-downstreamtask/
 DATA_DIR = PROJECT_ROOT / "data"
-GRAM_DATA_DIR = PROJECT_ROOT / "gram" / "data"
+GRAM_DATA_DIR = GRAM_DIR / "data"
 
-# ĐƯỜNG DẪN CHÍNH XÁC
-HIERARCHY_CSV = DATA_DIR / "icd9_hierarchy.csv"          # ĐÃ SỬA
+BUILD_TREES_PY = GRAM_DIR / "model" / "build_trees.py"   # ĐÃ SỬA
+HIERARCHY_CSV = DATA_DIR / "icd9_hierarchy.csv"
 REAL_SEQS = DATA_DIR / "result" / "mimic3" / "real_mimic3.3digitICD9.seqs"
 REAL_TYPES = DATA_DIR / "result" / "mimic3" / "real_mimic3.3digitICD9.types"
 TREE_PREFIX = GRAM_DATA_DIR / "tree_mimic3"
 
+# Tạo thư mục
 os.makedirs(GRAM_DATA_DIR, exist_ok=True)
 
-for f in [HIERARCHY_CSV, REAL_SEQS, REAL_TYPES]:
+# KIỂM TRA TẤT CẢ FILE
+for f in [BUILD_TREES_PY, HIERARCHY_CSV, REAL_SEQS, REAL_TYPES]:
     if not f.exists():
         raise FileNotFoundError(f"Không tìm thấy: {f}")
 
+print(f"Đang chạy: {BUILD_TREES_PY.name}")
 cmd = [
-    "python", str(SCRIPT_DIR / ".." / "model" / "build_trees.py"),
+    "python", str(BUILD_TREES_PY),
     str(HIERARCHY_CSV),
     str(REAL_SEQS),
     str(REAL_TYPES),
