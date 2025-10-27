@@ -435,6 +435,11 @@ def train_GRAM(
     verbose=False
 ):
     options = locals().copy()
+    # 🚫 Bỏ qua mọi embedding cũ (ép random init)
+    options["embFile"] = ""
+    options["embed_file"] = ""
+    print("[DEBUG] Forced random init for W_emb (no pretrain embedding loaded)")
+
 
     leavesList = []
     ancestorsList = []
