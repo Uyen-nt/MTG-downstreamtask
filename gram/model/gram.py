@@ -128,64 +128,53 @@ def load_embedding(options):
 
 
 def init_params(options):
-    import numpy as np, os, pickle
+    import numpy as np, os
 
     params = {}
 
-    # ----------------------------
-    # 🔍 Lấy giá trị từ dict hoặc Namespace một cách an toàn
-    # ----------------------------
     def get_opt(name, default=None):
         if isinstance(options, dict):
             return options.get(name, default)
         return getattr(options, name, default)
 
     emb_file = get_opt("embFile") or get_opt("embed_file")
-    input_dim = get_opt("inputDimSize", 1000)
-    n_anc = get_opt("numAncestors", 0)
-    rnn_size = get_opt("rnn_size", 128)
-    att_size = get_opt("attention_size", 128)
+    input_dim = int(get_opt("inputDimSize", 1000))
+    n_anc    = int(get_opt("numAncestors", 0))
+    rnn_size = int(get_opt("rnn_size", 128))
+    att_size = int(get_opt("attention_size", 128))
+    emb_size_opt = int(get_opt("embed_size", 128))
 
-    # ----------------------------
-    # 🧩 Khởi tạo hoặc load embedding
-    # ----------------------------
+    # --- W_emb ---
     if emb_file and os.path.exists(str(emb_file)):
         params["W_emb"] = load_embedding(options)
     else:
         print("[INFO] Không có embed_file → khởi tạo W_emb ngẫu nhiên.")
-        emb_dim = 128
-        expected_dim = int(input_dim) + int(n_anc)
+        expected_dim = input_dim + n_anc
         np.random.seed(42)
-        params["W_emb"] = np.random.normal(0, 0.01, size=(expected_dim, emb_dim)).astype("float32")
+        params["W_emb"] = np.random.normal(0, 0.01,
+                                           size=(expected_dim, emb_size_opt)
+                                          ).astype("float32")
 
-        # ✅ Lưu embedding ngẫu nhiên để có thể dùng cho downstream task
-        try:
-            save_path = os.path.join(os.getcwd(), "random_pretrain_model.npz")
-            np.savez(save_path, W_emb=params["W_emb"])
-            print(f"[💾] Đã lưu embedding ngẫu nhiên → {save_path}")
-        except Exception as e:
-            print(f"[WARN] Không thể lưu random embedding: {e}")
+    emb_dim = int(params["W_emb"].shape[1])  # chiều embedding thực tế
 
-    # ----------------------------
-    # 🧠 Các trọng số attention / output
-    # ----------------------------
-    params["W_attention"] = 0.01 * np.random.randn(rnn_size, att_size).astype("float32")
+    # --- GRU params ---
+    # x_emb có shape (*, emb_dim), nên W_gru phải là (emb_dim, 3*rnn_size)
+    params["W_gru"] = 0.01 * np.random.randn(emb_dim, 3 * rnn_size).astype("float32")
+    params["U_gru"] = 0.01 * np.random.randn(rnn_size, 3 * rnn_size).astype("float32")
+    params["b_gru"] = np.zeros((3 * rnn_size,), dtype="float32")
+
+    # --- Attention params ---
+    # attentionInput = concat([leaf_emb, ancestor_emb], axis=-1) → 2*emb_dim
+    params["W_attention"] = 0.01 * np.random.randn(2 * emb_dim, att_size).astype("float32")
     params["b_attention"] = np.zeros((att_size,), dtype="float32")
     params["v_attention"] = 0.01 * np.random.randn(att_size,).astype("float32")
 
+    # --- Output params ---
     params["W_output"] = 0.01 * np.random.randn(rnn_size, input_dim).astype("float32")
     params["b_output"] = np.zeros((input_dim,), dtype="float32")
 
-    # ----------------------------
-    # 🔁 Thêm tham số GRU (nếu chưa có)
-    # ----------------------------
-    if "W_gru" not in params:
-        print("[INFO] Khởi tạo tham số GRU ngẫu nhiên ...")
-        params["W_gru"] = 0.01 * np.random.randn(input_dim, 3 * rnn_size).astype("float32")
-        params["U_gru"] = 0.01 * np.random.randn(rnn_size, 3 * rnn_size).astype("float32")
-        params["b_gru"] = np.zeros((3 * rnn_size,), dtype="float32")
-
     return params
+
 
 
 def init_tparams(params):
