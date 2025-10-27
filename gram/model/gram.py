@@ -270,7 +270,8 @@ def build_model(tparams, leavesList, ancestorsList, options):
 
 
     
-    x_emb = T.tanh(T.dot(x, emb))
+    x_emb = T.tanh(T.dot(x, tparams['W_emb']))
+
     hidden = gru_layer(tparams, x_emb, options)
     hidden = dropout_layer(hidden, use_noise, trng, dropoutRate)
     y_hat = softmax_layer(tparams, hidden) * mask[:,:,None]
