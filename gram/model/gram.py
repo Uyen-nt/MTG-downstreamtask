@@ -249,8 +249,23 @@ def build_model(tparams, leavesList, ancestorsList, options):
         embList.append(tempEmb)
 
     #emb = T.concatenate(embList, axis=0)
-    emb = sum(embList) / len(embList)
+    #emb = sum(embList) / len(embList)
 
+    # 🧩 align embedding giữa các tầng tổ tiên (fix lỗi shape mismatch)
+    max_len = max(e.shape[0] for e in embList)
+    aligned_embs = []
+    
+    for e in embList:
+        if e.shape[0] < max_len:
+            pad_len = max_len - e.shape[0]
+            pad = T.zeros((pad_len, e.shape[1]), dtype=e.dtype)
+            e = T.concatenate([e, pad], axis=0)
+        aligned_embs.append(e)
+    
+    emb = sum(aligned_embs) / len(aligned_embs)
+
+
+    
     x_emb = T.tanh(T.dot(x, emb))
     hidden = gru_layer(tparams, x_emb, options)
     hidden = dropout_layer(hidden, use_noise, trng, dropoutRate)
