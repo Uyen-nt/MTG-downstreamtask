@@ -229,6 +229,63 @@ def softmax_layer(tparams, emb):
     output = nom / denom
     return output
     
+# def build_model(tparams, leavesList, ancestorsList, options):
+#     dropoutRate = options['dropoutRate']
+#     trng = RandomStream(123)
+#     use_noise = aesara.shared(numpy_floatX(0.))
+
+#     x = T.tensor3('x', dtype=config.floatX)
+#     y = T.tensor3('y', dtype=config.floatX)
+#     mask = T.matrix('mask', dtype=config.floatX)
+#     lengths = T.vector('lengths', dtype=config.floatX)
+
+#     n_timesteps = x.shape[0]
+#     n_samples = x.shape[1]
+
+#     embList = []
+#     for leaves, ancestors in zip(leavesList, ancestorsList):
+#         tempAttention = generate_attention(tparams, leaves, ancestors)
+#         tempEmb = (tparams['W_emb'][ancestors] * tempAttention[:,:,None]).sum(axis=1)
+#         embList.append(tempEmb)
+
+#     #emb = T.concatenate(embList, axis=0)
+#     #emb = sum(embList) / len(embList)
+
+#     # 🧩 Fix: align embeddings trong graph Aesara (symbolic-safe)
+#     # Không dùng max() của Python, dùng cách tính symbolic-safe
+#     emb_shapes = [e.shape[0] for e in embList]
+#     max_len = emb_shapes[0]
+#     for s in emb_shapes[1:]:
+#         max_len = T.maximum(max_len, s)
+    
+#     aligned_embs = []
+#     for e in embList:
+#         pad_len = max_len - e.shape[0]
+#         pad = T.zeros((pad_len, e.shape[1]), dtype=e.dtype)
+#         e_padded = T.concatenate([e, pad], axis=0)
+#         aligned_embs.append(e_padded)
+    
+#     emb = sum(aligned_embs) / len(aligned_embs)
+
+
+
+    
+#     x_emb = T.tanh(T.dot(x, tparams['W_emb']))
+
+#     hidden = gru_layer(tparams, x_emb, options)
+#     hidden = dropout_layer(hidden, use_noise, trng, dropoutRate)
+#     y_hat = softmax_layer(tparams, hidden) * mask[:,:,None]
+
+#     logEps = 1e-8
+#     cross_entropy = -(y * T.log(y_hat + logEps) + (1. - y) * T.log(1. - y_hat + logEps))
+#     output_loglikelihood = cross_entropy.sum(axis=2).sum(axis=0) / lengths
+#     cost_noreg = T.mean(output_loglikelihood)
+
+#     if options['L2'] > 0.:
+#         cost = cost_noreg + options['L2'] * ((tparams['W_output']**2).sum() + (tparams['W_attention']**2).sum() + (tparams['v_attention']**2).sum())
+
+#     return use_noise, x, y, mask, lengths, cost, cost_noreg, y_hat
+
 def build_model(tparams, leavesList, ancestorsList, options):
     dropoutRate = options['dropoutRate']
     trng = RandomStream(123)
@@ -242,49 +299,72 @@ def build_model(tparams, leavesList, ancestorsList, options):
     n_timesteps = x.shape[0]
     n_samples = x.shape[1]
 
+    # ============================================================
+    # 🧠 1. Tạo Attention cho từng cấp độ ancestor
+    # ============================================================
     embList = []
     for leaves, ancestors in zip(leavesList, ancestorsList):
+        # Tính attention weight cho (leaf, ancestor)
         tempAttention = generate_attention(tparams, leaves, ancestors)
-        tempEmb = (tparams['W_emb'][ancestors] * tempAttention[:,:,None]).sum(axis=1)
+        # Áp dụng trọng số attention lên embedding của ancestor
+        tempEmb = (tparams['W_emb'][ancestors] * tempAttention[:, :, None]).sum(axis=1)
         embList.append(tempEmb)
 
-    #emb = T.concatenate(embList, axis=0)
-    #emb = sum(embList) / len(embList)
-
-    # 🧩 Fix: align embeddings trong graph Aesara (symbolic-safe)
-    # Không dùng max() của Python, dùng cách tính symbolic-safe
+    # ============================================================
+    # 📦 2. Tổng hợp nhiều cấp độ (level 1→5)
+    # ============================================================
+    # Padding symbolic để mọi emb có cùng chiều (safe trong Aesara)
     emb_shapes = [e.shape[0] for e in embList]
     max_len = emb_shapes[0]
     for s in emb_shapes[1:]:
         max_len = T.maximum(max_len, s)
-    
+
     aligned_embs = []
     for e in embList:
         pad_len = max_len - e.shape[0]
         pad = T.zeros((pad_len, e.shape[1]), dtype=e.dtype)
         e_padded = T.concatenate([e, pad], axis=0)
         aligned_embs.append(e_padded)
-    
-    emb = sum(aligned_embs) / len(aligned_embs)
 
+    # Trung bình các level
+    attention_emb = sum(aligned_embs) / len(aligned_embs)
 
+    # ============================================================
+    # 🔗 3. Kết hợp input one-hot embedding và attention embedding
+    # ============================================================
+    # Lookup embedding cho one-hot input
+    x_emb_lookup = T.dot(x, tparams['W_emb'])
+    # Cộng với embedding từ attention (knowledge-informed)
+    x_emb = T.tanh(x_emb_lookup + attention_emb)
 
-    
-    x_emb = T.tanh(T.dot(x, tparams['W_emb']))
-
+    # ============================================================
+    # 🔁 4. GRU layer
+    # ============================================================
     hidden = gru_layer(tparams, x_emb, options)
     hidden = dropout_layer(hidden, use_noise, trng, dropoutRate)
-    y_hat = softmax_layer(tparams, hidden) * mask[:,:,None]
+
+    # ============================================================
+    # 🎯 5. Output Softmax và Cost
+    # ============================================================
+    y_hat = softmax_layer(tparams, hidden) * mask[:, :, None]
 
     logEps = 1e-8
     cross_entropy = -(y * T.log(y_hat + logEps) + (1. - y) * T.log(1. - y_hat + logEps))
     output_loglikelihood = cross_entropy.sum(axis=2).sum(axis=0) / lengths
     cost_noreg = T.mean(output_loglikelihood)
 
+    # Regularization
     if options['L2'] > 0.:
-        cost = cost_noreg + options['L2'] * ((tparams['W_output']**2).sum() + (tparams['W_attention']**2).sum() + (tparams['v_attention']**2).sum())
+        cost = cost_noreg + options['L2'] * (
+            (tparams['W_output']**2).sum() +
+            (tparams['W_attention']**2).sum() +
+            (tparams['v_attention']**2).sum()
+        )
+    else:
+        cost = cost_noreg
 
     return use_noise, x, y, mask, lengths, cost, cost_noreg, y_hat
+
 
 def load_data(seqFile, labelFile, timeFile=''):
     # ⚙️ Không ép thành np.array vì độ dài mỗi bệnh nhân khác nhau
@@ -464,8 +544,7 @@ def train_GRAM(
     print('done!!')
     
     print('Constructing the optimizer ... ',)
-   # grads = T.grad(cost, wrt=list(tparams.values()))
-    grads = T.grad(cost, wrt=list(tparams.values()), disconnected_inputs='ignore')
+    grads = T.grad(cost, wrt=list(tparams.values()))
     
     print('    ✓ grads ready', flush=True)
     f_grad_shared, f_update = adadelta(tparams, grads, x, y, mask, lengths, cost)
