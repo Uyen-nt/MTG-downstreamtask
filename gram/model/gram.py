@@ -75,11 +75,23 @@ def load_embedding(options):
         input_dim = getattr(options, "inputDimSize", None)
         n_anc = getattr(options, "numAncestors", 0)
 
-    if not embed_path:
-        raise KeyError("Không tìm thấy tham số embed_file hoặc embFile trong options!")
+    # ✅ Nếu không có embed_file → khởi tạo ngẫu nhiên
+    if not embed_path or not os.path.exists(str(embed_path)):
+        print("[WARN] Không có embed_file → khởi tạo embedding ngẫu nhiên.")
+        if input_dim is None:
+            input_dim = 1000
+        emb_dim = 128
+        expected_dim = int(input_dim) + int(n_anc)
+        np.random.seed(42)
+        w = np.random.normal(0, 0.01, size=(expected_dim, emb_dim)).astype("float32")
+        print(f"[INFO] Random embedding shape: {w.shape}")
+        return w
 
+    # ============================================================
+    # Nếu có file embedding, load như cũ
+    # ============================================================
     print(f"[INFO] Loading embedding từ: {embed_path}")
-    m = np.load(embed_path)
+    m = np.load(embed_path, allow_pickle=True)
 
     # Lấy embedding từ file .npz
     if "w" in m and "w_tilde" in m:
@@ -88,7 +100,13 @@ def load_embedding(options):
         w = m["W_emb"]
     else:
         print(f"[WARN] Keys có trong {embed_path}: {list(m.keys())}")
-        raise KeyError(f"Không tìm thấy 'w' hoặc 'W_emb' trong {embed_path}")
+        print("[WARN] Không tìm thấy 'w' hoặc 'W_emb' → khởi tạo ngẫu nhiên.")
+        emb_dim = 128
+        expected_dim = int(input_dim) + int(n_anc)
+        np.random.seed(42)
+        w = np.random.normal(0, 0.01, size=(expected_dim, emb_dim)).astype("float32")
+        print(f"[INFO] Random embedding shape: {w.shape}")
+        return w
 
     # 🔧 PAD/CẮT THEO TỔNG TỪ VỰNG: inputDimSize + numAncestors
     expected_dim = None
