@@ -57,26 +57,46 @@ def predict_next_visit(seq):
 # =========================================================
 # ⚙️ CHẠY DỰ ĐOÁN VÀ ĐÁNH GIÁ
 # =========================================================
+
 print("🚀 Predicting next diagnosis codes ...")
 
 y_true, y_pred = [], []
 
 for i, (seq, label) in enumerate(zip(seqs, labels)):
-    if len(seq) < 1:  # bỏ bệnh nhân không có lượt khám
+    if len(seq) < 1:
         continue
-    pred = predict_next_visit(seq)
-    y_true.append(label[0])  # chỉ lấy nhãn đầu tiên làm ground truth
-    y_pred.append(pred)
+    pred_idx = predict_next_visit(seq)
+    
+    # 🧠 label có thể chứa nhiều mã bệnh
+    if isinstance(label[0], list):
+        true_vec = np.zeros(embedding.shape[0])
+        for l in label[0]:
+            if l < embedding.shape[0]:
+                true_vec[l] = 1
+    else:
+        true_vec = np.zeros(embedding.shape[0])
+        if label[0] < embedding.shape[0]:
+            true_vec[label[0]] = 1
 
-acc = accuracy_score(y_true, y_pred)
-prec = precision_score(y_true, y_pred, average="macro", zero_division=0)
-rec = recall_score(y_true, y_pred, average="macro", zero_division=0)
-f1 = f1_score(y_true, y_pred, average="macro", zero_division=0)
+    pred_vec = np.zeros(embedding.shape[0])
+    pred_vec[pred_idx] = 1
+
+    y_true.append(true_vec)
+    y_pred.append(pred_vec)
+
+y_true = np.array(y_true)
+y_pred = np.array(y_pred)
+
+# ⚙️ Multi-label metrics
+acc = (y_true == y_pred).mean()
+prec = precision_score(y_true, y_pred, average="micro", zero_division=0)
+rec = recall_score(y_true, y_pred, average="micro", zero_division=0)
+f1 = f1_score(y_true, y_pred, average="micro", zero_division=0)
 
 # =========================================================
 # 📈 IN KẾT QUẢ
 # =========================================================
-print("\n🎯 Evaluation Results:")
+print("\n🎯 Evaluation Results (multi-label setting):")
 print(f"Accuracy:  {acc:.4f}")
 print(f"Precision: {prec:.4f}")
 print(f"Recall:    {rec:.4f}")
