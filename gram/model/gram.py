@@ -130,34 +130,43 @@ def load_embedding(options):
 def init_params(options):
     params = {}
 
-    # 🔧 Lấy embedding
-    if isinstance(options, dict):
-        emb_file = options.get("embFile") or options.get("embed_file")
-    else:
-        emb_file = getattr(options, "embed_file", None)
+    # ----------------------------
+    # 🔍 Lấy giá trị từ dict hoặc Namespace một cách an toàn
+    # ----------------------------
+    def get_opt(name, default=None):
+        if isinstance(options, dict):
+            return options.get(name, default)
+        return getattr(options, name, default)
 
-    # ✅ Chỉ load nếu thật sự có embed_file
-    if emb_file and isinstance(emb_file, str) and len(emb_file) > 0 and os.path.exists(emb_file):
+    emb_file = get_opt("embFile") or get_opt("embed_file")
+    input_dim = get_opt("inputDimSize", 1000)
+    n_anc = get_opt("numAncestors", 0)
+    rnn_size = get_opt("rnn_size", 128)
+    att_size = get_opt("attention_size", 128)
+
+    # ----------------------------
+    # 🧩 Khởi tạo hoặc load embedding
+    # ----------------------------
+    if emb_file and os.path.exists(str(emb_file)):
         params["W_emb"] = load_embedding(options)
     else:
         print("[INFO] Không có embed_file → khởi tạo W_emb ngẫu nhiên.")
-        input_dim = options.get("inputDimSize", 1000) if isinstance(options, dict) else getattr(options, "inputDimSize", 1000)
-        n_anc = options.get("numAncestors", 0) if isinstance(options, dict) else getattr(options, "numAncestors", 0)
         emb_dim = 128
         expected_dim = int(input_dim) + int(n_anc)
         np.random.seed(42)
         params["W_emb"] = np.random.normal(0, 0.01, size=(expected_dim, emb_dim)).astype("float32")
 
-    # 🔧 Các tham số khác (không đổi)
-    params["W_attention"] = 0.01 * np.random.randn(options["rnn_size"], options["attention_size"]).astype("float32")
-    params["b_attention"] = np.zeros((options["attention_size"],), dtype="float32")
-    params["v_attention"] = 0.01 * np.random.randn(options["attention_size"],).astype("float32")
+    # ----------------------------
+    # 🧠 Các trọng số attention / output
+    # ----------------------------
+    params["W_attention"] = 0.01 * np.random.randn(rnn_size, att_size).astype("float32")
+    params["b_attention"] = np.zeros((att_size,), dtype="float32")
+    params["v_attention"] = 0.01 * np.random.randn(att_size,).astype("float32")
 
-    params["W_output"] = 0.01 * np.random.randn(options["rnn_size"], options["inputDimSize"]).astype("float32")
-    params["b_output"] = np.zeros((options["inputDimSize"],), dtype="float32")
+    params["W_output"] = 0.01 * np.random.randn(rnn_size, input_dim).astype("float32")
+    params["b_output"] = np.zeros((input_dim,), dtype="float32")
 
     return params
-
 
 def init_tparams(params):
     tparams = OrderedDict()
