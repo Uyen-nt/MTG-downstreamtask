@@ -7,18 +7,19 @@ from pathlib import Path
 # =========================
 PROJECT_ROOT = Path("/kaggle/working/MTG-downstreamtask")
 GRAM_DIR = PROJECT_ROOT / "gram"
-DATA_DIR = GRAM_DIR / "data"
 RESULTS_DIR = GRAM_DIR / "results"
 REAL_RESULT_DIR = RESULTS_DIR / "train_real"
 os.makedirs(REAL_RESULT_DIR, exist_ok=True)
 
 # =========================
-# 📂 FILE DỮ LIỆU REAL MIMIC3
+# 📂 DỮ LIỆU REMAPPED (CHUẨN CHO TRAIN)
 # =========================
-REAL_SEQS = Path("/kaggle/input/downstream-data/mtg_downstream_data/real_mimic3.seqs")
-REAL_LABELS = Path("/kaggle/input/downstream-data/mtg_downstream_data/real_mimic3.labels")
-TREE_PREFIX = Path("/kaggle/input/downstream-data/mtg_downstream_data/tree_mimic3/tree_mimic3")
+DATA_ROOT = Path("/kaggle/input/downstream-data/mtg_downstream_data")
 
+REAL_SEQS = DATA_ROOT / "tree_mimic3.seqs"              # ✅ remapped seqs
+REAL_LABELS = DATA_ROOT / "tree_mimic3.labels"          # ✅ remapped labels
+TREE_PREFIX = DATA_ROOT / "tree_mimic3/tree_mimic3"     # ✅ ICD tree prefix
+EMBED_INIT = DATA_ROOT / "pretrain_model.npz"           # ✅ pretrained model để khởi tạo embedding
 
 # =========================
 # ⚙️ LỆNH CHẠY GRAM TRAIN
@@ -31,6 +32,7 @@ cmd = [
     str(REAL_LABELS),
     str(TREE_PREFIX),
     str(REAL_RESULT_DIR),
+    "--embed_file", str(EMBED_INIT),   # ✅ khởi tạo từ pretrain_model
     "--n_epochs", "2",
     "--batch_size", "64",
     "--rnn_size", "64",
@@ -40,7 +42,7 @@ cmd = [
     "--verbose"
 ]
 
-print("\n🚀 Training GRAM on real MIMIC-III data...")
+print("\n🚀 Training GRAM on remapped real MIMIC-III data...")
 print("Command:", " ".join(cmd))
 print("─────────────────────────────────────────────────────────────")
 
@@ -58,7 +60,7 @@ with subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, tex
     ret = p.wait()
 
 if ret == 0:
-    print("\n✅ HOÀN TẤT TRAINING REAL MIMIC-III!")
+    print("\n✅ HOÀN TẤT TRAINING REAL MIMIC-III (remapped)!")
     print(f"→ Model saved in: {REAL_RESULT_DIR}")
 else:
     print("\n❌ LỖI TRONG QUÁ TRÌNH TRAIN!")
