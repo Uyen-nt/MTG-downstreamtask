@@ -128,47 +128,36 @@ def load_embedding(options):
 
 
 def init_params(options):
-    params = OrderedDict()
+    params = {}
 
-    np.random.seed(0)
-    inputDimSize = options['inputDimSize']
-    numAncestors = options['numAncestors']
-    embDimSize = options['embDimSize']
-    hiddenDimSize = options['hiddenDimSize'] #hidden layer does not need an extra space
-    attentionDimSize = options['attentionDimSize']
-    numClass = options['numClass']
-
-    # ✅ Hỗ trợ cả Namespace và dict
-    if hasattr(options, "__dict__"):
-        opt_dict = {**vars(options)}
+    # 🔧 Lấy embedding
+    if isinstance(options, dict):
+        emb_file = options.get("embFile") or options.get("embed_file")
     else:
-        opt_dict = dict(options)
-    
-    # ✅ Thêm inputDimSize để load_embedding() biết vocab size
-    if hasattr(options, "inputDimSize"):
-        opt_dict["inputDimSize"] = options.inputDimSize
-    elif "inputDimSize" not in opt_dict:
-        print("[WARN] Không tìm thấy inputDimSize trong options — có thể embedding sẽ không được pad/cắt tự động.")
-    
-    params["W_emb"] = load_embedding(opt_dict)
+        emb_file = getattr(options, "embed_file", None)
 
-    if len(options['embFile']) > 0:
-        params['W_emb'] = load_embedding(options)
-        options['embDimSize'] = params['W_emb'].shape[1]
-        embDimSize = options['embDimSize']
+    # ✅ Chỉ load nếu thật sự có embed_file
+    if emb_file and isinstance(emb_file, str) and len(emb_file) > 0 and os.path.exists(emb_file):
+        params["W_emb"] = load_embedding(options)
+    else:
+        print("[INFO] Không có embed_file → khởi tạo W_emb ngẫu nhiên.")
+        input_dim = options.get("inputDimSize", 1000) if isinstance(options, dict) else getattr(options, "inputDimSize", 1000)
+        n_anc = options.get("numAncestors", 0) if isinstance(options, dict) else getattr(options, "numAncestors", 0)
+        emb_dim = 128
+        expected_dim = int(input_dim) + int(n_anc)
+        np.random.seed(42)
+        params["W_emb"] = np.random.normal(0, 0.01, size=(expected_dim, emb_dim)).astype("float32")
 
-    params['W_attention'] = get_random_weight(embDimSize*2, attentionDimSize)
-    params['b_attention'] = np.zeros(attentionDimSize).astype(config.floatX)
-    params['v_attention'] = np.random.uniform(-0.1, 0.1, attentionDimSize).astype(config.floatX)
+    # 🔧 Các tham số khác (không đổi)
+    params["W_attention"] = 0.01 * np.random.randn(options["rnn_size"], options["attention_size"]).astype("float32")
+    params["b_attention"] = np.zeros((options["attention_size"],), dtype="float32")
+    params["v_attention"] = 0.01 * np.random.randn(options["attention_size"],).astype("float32")
 
-    params['W_gru'] = get_random_weight(embDimSize, 3*hiddenDimSize)
-    params['U_gru'] = get_random_weight(hiddenDimSize, 3*hiddenDimSize)
-    params['b_gru'] = np.zeros(3 * hiddenDimSize).astype(config.floatX)
-
-    params['W_output'] = get_random_weight(hiddenDimSize, numClass)
-    params['b_output'] = np.zeros(numClass).astype(config.floatX)
+    params["W_output"] = 0.01 * np.random.randn(options["rnn_size"], options["inputDimSize"]).astype("float32")
+    params["b_output"] = np.zeros((options["inputDimSize"],), dtype="float32")
 
     return params
+
 
 def init_tparams(params):
     tparams = OrderedDict()
