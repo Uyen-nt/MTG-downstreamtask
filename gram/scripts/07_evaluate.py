@@ -1,13 +1,12 @@
-# scripts/07_evaluate.py
+# =========================================================
+# 📂 CẤU HÌNH ĐƯỜNG DẪN
+# =========================================================
 import os
 import pickle
 import numpy as np
 from pathlib import Path
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from sklearn.metrics import precision_score, recall_score, f1_score
 
-# =========================================================
-# 📂 CẤU HÌNH ĐƯỜNG DẪN
-# =========================================================
 DATA_DIR = Path("/kaggle/input/downstream-data/mtg_downstream_data")
 HYBRID_DIR = Path("/kaggle/working/hybrid_results")
 MODEL_PATH = DATA_DIR / "pretrain_model.npz"
@@ -39,25 +38,47 @@ else:
 print(f"Embedding shape: {embedding.shape}")
 
 # =========================================================
-# 🧠 HÀM DỰ ĐOÁN ĐƠN GIẢN
+# 🧠 HÀM DỰ ĐOÁN
 # =========================================================
 def predict_next_visit(seq):
     if len(seq) == 0:
         return np.zeros(embedding.shape[0])
     last_visit = [idx for idx in seq[-1] if idx < embedding.shape[0]]
     if len(last_visit) == 0:
-        # nếu tất cả mã vượt vocab, dùng random hoặc trung bình embedding
         visit_vec = embedding.mean(axis=0)
     else:
         visit_vec = embedding[last_visit].mean(axis=0)
     sim = embedding @ visit_vec
     return np.argmax(sim)
 
+def predict_topk(seq, k=5):
+    if len(seq) == 0:
+        return []
+    last_visit = [idx for idx in seq[-1] if idx < embedding.shape[0]]
+    if len(last_visit) == 0:
+        visit_vec = embedding.mean(axis=0)
+    else:
+        visit_vec = embedding[last_visit].mean(axis=0)
+    sim = embedding @ visit_vec
+    return np.argsort(sim)[-k:]
+
+# =========================================================
+# ⚙️ TÍNH TOP-5 ACCURACY
+# =========================================================
+topk_hits = 0
+for seq, label in zip(seqs, labels):
+    if len(seq) < 1:
+        continue
+    topk_pred = predict_topk(seq, k=5)
+    true_labels = [l for l in label[0] if l < embedding.shape[0]]
+    if any(l in topk_pred for l in true_labels):
+        topk_hits += 1
+topk_acc = topk_hits / len(seqs)
+print(f"Top-5 Accuracy: {topk_acc:.4f}")
 
 # =========================================================
 # ⚙️ CHẠY DỰ ĐOÁN VÀ ĐÁNH GIÁ
 # =========================================================
-
 print("🚀 Predicting next diagnosis codes ...")
 
 y_true, y_pred = [], []
@@ -66,18 +87,14 @@ for i, (seq, label) in enumerate(zip(seqs, labels)):
     if len(seq) < 1:
         continue
     pred_idx = predict_next_visit(seq)
-    
-    # 🧠 label có thể chứa nhiều mã bệnh
-    if isinstance(label[0], list):
-        true_vec = np.zeros(embedding.shape[0])
-        for l in label[0]:
-            if l < embedding.shape[0]:
-                true_vec[l] = 1
-    else:
-        true_vec = np.zeros(embedding.shape[0])
-        if label[0] < embedding.shape[0]:
-            true_vec[label[0]] = 1
 
+    # 🧠 Tạo vector true label
+    true_vec = np.zeros(embedding.shape[0])
+    for l in label[0]:
+        if l < embedding.shape[0]:
+            true_vec[l] = 1
+
+    # 🧠 Tạo vector dự đoán (1 nhãn duy nhất)
     pred_vec = np.zeros(embedding.shape[0])
     pred_vec[pred_idx] = 1
 
@@ -88,7 +105,6 @@ y_true = np.array(y_true)
 y_pred = np.array(y_pred)
 
 # ⚙️ Multi-label metrics
-acc = (y_true == y_pred).mean()
 prec = precision_score(y_true, y_pred, average="micro", zero_division=0)
 rec = recall_score(y_true, y_pred, average="micro", zero_division=0)
 f1 = f1_score(y_true, y_pred, average="micro", zero_division=0)
@@ -97,10 +113,20 @@ f1 = f1_score(y_true, y_pred, average="micro", zero_division=0)
 # 📈 IN KẾT QUẢ
 # =========================================================
 print("\n🎯 Evaluation Results (multi-label setting):")
-print(f"Accuracy:  {acc:.4f}")
 print(f"Precision: {prec:.4f}")
 print(f"Recall:    {rec:.4f}")
 print(f"F1-score:  {f1:.4f}")
 
-print("\n✅ Đánh giá hoàn tất! Model GRAM (fine-tuned) đã được kiểm tra trên dữ liệu hybrid.")
+# =========================================================
+# 🔍 IN RA DỰ ĐOÁN MÃ BỆNH CHO VÀI BỆNH NHÂN MẪU
+# =========================================================
+print("\n📋 Ví dụ dự đoán bệnh tiếp theo:")
 
+for i, seq in enumerate(seqs[:5]):  # in 5 bệnh nhân đầu tiên
+    topk_pred = predict_topk(seq, k=5)
+    last_visit = seq[-1] if len(seq) > 0 else []
+    print(f"\n🩺 Bệnh nhân {i+1}:")
+    print(f"  🔹 Mã bệnh lần khám gần nhất: {last_visit[:10]}{'...' if len(last_visit) > 10 else ''}")
+    print(f"  🔮 Dự đoán top-5 mã bệnh lần khám tiếp theo: {list(topk_pred)}")
+
+print("\n✅ Đánh giá hoàn tất! Model GRAM (fine-tuned) đã được kiểm tra trên dữ liệu hybrid.")
