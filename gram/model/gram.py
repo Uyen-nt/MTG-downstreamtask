@@ -128,6 +128,8 @@ def load_embedding(options):
 
 
 def init_params(options):
+    import numpy as np, os, pickle
+
     params = {}
 
     # ----------------------------
@@ -156,6 +158,14 @@ def init_params(options):
         np.random.seed(42)
         params["W_emb"] = np.random.normal(0, 0.01, size=(expected_dim, emb_dim)).astype("float32")
 
+        # ✅ Lưu embedding ngẫu nhiên để có thể dùng cho downstream task
+        try:
+            save_path = os.path.join(os.getcwd(), "random_pretrain_model.npz")
+            np.savez(save_path, W_emb=params["W_emb"])
+            print(f"[💾] Đã lưu embedding ngẫu nhiên → {save_path}")
+        except Exception as e:
+            print(f"[WARN] Không thể lưu random embedding: {e}")
+
     # ----------------------------
     # 🧠 Các trọng số attention / output
     # ----------------------------
@@ -166,7 +176,17 @@ def init_params(options):
     params["W_output"] = 0.01 * np.random.randn(rnn_size, input_dim).astype("float32")
     params["b_output"] = np.zeros((input_dim,), dtype="float32")
 
+    # ----------------------------
+    # 🔁 Thêm tham số GRU (nếu chưa có)
+    # ----------------------------
+    if "W_gru" not in params:
+        print("[INFO] Khởi tạo tham số GRU ngẫu nhiên ...")
+        params["W_gru"] = 0.01 * np.random.randn(input_dim, 3 * rnn_size).astype("float32")
+        params["U_gru"] = 0.01 * np.random.randn(rnn_size, 3 * rnn_size).astype("float32")
+        params["b_gru"] = np.zeros((3 * rnn_size,), dtype="float32")
+
     return params
+
 
 def init_tparams(params):
     tparams = OrderedDict()
