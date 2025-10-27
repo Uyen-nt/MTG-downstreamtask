@@ -32,7 +32,6 @@ cmd = [
     str(REAL_LABELS),
     str(TREE_PREFIX),
     str(REAL_RESULT_DIR),
-    "--embed_file", str(EMBED_INIT),   # ✅ khởi tạo từ pretrain_model
     "--n_epochs", "2",
     "--batch_size", "64",
     "--rnn_size", "64",
