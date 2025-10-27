@@ -11,6 +11,7 @@ DATA_DIR = Path("/kaggle/input/downstream-data/mtg_downstream_data")
 HYBRID_DIR = Path("/kaggle/working/hybrid_results")
 MODEL_PATH = DATA_DIR / "pretrain_model.npz"
 TREE_PATH = DATA_DIR / "tree_synth.types"
+CODE_MAP_PATH = DATA_DIR / "code_map.pkl"
 
 # =========================================================
 # 🧩 LOAD DỮ LIỆU
@@ -21,13 +22,32 @@ labels = pickle.load(open(HYBRID_DIR / "merged.labels", "rb"))
 print(f"📊 Tổng số bệnh nhân: {len(seqs)}")
 
 # =========================================================
+# 📖 LOAD CODE MAP (ID ↔ ICD9)
+# =========================================================
+if CODE_MAP_PATH.exists():
+    code_map = pickle.load(open(CODE_MAP_PATH, "rb"))
+    if isinstance(code_map, dict):
+        id2code = {v: k for k, v in code_map.items()}
+        print(f"✅ Loaded ICD9 mapping từ code_map.pkl ({len(id2code)} mã)")
+    else:
+        raise ValueError("❌ code_map.pkl không đúng định dạng.")
+else:
+    id2code = None
+    print("⚠️ Không tìm thấy file code_map.pkl → chỉ hiển thị chỉ số index.")
+
+def decode_codes(indices):
+    """Chuyển danh sách index → mã ICD9 nếu có mapping"""
+    if id2code is None:
+        return [int(i) for i in indices]
+    return [id2code.get(int(i), f"UNK_{i}") for i in indices]
+
+# =========================================================
 # 🧱 LOAD MÔ HÌNH GRAM (embedding + weights)
 # =========================================================
 print("🔹 Loading fine-tuned model weights...")
 model_data = np.load(MODEL_PATH, allow_pickle=True)
 print(f"✅ Keys trong model: {list(model_data.keys())}")
 
-# Dùng embedding W_emb để đánh giá nhanh
 if "W_emb" in model_data:
     embedding = model_data["W_emb"]
 elif "w" in model_data and "w_tilde" in model_data:
@@ -88,13 +108,11 @@ for i, (seq, label) in enumerate(zip(seqs, labels)):
         continue
     pred_idx = predict_next_visit(seq)
 
-    # 🧠 Tạo vector true label
     true_vec = np.zeros(embedding.shape[0])
     for l in label[0]:
         if l < embedding.shape[0]:
             true_vec[l] = 1
 
-    # 🧠 Tạo vector dự đoán (1 nhãn duy nhất)
     pred_vec = np.zeros(embedding.shape[0])
     pred_vec[pred_idx] = 1
 
@@ -104,7 +122,6 @@ for i, (seq, label) in enumerate(zip(seqs, labels)):
 y_true = np.array(y_true)
 y_pred = np.array(y_pred)
 
-# ⚙️ Multi-label metrics
 prec = precision_score(y_true, y_pred, average="micro", zero_division=0)
 rec = recall_score(y_true, y_pred, average="micro", zero_division=0)
 f1 = f1_score(y_true, y_pred, average="micro", zero_division=0)
@@ -118,15 +135,15 @@ print(f"Recall:    {rec:.4f}")
 print(f"F1-score:  {f1:.4f}")
 
 # =========================================================
-# 🔍 IN RA DỰ ĐOÁN MÃ BỆNH CHO VÀI BỆNH NHÂN MẪU
+# 🔍 HIỂN THỊ VÍ DỤ DỰ ĐOÁN MÃ BỆNH
 # =========================================================
 print("\n📋 Ví dụ dự đoán bệnh tiếp theo:")
 
-for i, seq in enumerate(seqs[:5]):  # in 5 bệnh nhân đầu tiên
+for i, seq in enumerate(seqs[:5]):  # In 5 bệnh nhân đầu tiên
     topk_pred = predict_topk(seq, k=5)
     last_visit = seq[-1] if len(seq) > 0 else []
     print(f"\n🩺 Bệnh nhân {i+1}:")
-    print(f"  🔹 Mã bệnh lần khám gần nhất: {last_visit[:10]}{'...' if len(last_visit) > 10 else ''}")
-    print(f"  🔮 Dự đoán top-5 mã bệnh lần khám tiếp theo: {list(topk_pred)}")
+    print(f"  🔹 Mã bệnh lần khám gần nhất: {decode_codes(last_visit[:10])}{'...' if len(last_visit) > 10 else ''}")
+    print(f"  🔮 Dự đoán top-5 mã bệnh lần khám tiếp theo: {decode_codes(topk_pred)}")
 
 print("\n✅ Đánh giá hoàn tất! Model GRAM (fine-tuned) đã được kiểm tra trên dữ liệu hybrid.")
