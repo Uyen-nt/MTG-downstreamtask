@@ -42,17 +42,17 @@ print(f"Embedding shape: {embedding.shape}")
 # 🧠 HÀM DỰ ĐOÁN ĐƠN GIẢN
 # =========================================================
 def predict_next_visit(seq):
-    """
-    Hàm dự đoán lượt khám kế tiếp (simple baseline)
-    - Lấy trung bình embedding của các mã bệnh trong lượt gần nhất
-    - Tính cosine similarity với toàn bộ embedding để chọn top-1
-    """
     if len(seq) == 0:
         return np.zeros(embedding.shape[0])
-    last_visit = seq[-1]
-    visit_vec = embedding[last_visit].mean(axis=0)
+    last_visit = [idx for idx in seq[-1] if idx < embedding.shape[0]]
+    if len(last_visit) == 0:
+        # nếu tất cả mã vượt vocab, dùng random hoặc trung bình embedding
+        visit_vec = embedding.mean(axis=0)
+    else:
+        visit_vec = embedding[last_visit].mean(axis=0)
     sim = embedding @ visit_vec
     return np.argmax(sim)
+
 
 # =========================================================
 # ⚙️ CHẠY DỰ ĐOÁN VÀ ĐÁNH GIÁ
