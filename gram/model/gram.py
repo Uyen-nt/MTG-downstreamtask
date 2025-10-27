@@ -251,18 +251,22 @@ def build_model(tparams, leavesList, ancestorsList, options):
     #emb = T.concatenate(embList, axis=0)
     #emb = sum(embList) / len(embList)
 
-    # 🧩 align embedding giữa các tầng tổ tiên (fix lỗi shape mismatch)
-    max_len = max(e.shape[0] for e in embList)
-    aligned_embs = []
+    # 🧩 Fix: align embeddings trong graph Aesara (symbolic-safe)
+    # Không dùng max() của Python, dùng cách tính symbolic-safe
+    emb_shapes = [e.shape[0] for e in embList]
+    max_len = emb_shapes[0]
+    for s in emb_shapes[1:]:
+        max_len = T.maximum(max_len, s)
     
+    aligned_embs = []
     for e in embList:
-        if e.shape[0] < max_len:
-            pad_len = max_len - e.shape[0]
-            pad = T.zeros((pad_len, e.shape[1]), dtype=e.dtype)
-            e = T.concatenate([e, pad], axis=0)
-        aligned_embs.append(e)
+        pad_len = max_len - e.shape[0]
+        pad = T.zeros((pad_len, e.shape[1]), dtype=e.dtype)
+        e_padded = T.concatenate([e, pad], axis=0)
+        aligned_embs.append(e_padded)
     
     emb = sum(aligned_embs) / len(aligned_embs)
+
 
 
     
