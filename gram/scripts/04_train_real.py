@@ -17,7 +17,8 @@ os.makedirs(REAL_RESULT_DIR, exist_ok=True)
 # =========================
 REAL_SEQS = Path("/kaggle/input/downstream-data/mtg_downstream_data/real_mimic3.seqs")
 REAL_LABELS = Path("/kaggle/input/downstream-data/mtg_downstream_data/real_mimic3.labels")
-TREE_PREFIX = Path("/kaggle/input/downstream-data/mtg_downstream_data/tree_mimic3")
+TREE_PREFIX = Path("/kaggle/input/downstream-data/mtg_downstream_data/tree_mimic3/tree_mimic3")
+
 
 # =========================
 # ⚙️ LỆNH CHẠY GRAM TRAIN
@@ -30,7 +31,7 @@ cmd = [
     str(REAL_LABELS),
     str(TREE_PREFIX),
     str(REAL_RESULT_DIR),
-    "--n_epochs", "20",
+    "--n_epochs", "2",
     "--batch_size", "64",
     "--rnn_size", "64",
     "--attention_size", "64",
