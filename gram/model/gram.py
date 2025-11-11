@@ -75,23 +75,11 @@ def load_embedding(options):
         input_dim = getattr(options, "inputDimSize", None)
         n_anc = getattr(options, "numAncestors", 0)
 
-    # ✅ Nếu không có embed_file → khởi tạo ngẫu nhiên
-    if not embed_path or not os.path.exists(str(embed_path)):
-        print("[WARN] Không có embed_file → khởi tạo embedding ngẫu nhiên.")
-        if input_dim is None:
-            input_dim = 1000
-        emb_dim = 128
-        expected_dim = int(input_dim) + int(n_anc)
-        np.random.seed(42)
-        w = np.random.normal(0, 0.01, size=(expected_dim, emb_dim)).astype("float32")
-        print(f"[INFO] Random embedding shape: {w.shape}")
-        return w
+    if not embed_path:
+        raise KeyError("Không tìm thấy tham số embed_file hoặc embFile trong options!")
 
-    # ============================================================
-    # Nếu có file embedding, load như cũ
-    # ============================================================
     print(f"[INFO] Loading embedding từ: {embed_path}")
-    m = np.load(embed_path, allow_pickle=True)
+    m = np.load(embed_path)
 
     # Lấy embedding từ file .npz
     if "w" in m and "w_tilde" in m:
@@ -100,13 +88,7 @@ def load_embedding(options):
         w = m["W_emb"]
     else:
         print(f"[WARN] Keys có trong {embed_path}: {list(m.keys())}")
-        print("[WARN] Không tìm thấy 'w' hoặc 'W_emb' → khởi tạo ngẫu nhiên.")
-        emb_dim = 128
-        expected_dim = int(input_dim) + int(n_anc)
-        np.random.seed(42)
-        w = np.random.normal(0, 0.01, size=(expected_dim, emb_dim)).astype("float32")
-        print(f"[INFO] Random embedding shape: {w.shape}")
-        return w
+        raise KeyError(f"Không tìm thấy 'w' hoặc 'W_emb' trong {embed_path}")
 
     # 🔧 PAD/CẮT THEO TỔNG TỪ VỰNG: inputDimSize + numAncestors
     expected_dim = None
@@ -128,54 +110,47 @@ def load_embedding(options):
 
 
 def init_params(options):
-    import numpy as np, os
+    params = OrderedDict()
 
-    params = {}
+    np.random.seed(0)
+    inputDimSize = options['inputDimSize']
+    numAncestors = options['numAncestors']
+    embDimSize = options['embDimSize']
+    hiddenDimSize = options['hiddenDimSize'] #hidden layer does not need an extra space
+    attentionDimSize = options['attentionDimSize']
+    numClass = options['numClass']
 
-    def get_opt(name, default=None):
-        if isinstance(options, dict):
-            return options.get(name, default)
-        return getattr(options, name, default)
-
-    emb_file = get_opt("embFile") or get_opt("embed_file")
-    input_dim = int(get_opt("inputDimSize", 1000))
-    n_anc    = int(get_opt("numAncestors", 0))
-    rnn_size = int(get_opt("rnn_size", 128))
-    att_size = int(get_opt("attention_size", 128))
-    emb_size_opt = int(get_opt("embed_size", 128))
-
-    # --- W_emb ---
-    if emb_file and os.path.exists(str(emb_file)):
-        params["W_emb"] = load_embedding(options)
+    # ✅ Hỗ trợ cả Namespace và dict
+    if hasattr(options, "__dict__"):
+        opt_dict = {**vars(options)}
     else:
-        print("[INFO] Không có embed_file → khởi tạo W_emb ngẫu nhiên.")
-        expected_dim = input_dim + n_anc
-        np.random.seed(42)
-        params["W_emb"] = np.random.normal(0, 0.01,
-                                           size=(expected_dim, emb_size_opt)
-                                          ).astype("float32")
+        opt_dict = dict(options)
+    
+    # ✅ Thêm inputDimSize để load_embedding() biết vocab size
+    if hasattr(options, "inputDimSize"):
+        opt_dict["inputDimSize"] = options.inputDimSize
+    elif "inputDimSize" not in opt_dict:
+        print("[WARN] Không tìm thấy inputDimSize trong options — có thể embedding sẽ không được pad/cắt tự động.")
+    
+    params["W_emb"] = load_embedding(opt_dict)
 
-    emb_dim = int(params["W_emb"].shape[1])  # chiều embedding thực tế
+    if len(options['embFile']) > 0:
+        params['W_emb'] = load_embedding(options)
+        options['embDimSize'] = params['W_emb'].shape[1]
+        embDimSize = options['embDimSize']
 
-    # --- GRU params ---
-    # x_emb có shape (*, emb_dim), nên W_gru phải là (emb_dim, 3*rnn_size)
-    params["W_gru"] = 0.01 * np.random.randn(emb_dim, 3 * rnn_size).astype("float32")
-    params["U_gru"] = 0.01 * np.random.randn(rnn_size, 3 * rnn_size).astype("float32")
-    params["b_gru"] = np.zeros((3 * rnn_size,), dtype="float32")
+    params['W_attention'] = get_random_weight(embDimSize*2, attentionDimSize)
+    params['b_attention'] = np.zeros(attentionDimSize).astype(config.floatX)
+    params['v_attention'] = np.random.uniform(-0.1, 0.1, attentionDimSize).astype(config.floatX)
 
-    # --- Attention params ---
-    # attentionInput = concat([leaf_emb, ancestor_emb], axis=-1) → 2*emb_dim
-    params["W_attention"] = 0.01 * np.random.randn(2 * emb_dim, att_size).astype("float32")
-    params["b_attention"] = np.zeros((att_size,), dtype="float32")
-    params["v_attention"] = 0.01 * np.random.randn(att_size,).astype("float32")
+    params['W_gru'] = get_random_weight(embDimSize, 3*hiddenDimSize)
+    params['U_gru'] = get_random_weight(hiddenDimSize, 3*hiddenDimSize)
+    params['b_gru'] = np.zeros(3 * hiddenDimSize).astype(config.floatX)
 
-    # --- Output params ---
-    params["W_output"] = 0.01 * np.random.randn(rnn_size, input_dim).astype("float32")
-    params["b_output"] = np.zeros((input_dim,), dtype="float32")
+    params['W_output'] = get_random_weight(hiddenDimSize, numClass)
+    params['b_output'] = np.zeros(numClass).astype(config.floatX)
 
     return params
-
-
 
 def init_tparams(params):
     tparams = OrderedDict()
@@ -229,63 +204,6 @@ def softmax_layer(tparams, emb):
     output = nom / denom
     return output
     
-# def build_model(tparams, leavesList, ancestorsList, options):
-#     dropoutRate = options['dropoutRate']
-#     trng = RandomStream(123)
-#     use_noise = aesara.shared(numpy_floatX(0.))
-
-#     x = T.tensor3('x', dtype=config.floatX)
-#     y = T.tensor3('y', dtype=config.floatX)
-#     mask = T.matrix('mask', dtype=config.floatX)
-#     lengths = T.vector('lengths', dtype=config.floatX)
-
-#     n_timesteps = x.shape[0]
-#     n_samples = x.shape[1]
-
-#     embList = []
-#     for leaves, ancestors in zip(leavesList, ancestorsList):
-#         tempAttention = generate_attention(tparams, leaves, ancestors)
-#         tempEmb = (tparams['W_emb'][ancestors] * tempAttention[:,:,None]).sum(axis=1)
-#         embList.append(tempEmb)
-
-#     #emb = T.concatenate(embList, axis=0)
-#     #emb = sum(embList) / len(embList)
-
-#     # 🧩 Fix: align embeddings trong graph Aesara (symbolic-safe)
-#     # Không dùng max() của Python, dùng cách tính symbolic-safe
-#     emb_shapes = [e.shape[0] for e in embList]
-#     max_len = emb_shapes[0]
-#     for s in emb_shapes[1:]:
-#         max_len = T.maximum(max_len, s)
-    
-#     aligned_embs = []
-#     for e in embList:
-#         pad_len = max_len - e.shape[0]
-#         pad = T.zeros((pad_len, e.shape[1]), dtype=e.dtype)
-#         e_padded = T.concatenate([e, pad], axis=0)
-#         aligned_embs.append(e_padded)
-    
-#     emb = sum(aligned_embs) / len(aligned_embs)
-
-
-
-    
-#     x_emb = T.tanh(T.dot(x, tparams['W_emb']))
-
-#     hidden = gru_layer(tparams, x_emb, options)
-#     hidden = dropout_layer(hidden, use_noise, trng, dropoutRate)
-#     y_hat = softmax_layer(tparams, hidden) * mask[:,:,None]
-
-#     logEps = 1e-8
-#     cross_entropy = -(y * T.log(y_hat + logEps) + (1. - y) * T.log(1. - y_hat + logEps))
-#     output_loglikelihood = cross_entropy.sum(axis=2).sum(axis=0) / lengths
-#     cost_noreg = T.mean(output_loglikelihood)
-
-#     if options['L2'] > 0.:
-#         cost = cost_noreg + options['L2'] * ((tparams['W_output']**2).sum() + (tparams['W_attention']**2).sum() + (tparams['v_attention']**2).sum())
-
-#     return use_noise, x, y, mask, lengths, cost, cost_noreg, y_hat
-
 def build_model(tparams, leavesList, ancestorsList, options):
     dropoutRate = options['dropoutRate']
     trng = RandomStream(123)
@@ -299,72 +217,29 @@ def build_model(tparams, leavesList, ancestorsList, options):
     n_timesteps = x.shape[0]
     n_samples = x.shape[1]
 
-    # ============================================================
-    # 🧠 1. Tạo Attention cho từng cấp độ ancestor
-    # ============================================================
     embList = []
     for leaves, ancestors in zip(leavesList, ancestorsList):
-        # Tính attention weight cho (leaf, ancestor)
         tempAttention = generate_attention(tparams, leaves, ancestors)
-        # Áp dụng trọng số attention lên embedding của ancestor
-        tempEmb = (tparams['W_emb'][ancestors] * tempAttention[:, :, None]).sum(axis=1)
+        tempEmb = (tparams['W_emb'][ancestors] * tempAttention[:,:,None]).sum(axis=1)
         embList.append(tempEmb)
 
-    # ============================================================
-    # 📦 2. Tổng hợp nhiều cấp độ (level 1→5)
-    # ============================================================
-    # Padding symbolic để mọi emb có cùng chiều (safe trong Aesara)
-    emb_shapes = [e.shape[0] for e in embList]
-    max_len = emb_shapes[0]
-    for s in emb_shapes[1:]:
-        max_len = T.maximum(max_len, s)
+    #emb = T.concatenate(embList, axis=0)
+    emb = sum(embList) / len(embList)
 
-    aligned_embs = []
-    for e in embList:
-        pad_len = max_len - e.shape[0]
-        pad = T.zeros((pad_len, e.shape[1]), dtype=e.dtype)
-        e_padded = T.concatenate([e, pad], axis=0)
-        aligned_embs.append(e_padded)
-
-    # Trung bình các level
-    attention_emb = sum(aligned_embs) / len(aligned_embs)
-
-    # ============================================================
-    # 🔗 3. Kết hợp input one-hot embedding và attention embedding
-    # ============================================================
-    # Lookup embedding cho one-hot input
-    x_emb_lookup = T.dot(x, tparams['W_emb'])
-    # Cộng với embedding từ attention (knowledge-informed)
-    x_emb = T.tanh(x_emb_lookup + attention_emb)
-
-    # ============================================================
-    # 🔁 4. GRU layer
-    # ============================================================
+    x_emb = T.tanh(T.dot(x, emb))
     hidden = gru_layer(tparams, x_emb, options)
     hidden = dropout_layer(hidden, use_noise, trng, dropoutRate)
-
-    # ============================================================
-    # 🎯 5. Output Softmax và Cost
-    # ============================================================
-    y_hat = softmax_layer(tparams, hidden) * mask[:, :, None]
+    y_hat = softmax_layer(tparams, hidden) * mask[:,:,None]
 
     logEps = 1e-8
     cross_entropy = -(y * T.log(y_hat + logEps) + (1. - y) * T.log(1. - y_hat + logEps))
     output_loglikelihood = cross_entropy.sum(axis=2).sum(axis=0) / lengths
     cost_noreg = T.mean(output_loglikelihood)
 
-    # Regularization
     if options['L2'] > 0.:
-        cost = cost_noreg + options['L2'] * (
-            (tparams['W_output']**2).sum() +
-            (tparams['W_attention']**2).sum() +
-            (tparams['v_attention']**2).sum()
-        )
-    else:
-        cost = cost_noreg
+        cost = cost_noreg + options['L2'] * ((tparams['W_output']**2).sum() + (tparams['W_attention']**2).sum() + (tparams['v_attention']**2).sum())
 
     return use_noise, x, y, mask, lengths, cost, cost_noreg, y_hat
-
 
 def load_data(seqFile, labelFile, timeFile=''):
     # ⚙️ Không ép thành np.array vì độ dài mỗi bệnh nhân khác nhau
@@ -516,11 +391,6 @@ def train_GRAM(
     verbose=False
 ):
     options = locals().copy()
-    # 🚫 Bỏ qua mọi embedding cũ (ép random init)
-    options["embFile"] = ""
-    options["embed_file"] = ""
-    print("[DEBUG] Forced random init for W_emb (no pretrain embedding loaded)")
-
 
     leavesList = []
     ancestorsList = []
@@ -545,7 +415,6 @@ def train_GRAM(
     
     print('Constructing the optimizer ... ',)
     grads = T.grad(cost, wrt=list(tparams.values()))
-    
     print('    ✓ grads ready', flush=True)
     f_grad_shared, f_update = adadelta(tparams, grads, x, y, mask, lengths, cost)
     print('    ✓ optimizer functions compiled', flush=True)
