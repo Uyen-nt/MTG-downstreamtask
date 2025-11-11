@@ -1,4 +1,4 @@
-# gram/scripts/04_train_real.py
+# gram/scripts/04_pretrain.py
 
 import os, sys, subprocess
 from pathlib import Path
