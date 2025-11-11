@@ -111,46 +111,47 @@ def load_embedding(options):
 
 def init_params(options):
     params = OrderedDict()
-
     np.random.seed(0)
-    inputDimSize = options['inputDimSize']
-    numAncestors = options['numAncestors']
-    embDimSize = options['embDimSize']
-    hiddenDimSize = options['hiddenDimSize'] #hidden layer does not need an extra space
+
+    inputDimSize     = options['inputDimSize']
+    numAncestors     = options['numAncestors']
+    embDimSize       = options['embDimSize']
+    hiddenDimSize    = options['hiddenDimSize']
     attentionDimSize = options['attentionDimSize']
-    numClass = options['numClass']
+    numClass         = options['numClass']
 
-    # ✅ Hỗ trợ cả Namespace và dict
-    if hasattr(options, "__dict__"):
-        opt_dict = {**vars(options)}
+    # Chuẩn hóa tên khóa
+    emb_path = None
+    if isinstance(options, dict):
+        emb_path = options.get('embFile') or options.get('embed_file')
     else:
-        opt_dict = dict(options)
-    
-    # ✅ Thêm inputDimSize để load_embedding() biết vocab size
-    if hasattr(options, "inputDimSize"):
-        opt_dict["inputDimSize"] = options.inputDimSize
-    elif "inputDimSize" not in opt_dict:
-        print("[WARN] Không tìm thấy inputDimSize trong options — có thể embedding sẽ không được pad/cắt tự động.")
-    
-    params["W_emb"] = load_embedding(opt_dict)
+        emb_path = getattr(options, 'embFile', None) or getattr(options, 'embed_file', None)
 
-    if len(options['embFile']) > 0:
-        params['W_emb'] = load_embedding(options)
+    vocab_size = int(inputDimSize) + int(numAncestors)
+
+    if emb_path:  # có file → load
+        w = load_embedding({'embed_file': emb_path, 'inputDimSize': inputDimSize, 'numAncestors': numAncestors})
+        # đảm bảo đúng kích thước (pad/cắt đã làm trong load_embedding)
+        params['W_emb'] = w.astype(config.floatX)
+        # cập nhật embDimSize theo file
         options['embDimSize'] = params['W_emb'].shape[1]
         embDimSize = options['embDimSize']
+    else:         # không có file → random như gốc
+        params['W_emb'] = get_random_weight(vocab_size, embDimSize)
 
     params['W_attention'] = get_random_weight(embDimSize*2, attentionDimSize)
-    params['b_attention'] = np.zeros(attentionDimSize).astype(config.floatX)
+    params['b_attention'] = np.zeros(attentionDimSize, dtype=config.floatX)
     params['v_attention'] = np.random.uniform(-0.1, 0.1, attentionDimSize).astype(config.floatX)
 
     params['W_gru'] = get_random_weight(embDimSize, 3*hiddenDimSize)
     params['U_gru'] = get_random_weight(hiddenDimSize, 3*hiddenDimSize)
-    params['b_gru'] = np.zeros(3 * hiddenDimSize).astype(config.floatX)
+    params['b_gru'] = np.zeros(3*hiddenDimSize, dtype=config.floatX)
 
     params['W_output'] = get_random_weight(hiddenDimSize, numClass)
-    params['b_output'] = np.zeros(numClass).astype(config.floatX)
+    params['b_output'] = np.zeros(numClass, dtype=config.floatX)
 
     return params
+
 
 def init_tparams(params):
     tparams = OrderedDict()
@@ -159,12 +160,12 @@ def init_tparams(params):
     return tparams
 
 def dropout_layer(state_before, use_noise, trng, prob):
-    proj = T.switch(
+    # prob = keep-prob (vd 0.5)
+    return T.switch(
         use_noise,
         state_before * trng.binomial(size=state_before.shape, n=1, p=prob, dtype=state_before.dtype),
-        state_before * 0.5
+        state_before * prob
     )
-    return proj
 
 
 def _slice(_x, n, dim):
@@ -223,8 +224,8 @@ def build_model(tparams, leavesList, ancestorsList, options):
         tempEmb = (tparams['W_emb'][ancestors] * tempAttention[:,:,None]).sum(axis=1)
         embList.append(tempEmb)
 
-    #emb = T.concatenate(embList, axis=0)
-    emb = sum(embList) / len(embList)
+    emb = T.concatenate(embList, axis=0)
+    #emb = sum(embList) / len(embList)
 
     x_emb = T.tanh(T.dot(x, emb))
     hidden = gru_layer(tparams, x_emb, options)
@@ -504,10 +505,8 @@ def calculate_dimSize(seqFile):
 
 def get_rootCode(treeFile):
     tree = pickle.load(open(treeFile, 'rb'))
-    # Lấy phần tử đầu tiên trong dict_values
     first_value = next(iter(tree.values()))
-    rootCode = first_value[1]
-    return rootCode
+    return first_value[1]
 
 
 if __name__ == '__main__':
@@ -519,10 +518,15 @@ if __name__ == '__main__':
     
     # ✅ Gán treeFile từ args
     treeFile = args.tree_file
+
+    try:
+        rootCode = get_rootCode_from_types(treeFile)  # ưu tiên .types
+    except Exception as e:
+        print(f"[WARN] .types không dùng được ({e}) → fallback level2.pk")
+        rootCode = get_rootCode(treeFile + '.level2.pk')
     
-    # ✅ Lấy số lượng ancestor từ file .types (ổn định hơn nhiều)
-    rootCode = get_rootCode_from_types(treeFile)
     numAncestors = rootCode - inputDimSize + 1
+
     print(f"[DEBUG] inputDimSize={inputDimSize}, rootCode={rootCode}, numAncestors={numAncestors}, total_vocab={inputDimSize + numAncestors}")
 
 
