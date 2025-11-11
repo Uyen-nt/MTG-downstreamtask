@@ -1,4 +1,4 @@
-# gram/scripts/03b_build_tree_synth.py
+# gram/scripts/03_build_tree_synth.py
 import pickle, os
 from pathlib import Path
 import numpy as np
