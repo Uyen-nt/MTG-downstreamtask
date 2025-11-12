@@ -2,7 +2,9 @@
 import pickle
 from pathlib import Path
 
-GRAM_DATA_DIR = Path("gram/data")
+WORK_DIR = Path.cwd()  # /kaggle/working/MTG-downstreamtask
+GRAM_DATA_DIR = WORK_DIR / "gram" / "data"
+
 SEQS = GRAM_DATA_DIR / "tree_mimic3.seqs"
 LABELS = GRAM_DATA_DIR / "tree_mimic3.labels"
 
