@@ -130,14 +130,14 @@ def init_params(options):
     vocab_size = int(inputDimSize) + int(numAncestors)
 
     if emb_path:  # có file → load
-        w = load_embedding({'embed_file': emb_path, 'inputDimSize': inputDimSize, 'numAncestors': numAncestors})
+        w = load_embedding({'embed_file': emb_path, 'inputDimSize': inputDimSize, 'numAncestors': 0})
         # đảm bảo đúng kích thước (pad/cắt đã làm trong load_embedding)
         params['W_emb'] = w.astype(config.floatX)
         # cập nhật embDimSize theo file
         options['embDimSize'] = params['W_emb'].shape[1]
         embDimSize = options['embDimSize']
     else:         # không có file → random như gốc
-        params['W_emb'] = get_random_weight(vocab_size, embDimSize)
+        params['W_emb'] = get_random_weight(inputDimSize, embDimSize)
 
     params['W_attention'] = get_random_weight(embDimSize*2, attentionDimSize)
     params['b_attention'] = np.zeros(attentionDimSize, dtype=config.floatX)
