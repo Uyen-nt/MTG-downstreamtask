@@ -1,6 +1,5 @@
-# gram/model/build_trees.py
-import sys
-import pickle 
+import sys, copy
+import cPickle as pickle
 
 if __name__ == '__main__':
     infile = sys.argv[1]
@@ -8,8 +7,8 @@ if __name__ == '__main__':
     typeFile = sys.argv[3]
     outFile = sys.argv[4]
 
-    infd = open(infile, 'r', encoding='utf-8')
-    _ = infd.readline()  # bỏ qua header
+    infd = open(infile, 'r')
+    _ = infd.readline()
 
     seqs = pickle.load(open(seqFile, 'rb'))
     types = pickle.load(open(typeFile, 'rb'))
@@ -21,24 +20,17 @@ if __name__ == '__main__':
     cat2count = 0
     cat3count = 0
     cat4count = 0
-
     for line in infd:
-        line = line.strip()
-        if not line:
-            continue  # bỏ qua dòng trống
-        tokens = line.split(',')
-        if len(tokens) < 9:  # sửa 2: kiểm tra đủ 9 cột
-            continue
-
+        tokens = line.strip().split(',')
         icd9 = tokens[0][1:-1].strip()
         cat1 = tokens[1][1:-1].strip()
         desc1 = 'A_' + tokens[2][1:-1].strip()
-        cat2 = tokens[3][1:-1].strip() if len(tokens) > 3 else ""
-        desc2 = 'A_' + tokens[4][1:-1].strip() if len(tokens) > 4 else ""
-        cat3 = tokens[5][1:-1].strip() if len(tokens) > 5 else ""
-        desc3 = 'A_' + tokens[6][1:-1].strip() if len(tokens) > 6 else ""
-        cat4 = tokens[7][1:-1].strip() if len(tokens) > 7 else ""
-        desc4 = 'A_' + tokens[8][1:-1].strip() if len(tokens) > 8 else ""
+        cat2 = tokens[3][1:-1].strip()
+        desc2 = 'A_' + tokens[4][1:-1].strip()
+        cat3 = tokens[5][1:-1].strip()
+        desc3 = 'A_' + tokens[6][1:-1].strip()
+        cat4 = tokens[7][1:-1].strip()
+        desc4 = 'A_' + tokens[8][1:-1].strip()
         
         if icd9.startswith('E'):
             if len(icd9) > 4: icd9 = icd9[:4] + '.' + icd9[4:]
@@ -71,15 +63,20 @@ if __name__ == '__main__':
 
     rootCode = len(types)
     types['A_ROOT'] = rootCode
-    print(rootCode)  # sửa 3: print()
+    print rootCode
 
-    print('cat1count: %d' % cat1count)
-    print('cat2count: %d' % cat2count)
-    print('cat3count: %d' % cat3count)
-    print('cat4count: %d' % cat4count)
-    print('Number of total ancestors: %d' % (cat1count + cat2count + cat3count + cat4count + 1))
-    print('miss count: %d' % len(startSet - set(hitList)))
+    print 'cat1count: %d' % cat1count
+    print 'cat2count: %d' % cat2count
+    print 'cat3count: %d' % cat3count
+    print 'cat4count: %d' % cat4count
+    print 'Number of total ancestors: %d' % (cat1count + cat2count + cat3count + cat4count + 1)
+    #print 'hit count: %d' % len(set(hitList))
+    print 'miss count: %d' % len(startSet - set(hitList))
     missSet = startSet - set(hitList)
+
+    #pickle.dump(types, open(outFile + '.types', 'wb'), -1)
+    #pickle.dump(missSet, open(outFile + '.miss', 'wb'), -1)
+
 
     fiveMap = {}
     fourMap = {}
@@ -87,26 +84,20 @@ if __name__ == '__main__':
     twoMap = {}
     oneMap = dict([(types[icd], [types[icd], rootCode]) for icd in missSet])
 
-    infd = open(infile, 'r', encoding='utf-8')
-    infd.readline()  # bỏ qua header lần 2
+    infd = open(infile, 'r')
+    infd.readline()
 
     for line in infd:
-        line = line.strip()
-        if not line:
-            continue
-        tokens = line.split(',')
-        if len(tokens) < 9:
-            continue
-
+        tokens = line.strip().split(',')
         icd9 = tokens[0][1:-1].strip()
         cat1 = tokens[1][1:-1].strip()
         desc1 = 'A_' + tokens[2][1:-1].strip()
-        cat2 = tokens[3][1:-1].strip() if len(tokens) > 3 else ""
-        desc2 = 'A_' + tokens[4][1:-1].strip() if len(tokens) > 4 else ""
-        cat3 = tokens[5][1:-1].strip() if len(tokens) > 5 else ""
-        desc3 = 'A_' + tokens[6][1:-1].strip() if len(tokens) > 6 else ""
-        cat4 = tokens[7][1:-1].strip() if len(tokens) > 7 else ""
-        desc4 = 'A_' + tokens[8][1:-1].strip() if len(tokens) > 8 else ""
+        cat2 = tokens[3][1:-1].strip()
+        desc2 = 'A_' + tokens[4][1:-1].strip()
+        cat3 = tokens[5][1:-1].strip()
+        desc3 = 'A_' + tokens[6][1:-1].strip()
+        cat4 = tokens[7][1:-1].strip()
+        desc4 = 'A_' + tokens[8][1:-1].strip()
 
         if icd9.startswith('E'):
             if len(icd9) > 4: icd9 = icd9[:4] + '.' + icd9[4:]
@@ -114,9 +105,10 @@ if __name__ == '__main__':
             if len(icd9) > 3: icd9 = icd9[:3] + '.' + icd9[3:]
         icd9 = 'D_' + icd9
 
-        if icd9 not in types: 
-            continue
+        if icd9 not in types: continue
         icdCode = types[icd9]
+
+        codeVec = []
 
         if len(cat4) > 0:
             code4 = types[desc4]
@@ -137,33 +129,33 @@ if __name__ == '__main__':
             code1 = types[desc1]
             twoMap[icdCode] = [icdCode, rootCode, code1]
     
-    # Remap
+    # Now we re-map the integers to all medical codes.
     newFiveMap = {}
     newFourMap = {}
     newThreeMap = {}
     newTwoMap = {}
     newOneMap = {}
     newTypes = {}
-    rtypes = dict([(v, k) for k, v in types.items()])  # sửa 4: iteritems → items
+    rtypes = dict([(v, k) for k, v in types.iteritems()])
 
     codeCount = 0
-    for icdCode, ancestors in fiveMap.items():  # sửa 5
+    for icdCode, ancestors in fiveMap.iteritems():
         newTypes[rtypes[icdCode]] = codeCount
         newFiveMap[codeCount] = [codeCount] + ancestors[1:]
         codeCount += 1
-    for icdCode, ancestors in fourMap.items():
+    for icdCode, ancestors in fourMap.iteritems():
         newTypes[rtypes[icdCode]] = codeCount
         newFourMap[codeCount] = [codeCount] + ancestors[1:]
         codeCount += 1
-    for icdCode, ancestors in threeMap.items():
+    for icdCode, ancestors in threeMap.iteritems():
         newTypes[rtypes[icdCode]] = codeCount
         newThreeMap[codeCount] = [codeCount] + ancestors[1:]
         codeCount += 1
-    for icdCode, ancestors in twoMap.items():
+    for icdCode, ancestors in twoMap.iteritems():
         newTypes[rtypes[icdCode]] = codeCount
         newTwoMap[codeCount] = [codeCount] + ancestors[1:]
         codeCount += 1
-    for icdCode, ancestors in oneMap.items():
+    for icdCode, ancestors in oneMap.iteritems():
         newTypes[rtypes[icdCode]] = codeCount
         newOneMap[codeCount] = [codeCount] + ancestors[1:]
         codeCount += 1
