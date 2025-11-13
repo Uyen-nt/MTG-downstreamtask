@@ -5,7 +5,7 @@ from pathlib import Path
 WORK_DIR = Path.cwd()  # /kaggle/working/MTG-downstreamtask
 GRAM_DATA_DIR = WORK_DIR / "gram" / "data"
 
-SEQS = GRAM_DATA_DIR / "tree_mimic3.seqs"
+SEQS = GRAM_DATA_DIR / "synth_mimic3.seqs"
 LABELS = GRAM_DATA_DIR / "tree_mimic3.labels"
 
 def create_labels_from_seqs(seqs_path, out_path):
