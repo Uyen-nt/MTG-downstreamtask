@@ -2,59 +2,23 @@
 # Code written by Edward Choi (mp2893@gatech.edu)
 # For bug report, please contact author using the email address
 #################################################################
+
 import sys, random, time, argparse
 from collections import OrderedDict
-import pickle
+import cPickle as pickle
 import numpy as np
-import os
-# os.environ['AESARA_FLAGS'] = (
-#     'floatX=float32,device=cpu,base_compiledir=/tmp/aesara_cache,'
-#     'mode=FAST_RUN,'
-#     'warn_float64=ignore,'
-#     'cxx=,'
-#     'linker=py,'
-#     'blas__ldflags='  # ép bỏ flag BLAS
-# )
-os.environ['AESARA_FLAGS'] = (
-    'floatX=float32,device=cpu,base_compiledir=/tmp/aesara_cache,'
-    'mode=FAST_COMPILE,'
-    'warn_float64=ignore,'
-    'cxx=,'
-    'linker=py,'
-    'optimizer=fast_compile,'
-    'exception_verbosity=high,'
-    'blas__ldflags='
-)
-print("[DEBUG] AESARA_FLAGS = FAST_COMPILE mode activated (compile nhanh hơn, chạy chậm hơn một chút)")
 
-import aesara
-import aesara.tensor as T
-from aesara import config
-from aesara.tensor.random import RandomStream
-import aesara.tensor.nnet as nnet
-from aesara.tensor.math import sigmoid
-
+import theano
+import theano.tensor as T
+from theano import config
+from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
 
 _TEST_RATIO = 0.2
 _VALIDATION_RATIO = 0.1
 
-def get_rootCode_from_types(tree_prefix):
-    import pickle
-    types = pickle.load(open(tree_prefix + '.types', 'rb'))
-
-    # Nếu có key 'A_ROOT' (chuẩn GRAM gốc)
-    if 'A_ROOT' in types:
-        return types['A_ROOT']
-
-    # Nếu không có, lấy giá trị max ID (giá trị lớn nhất)
-    max_id = max(types.values())
-    print(f"[WARN] Không có khóa 'A_ROOT' trong file {tree_prefix}.types → dùng max_id={max_id} làm rootCode.")
-    return max_id
-
-
 def unzip(zipped):
     new_params = OrderedDict()
-    for key, value in zipped.items():
+    for key, value in zipped.iteritems():
         new_params[key] = value.get_value()
     return new_params
 
@@ -65,108 +29,49 @@ def get_random_weight(dim1, dim2, left=-0.1, right=0.1):
     return np.random.uniform(left, right, (dim1, dim2)).astype(config.floatX)
 
 def load_embedding(options):
-    # Lấy đường dẫn embedding một cách an toàn
-    if isinstance(options, dict):
-        embed_path = options.get("embFile") or options.get("embed_file")
-        input_dim = options.get("inputDimSize")
-        n_anc = options.get("numAncestors", 0)
-    else:
-        embed_path = getattr(options, "embed_file", None)
-        input_dim = getattr(options, "inputDimSize", None)
-        n_anc = getattr(options, "numAncestors", 0)
-
-    if not embed_path:
-        raise KeyError("Không tìm thấy tham số embed_file hoặc embFile trong options!")
-
-    print(f"[INFO] Loading embedding từ: {embed_path}")
-    m = np.load(embed_path)
-
-    # Lấy embedding từ file .npz
-    if "w" in m and "w_tilde" in m:
-        w = (m["w"] + m["w_tilde"]) / 2.0
-    elif "W_emb" in m:
-        w = m["W_emb"]
-    else:
-        print(f"[WARN] Keys có trong {embed_path}: {list(m.keys())}")
-        raise KeyError(f"Không tìm thấy 'w' hoặc 'W_emb' trong {embed_path}")
-
-    # 🔧 PAD/CẮT THEO TỔNG TỪ VỰNG: inputDimSize + numAncestors
-    expected_dim = None
-    if input_dim is not None:
-        expected_dim = int(input_dim) + int(n_anc)
-
-    if expected_dim is not None and w.shape[0] < expected_dim:
-        diff = expected_dim - w.shape[0]
-        print(f"[WARN] Padding embedding từ {w.shape[0]} → {expected_dim} (thêm {diff} vector ngẫu nhiên)")
-        extra = np.random.normal(scale=0.01, size=(diff, w.shape[1])).astype(w.dtype)
-        w = np.vstack([w, extra])
-    elif expected_dim is not None and w.shape[0] > expected_dim:
-        print(f"[WARN] Cắt embedding từ {w.shape[0]} → {expected_dim}")
-        w = w[:expected_dim]
-
-    print(f"[INFO] Embedding shape: {w.shape}")
-    return w.astype(np.float32)
-
-
+    m = np.load(options['embFile'])
+    w = (m['w'] + m['w_tilde']) / 2.0
+    return w
 
 def init_params(options):
     params = OrderedDict()
+
     np.random.seed(0)
-
-    inputDimSize     = options['inputDimSize']
-    numAncestors     = options['numAncestors']
-    embDimSize       = options['embDimSize']
-    hiddenDimSize    = options['hiddenDimSize']
+    inputDimSize = options['inputDimSize']
+    numAncestors = options['numAncestors']
+    embDimSize = options['embDimSize']
+    hiddenDimSize = options['hiddenDimSize'] #hidden layer does not need an extra space
     attentionDimSize = options['attentionDimSize']
-    numClass         = options['numClass']
+    numClass = options['numClass']
 
-    # Chuẩn hóa tên khóa
-    emb_path = None
-    if isinstance(options, dict):
-        emb_path = options.get('embFile') or options.get('embed_file')
-    else:
-        emb_path = getattr(options, 'embFile', None) or getattr(options, 'embed_file', None)
-
-    vocab_size = int(inputDimSize) + int(numAncestors)
-
-    if emb_path:  # có file → load
-        w = load_embedding({'embed_file': emb_path, 'inputDimSize': inputDimSize, 'numAncestors': 0})
-        # đảm bảo đúng kích thước (pad/cắt đã làm trong load_embedding)
-        params['W_emb'] = w.astype(config.floatX)
-        # cập nhật embDimSize theo file
+    params['W_emb'] = get_random_weight(inputDimSize+numAncestors, embDimSize)
+    if len(options['embFile']) > 0:
+        params['W_emb'] = load_embedding(options)
         options['embDimSize'] = params['W_emb'].shape[1]
         embDimSize = options['embDimSize']
-    else:         # không có file → random như gốc
-        params['W_emb'] = get_random_weight(inputDimSize, embDimSize)
 
     params['W_attention'] = get_random_weight(embDimSize*2, attentionDimSize)
-    params['b_attention'] = np.zeros(attentionDimSize, dtype=config.floatX)
+    params['b_attention'] = np.zeros(attentionDimSize).astype(config.floatX)
     params['v_attention'] = np.random.uniform(-0.1, 0.1, attentionDimSize).astype(config.floatX)
 
     params['W_gru'] = get_random_weight(embDimSize, 3*hiddenDimSize)
     params['U_gru'] = get_random_weight(hiddenDimSize, 3*hiddenDimSize)
-    params['b_gru'] = np.zeros(3*hiddenDimSize, dtype=config.floatX)
+    params['b_gru'] = np.zeros(3 * hiddenDimSize).astype(config.floatX)
 
     params['W_output'] = get_random_weight(hiddenDimSize, numClass)
-    params['b_output'] = np.zeros(numClass, dtype=config.floatX)
+    params['b_output'] = np.zeros(numClass).astype(config.floatX)
 
     return params
 
-
 def init_tparams(params):
     tparams = OrderedDict()
-    for key, value in params.items():
-        tparams[key] = aesara.shared(value, name=key)
+    for key, value in params.iteritems():
+        tparams[key] = theano.shared(value, name=key)
     return tparams
 
 def dropout_layer(state_before, use_noise, trng, prob):
-    # prob = keep-prob (vd 0.5)
-    return T.switch(
-        use_noise,
-        state_before * trng.binomial(size=state_before.shape, n=1, p=prob, dtype=state_before.dtype),
-        state_before * prob
-    )
-
+    proj = T.switch(use_noise, (state_before * trng.binomial(state_before.shape, p=prob, n=1, dtype=state_before.dtype)), state_before * 0.5)
+    return proj
 
 def _slice(_x, n, dim):
     if _x.ndim == 3:
@@ -181,14 +86,14 @@ def gru_layer(tparams, emb, options):
 
     def stepFn(wx, h, U_gru):
         uh = T.dot(h, U_gru)
-        r = sigmoid(_slice(wx, 0, hiddenDimSize) + _slice(uh, 0, hiddenDimSize))
-        z = sigmoid(_slice(wx, 1, hiddenDimSize) + _slice(uh, 1, hiddenDimSize))
+        r = T.nnet.sigmoid(_slice(wx, 0, hiddenDimSize) + _slice(uh, 0, hiddenDimSize))
+        z = T.nnet.sigmoid(_slice(wx, 1, hiddenDimSize) + _slice(uh, 1, hiddenDimSize))
         h_tilde = T.tanh(_slice(wx, 2, hiddenDimSize) + r * _slice(uh, 2, hiddenDimSize))
         h_new = z * h + ((1. - z) * h_tilde)
         return h_new
 
     Wx = T.dot(emb, tparams['W_gru']) + tparams['b_gru']
-    results, updates = aesara.scan(fn=stepFn, sequences=[Wx], outputs_info=T.alloc(numpy_floatX(0.0), n_samples, hiddenDimSize), non_sequences=[tparams['U_gru']], name='gru_layer', n_steps=timesteps)
+    results, updates = theano.scan(fn=stepFn, sequences=[Wx], outputs_info=T.alloc(numpy_floatX(0.0), n_samples, hiddenDimSize), non_sequences=[tparams['U_gru']], name='gru_layer', n_steps=timesteps)
 
     return results
 
@@ -196,7 +101,7 @@ def generate_attention(tparams, leaves, ancestors):
     attentionInput = T.concatenate([tparams['W_emb'][leaves], tparams['W_emb'][ancestors]], axis=2)
     mlpOutput = T.tanh(T.dot(attentionInput, tparams['W_attention']) + tparams['b_attention']) 
     preAttention = T.dot(mlpOutput, tparams['v_attention'])
-    attention = nnet.softmax(preAttention)
+    attention = T.nnet.softmax(preAttention)
     return attention
     
 def softmax_layer(tparams, emb):
@@ -207,8 +112,8 @@ def softmax_layer(tparams, emb):
     
 def build_model(tparams, leavesList, ancestorsList, options):
     dropoutRate = options['dropoutRate']
-    trng = RandomStream(123)
-    use_noise = aesara.shared(numpy_floatX(0.))
+    trng = RandomStreams(123)
+    use_noise = theano.shared(numpy_floatX(0.))
 
     x = T.tensor3('x', dtype=config.floatX)
     y = T.tensor3('y', dtype=config.floatX)
@@ -221,16 +126,10 @@ def build_model(tparams, leavesList, ancestorsList, options):
     embList = []
     for leaves, ancestors in zip(leavesList, ancestorsList):
         tempAttention = generate_attention(tparams, leaves, ancestors)
-        tempEmb = (tparams['W_emb'][ancestors] * tempAttention[:, :, None]).sum(axis=1)
+        tempEmb = (tparams['W_emb'][ancestors] * tempAttention[:,:,None]).sum(axis=1)
         embList.append(tempEmb)
-    
-    # ❌ KHÔNG được dùng concat theo trục 0 (vì sẽ ra (5*V, d))
-    # emb = T.concatenate(embList, axis=0)
-    
-    # ✅ Dùng trung bình 5 level → (V, d)
-    emb = sum(embList) / len(embList)
-    # hoặc đơn giản: emb = embList[0] nếu 5 level y hệt nhau (dummy tree)
 
+    emb = T.concatenate(embList, axis=0)
 
     x_emb = T.tanh(T.dot(x, emb))
     hidden = gru_layer(tparams, x_emb, options)
@@ -248,14 +147,10 @@ def build_model(tparams, leavesList, ancestorsList, options):
     return use_noise, x, y, mask, lengths, cost, cost_noreg, y_hat
 
 def load_data(seqFile, labelFile, timeFile=''):
-    # ⚙️ Không ép thành np.array vì độ dài mỗi bệnh nhân khác nhau
-    sequences = pickle.load(open(seqFile, 'rb'))
-    labels = pickle.load(open(labelFile, 'rb'))
-
+    sequences = np.array(pickle.load(open(seqFile, 'rb')))
+    labels = np.array(pickle.load(open(labelFile, 'rb')))
     if len(timeFile) > 0:
-        times = pickle.load(open(timeFile, 'rb'))
-    else:
-        times = None
+        times = np.array(pickle.load(open(timeFile, 'rb')))
 
     np.random.seed(0)
     dataSize = len(labels)
@@ -267,38 +162,37 @@ def load_data(seqFile, labelFile, timeFile=''):
     valid_indices = ind[nTest:nTest+nValid]
     train_indices = ind[nTest+nValid:]
 
-    # ✅ Dùng list comprehension thay vì numpy indexing
-    train_set_x = [sequences[i] for i in train_indices]
-    train_set_y = [labels[i] for i in train_indices]
-    valid_set_x = [sequences[i] for i in valid_indices]
-    valid_set_y = [labels[i] for i in valid_indices]
-    test_set_x = [sequences[i] for i in test_indices]
-    test_set_y = [labels[i] for i in test_indices]
+    train_set_x = sequences[train_indices]
+    train_set_y = labels[train_indices]
+    test_set_x = sequences[test_indices]
+    test_set_y = labels[test_indices]
+    valid_set_x = sequences[valid_indices]
+    valid_set_y = labels[valid_indices]
+    train_set_t = None
+    test_set_t = None
+    valid_set_t = None
 
-    # Nếu có timeFile
-    if times is not None:
-        train_set_t = [times[i] for i in train_indices]
-        valid_set_t = [times[i] for i in valid_indices]
-        test_set_t = [times[i] for i in test_indices]
-    else:
-        train_set_t = valid_set_t = test_set_t = None
+    if len(timeFile) > 0:
+        train_set_t = times[train_indices]
+        test_set_t = times[test_indices]
+        valid_set_t = times[valid_indices]
 
-    # ⚙️ Sắp xếp theo số lượt khám (giúp GRU batching)
     def len_argsort(seq):
         return sorted(range(len(seq)), key=lambda x: len(seq[x]))
 
     train_sorted_index = len_argsort(train_set_x)
-    valid_sorted_index = len_argsort(valid_set_x)
-    test_sorted_index = len_argsort(test_set_x)
-
     train_set_x = [train_set_x[i] for i in train_sorted_index]
     train_set_y = [train_set_y[i] for i in train_sorted_index]
+
+    valid_sorted_index = len_argsort(valid_set_x)
     valid_set_x = [valid_set_x[i] for i in valid_sorted_index]
     valid_set_y = [valid_set_y[i] for i in valid_sorted_index]
+
+    test_sorted_index = len_argsort(test_set_x)
     test_set_x = [test_set_x[i] for i in test_sorted_index]
     test_set_y = [test_set_y[i] for i in test_sorted_index]
 
-    if times is not None:
+    if len(timeFile) > 0:
         train_set_t = [train_set_t[i] for i in train_sorted_index]
         valid_set_t = [valid_set_t[i] for i in valid_sorted_index]
         test_set_t = [test_set_t[i] for i in test_sorted_index]
@@ -307,28 +201,24 @@ def load_data(seqFile, labelFile, timeFile=''):
     valid_set = (valid_set_x, valid_set_y, valid_set_t)
     test_set = (test_set_x, test_set_y, test_set_t)
 
-    print(f"[LOAD DATA] Tổng {len(sequences)} bệnh nhân → Train={len(train_set_x)}, Valid={len(valid_set_x)}, Test={len(test_set_x)}")
-    print(f"  ↳ Ví dụ: bệnh nhân đầu có {len(train_set_x[0])} lượt khám")
-
     return train_set, valid_set, test_set
 
-
 def adadelta(tparams, grads, x, y, mask, lengths, cost):
-    zipped_grads = [aesara.shared(p.get_value() * numpy_floatX(0.), name='%s_grad' % k) for k, p in tparams.items()]
-    running_up2 = [aesara.shared(p.get_value() * numpy_floatX(0.), name='%s_rup2' % k) for k, p in tparams.items()]
-    running_grads2 = [aesara.shared(p.get_value() * numpy_floatX(0.), name='%s_rgrad2' % k) for k, p in tparams.items()]
+    zipped_grads = [theano.shared(p.get_value() * numpy_floatX(0.), name='%s_grad' % k) for k, p in tparams.iteritems()]
+    running_up2 = [theano.shared(p.get_value() * numpy_floatX(0.), name='%s_rup2' % k) for k, p in tparams.iteritems()]
+    running_grads2 = [theano.shared(p.get_value() * numpy_floatX(0.), name='%s_rgrad2' % k) for k, p in tparams.iteritems()]
 
     zgup = [(zg, g) for zg, g in zip(zipped_grads, grads)]
-    rg2up = [(rg2, 0.95 * rg2 + 0.05 * T.sqr(g)) for rg2, g in zip(running_grads2, grads)]
-    print('    [adadelta] compiling f_grad_shared ...', flush=True)
-    f_grad_shared = aesara.function([x, y, mask, lengths], cost, updates=zgup + rg2up, name='adadelta_f_grad_shared')
-    print('    [adadelta] f_grad_shared compiled', flush=True)
+    rg2up = [(rg2, 0.95 * rg2 + 0.05 * (g ** 2)) for rg2, g in zip(running_grads2, grads)]
+
+    f_grad_shared = theano.function([x, y, mask, lengths], cost, updates=zgup + rg2up, name='adadelta_f_grad_shared')
+
     updir = [-T.sqrt(ru2 + 1e-6) / T.sqrt(rg2 + 1e-6) * zg for zg, ru2, rg2 in zip(zipped_grads, running_up2, running_grads2)]
-    ru2up = [(ru2, 0.95 * ru2 + 0.05 * T.sqr(ud)) for ru2, ud in zip(running_up2, updir)]
+    ru2up = [(ru2, 0.95 * ru2 + 0.05 * (ud ** 2)) for ru2, ud in zip(running_up2, updir)]
     param_up = [(p, p + ud) for p, ud in zip(tparams.values(), updir)]
-    print('    [adadelta] compiling f_update ...', flush=True)
-    f_update = aesara.function([], [], updates=ru2up + param_up, on_unused_input='ignore', name='adadelta_f_update')
-    print('    [adadelta] f_update compiled', flush=True)
+
+    f_update = theano.function([], [], updates=ru2up + param_up, on_unused_input='ignore', name='adadelta_f_update')
+
     return f_grad_shared, f_update
 
 def padMatrix(seqs, labels, options):
@@ -354,7 +244,7 @@ def calculate_cost(test_model, dataset, options):
     n_batches = int(np.ceil(float(len(dataset[0])) / float(batchSize)))
     costSum = 0.0
     dataCount = 0
-    for index in range(n_batches):
+    for index in xrange(n_batches):
         batchX = dataset[0][index*batchSize:(index+1)*batchSize]
         batchY = dataset[1][index*batchSize:(index+1)*batchSize]
         x, y, mask, lengths = padMatrix(batchX, batchY, options)
@@ -368,14 +258,15 @@ def print2file(buf, outFile):
     outfd.write(buf + '\n')
     outfd.close()
 
-
 def build_tree(treeFile):
     treeMap = pickle.load(open(treeFile, 'rb'))
-    ancestors = np.array(list(treeMap.values()), dtype=np.int32)
+    ancestors = np.array(treeMap.values()).astype('int32')
     ancSize = ancestors.shape[1]
-    leaves = np.array([[k] * ancSize for k in list(treeMap.keys())], dtype=np.int32)
+    leaves = []
+    for k in treeMap.keys():
+        leaves.append([k] * ancSize)
+    leaves = np.array(leaves).astype('int32')
     return leaves, ancestors
-
 
 def train_GRAM(
     seqFile = 'seqFile.txt',
@@ -402,43 +293,36 @@ def train_GRAM(
     ancestorsList = []
     for i in range(5, 0, -1): # An ICD9 diagnosis code can have at most five ancestors (including the artificial root) when using CCS multi-level grouper. 
         leaves, ancestors = build_tree(treeFile+'.level'+str(i)+'.pk')
-        sharedLeaves = aesara.shared(leaves, name='leaves'+str(i))
-        sharedAncestors = aesara.shared(ancestors, name='ancestors'+str(i))
+        sharedLeaves = theano.shared(leaves, name='leaves'+str(i))
+        sharedAncestors = theano.shared(ancestors, name='ancestors'+str(i))
         leavesList.append(sharedLeaves)
         ancestorsList.append(sharedAncestors)
     
-    print('Building the model ... ',)
-    print('Constructing the optimizer ... ', flush=True)
-
-    print('  ↳ computing symbolic gradients ...', flush=True)
+    print 'Building the model ... ',
     params = init_params(options)
     tparams = init_tparams(params)
     use_noise, x, y, mask, lengths, cost, cost_noreg, y_hat =  build_model(tparams, leavesList, ancestorsList, options)
-    print(' → build_model done', flush=True)
-    print('Constructing the optimizer ... ', flush=True)
-    get_cost = aesara.function(inputs=[x, y, mask, lengths], outputs=cost_noreg, name='get_cost')
-    print('done!!')
+    get_cost = theano.function(inputs=[x, y, mask, lengths], outputs=cost_noreg, name='get_cost')
+    print 'done!!'
     
-    print('Constructing the optimizer ... ',)
-    grads = T.grad(cost, wrt=list(tparams.values()))
-    print('    ✓ grads ready', flush=True)
+    print 'Constructing the optimizer ... ',
+    grads = T.grad(cost, wrt=tparams.values())
     f_grad_shared, f_update = adadelta(tparams, grads, x, y, mask, lengths, cost)
-    print('    ✓ optimizer functions compiled', flush=True)
-    print('done!!')
+    print 'done!!'
 
-    print('Loading data ... ',)
+    print 'Loading data ... ',
     trainSet, validSet, testSet = load_data(seqFile, labelFile)
     n_batches = int(np.ceil(float(len(trainSet[0])) / float(batchSize)))
-    print('done!!')
+    print 'done!!'
 
-    print('Optimization start !!')
+    print 'Optimization start !!'
     bestTrainCost = 0.0
     bestValidCost = 100000.0
     bestTestCost = 0.0
     epochDuration = 0.0
     bestEpoch = 0
     logFile = outFile + '.log'
-    for epoch in range(max_epochs):
+    for epoch in xrange(max_epochs):
         iteration = 0
         costVec = []
         startTime = time.time()
@@ -451,9 +335,9 @@ def train_GRAM(
             f_update()
             costVec.append(costValue)
 
-            if iteration % 10 == 0 and verbose:
+            if iteration % 100 == 0 and verbose:
                 buf = 'Epoch:%d, Iteration:%d/%d, Train_Cost:%f' % (epoch, iteration, n_batches, costValue)
-                print(buf)
+                print buf
             iteration += 1
         duration = time.time() - startTime
         use_noise.set_value(0.)
@@ -461,7 +345,7 @@ def train_GRAM(
         validCost = calculate_cost(get_cost, validSet, options)
         testCost = calculate_cost(get_cost, testSet, options)
         buf = 'Epoch:%d, Duration:%f, Train_Cost:%f, Valid_Cost:%f, Test_Cost:%f' % (epoch, duration, trainCost, validCost, testCost)
-        print(buf)
+        print buf
         print2file(buf, logFile)
         epochDuration += duration
         if validCost < bestValidCost:
@@ -472,7 +356,7 @@ def train_GRAM(
             tempParams = unzip(tparams)
             np.savez_compressed(outFile + '.' + str(epoch), **tempParams)
     buf = 'Best Epoch:%d, Avg_Duration:%f, Train_Cost:%f, Valid_Cost:%f, Test_Cost:%f' % (bestEpoch, epochDuration/max_epochs, bestTrainCost, bestValidCost, bestTestCost)
-    print(buf)
+    print buf
     print2file(buf, logFile)
 
 def parse_arguments(parser):
@@ -480,7 +364,7 @@ def parse_arguments(parser):
     parser.add_argument('label_file', type=str, metavar='<label_file>', help='The path to the Pickled file containing label information of patients')
     parser.add_argument('tree_file', type=str, metavar='<tree_file>', help='The path to the Pickled files containing the ancestor information of the input medical codes. Only use the prefix and exclude ".level#.pk".')
     parser.add_argument('out_file', metavar='<out_file>', help='The path to the output models. The models will be saved after every epoch')
-    #parser.add_argument('--embed_file', type=str, default='', help='The path to the Pickled file containing the representation vectors of medical codes. If you are not using medical code representations, do not use this option')
+    parser.add_argument('--embed_file', type=str, default='', help='The path to the Pickled file containing the representation vectors of medical codes. If you are not using medical code representations, do not use this option')
     parser.add_argument('--embed_size', type=int, default=128, help='The dimension size of the visit embedding. If you are providing your own medical code vectors, this value will be automatically decided. (default value: 128)')
     parser.add_argument('--rnn_size', type=int, default=128, help='The dimension size of the hidden layer of the GRU (default value: 128)')
     parser.add_argument('--attention_size', type=int, default=128, help='The dimension size of hidden layer of the MLP that generates the attention weights (default value: 128)')
@@ -490,11 +374,6 @@ def parse_arguments(parser):
     parser.add_argument('--dropout_rate', type=float, default=0.5, help='Dropout rate used for the hidden layer of RNN (default value: 0.5)')
     parser.add_argument('--log_eps', type=float, default=1e-8, help='A small value to prevent log(0) (default value: 1e-8)')
     parser.add_argument('--verbose', action='store_true', help='Print output after every 100 mini-batches (default false)')
-    parser.add_argument('--embed_file', type=str, default=None,
-                    help='Đường dẫn đến pretrain embedding (.npz) hoặc pickle file chứa vector biểu diễn mã y tế. '
-                         'Nếu không sử dụng embedding, để trống.')
-
-
     args = parser.parse_args()
     return args
 
@@ -507,12 +386,10 @@ def calculate_dimSize(seqFile):
                 codeSet.add(code)
     return max(codeSet) + 1
 
-
 def get_rootCode(treeFile):
     tree = pickle.load(open(treeFile, 'rb'))
-    first_value = next(iter(tree.values()))
-    return first_value[1]
-
+    rootCode = tree.values()[0][1]
+    return rootCode
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -520,21 +397,7 @@ if __name__ == '__main__':
 
     inputDimSize = calculate_dimSize(args.seq_file)
     numClass = calculate_dimSize(args.label_file)
-    
-    # ✅ Gán treeFile từ args
-    treeFile = args.tree_file
-
-    try:
-        rootCode = get_rootCode_from_types(treeFile)  # ưu tiên .types
-    except Exception as e:
-        print(f"[WARN] .types không dùng được ({e}) → fallback level2.pk")
-        rootCode = get_rootCode(treeFile + '.level2.pk')
-    
-    numAncestors = rootCode - inputDimSize + 1
-
-    print(f"[DEBUG] inputDimSize={inputDimSize}, rootCode={rootCode}, numAncestors={numAncestors}, total_vocab={inputDimSize + numAncestors}")
-
-
+    numAncestors = get_rootCode(args.tree_file+'.level2.pk') - inputDimSize + 1
 
     train_GRAM(
         seqFile=args.seq_file, 
