@@ -221,11 +221,16 @@ def build_model(tparams, leavesList, ancestorsList, options):
     embList = []
     for leaves, ancestors in zip(leavesList, ancestorsList):
         tempAttention = generate_attention(tparams, leaves, ancestors)
-        tempEmb = (tparams['W_emb'][ancestors] * tempAttention[:,:,None]).sum(axis=1)
+        tempEmb = (tparams['W_emb'][ancestors] * tempAttention[:, :, None]).sum(axis=1)
         embList.append(tempEmb)
+    
+    # ❌ KHÔNG được dùng concat theo trục 0 (vì sẽ ra (5*V, d))
+    # emb = T.concatenate(embList, axis=0)
+    
+    # ✅ Dùng trung bình 5 level → (V, d)
+    emb = sum(embList) / len(embList)
+    # hoặc đơn giản: emb = embList[0] nếu 5 level y hệt nhau (dummy tree)
 
-    emb = T.concatenate(embList, axis=0)
-    #emb = sum(embList) / len(embList)
 
     x_emb = T.tanh(T.dot(x, emb))
     hidden = gru_layer(tparams, x_emb, options)
