@@ -26,7 +26,7 @@ echo "Out prefix: $OUT_PREFIX"
 echo
 
 # Kaggle uses Python 3 by default
-python3 build_trees.py "$CCS_FILE" "$SEQ_FILE" "$TYPE_FILE" "$OUT_PREFIX"
+python3 ../model/build_trees.py ... "$CCS_FILE" "$SEQ_FILE" "$TYPE_FILE" "$OUT_PREFIX"
 
 echo
 echo "=== DONE ==="
