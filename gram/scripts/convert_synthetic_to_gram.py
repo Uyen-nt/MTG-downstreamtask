@@ -69,8 +69,8 @@ def convert(npz_path, seq_out, types_out):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--npz_path", type=str, required=True)
-    parser.add_argument("--seq_out", type=str, default="synthetic.seqs")
-    parser.add_argument("--types_out", type=str, default="synthetic.types")
+    parser.add_argument("--seq_out", type=str, default="../data/synthetic.seqs")
+    parser.add_argument("--types_out", type=str, default="../data/synthetic.types")
     args = parser.parse_args()
 
     convert(args.npz_path, args.seq_out, args.types_out)
