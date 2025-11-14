@@ -36,16 +36,29 @@ def load_tree_levels(prefix):
             tree[f"level{i}"] = pickle.load(f)
     return tree
 
+def clean_seqs(seqs):
+    clean = []
+    for patient in seqs:
+        visits = [v for v in patient if len(v) > 0]  # bỏ visit rỗng
+        if len(visits) >= 2:  # cần >=2 visit
+            clean.append(visits)
+    return clean
 
 def train():
     print("===== TRAIN GRAM =====")
 
     seqs = pickle.load(open(SEQ_FILE, "rb"))
+    seqs = clean_seqs(seqs)
+
     labels = build_labels_from_seqs(seqs)
     tree = load_tree_levels(TREE_PREFIX)
 
     # Thông số cần thiết từ tree
-    num_codes = max(max(max(v) for v in patient) for patient in seqs) + 1
+    num_codes = max(
+        max(max(v) if len(v) > 0 else 0 for v in patient)
+        for patient in seqs
+    ) + 1
+    
     num_classes = num_codes  # multi-label prediction
 
     dataset = VisitDataset(seqs, labels)
