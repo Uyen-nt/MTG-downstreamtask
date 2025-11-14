@@ -55,29 +55,24 @@ def train():
 
     print("num_codes =", num_codes)
 
-    # -------------------
     # Load REAL tree
     # -------------------
-        # -------------------
-    # Load REAL tree
-    # -------------------
+    # Sau khi load tree
     tree_leaves, tree_ancestors = load_tree(TREE_PREFIX, device=device)
-
-    if len(tree_ancestors) == 0:
-        raise ValueError("No tree levels loaded! Check your tree files.")
-
-    max_indices = []
-    for anc in tree_ancestors:
-        if anc.numel() > 0:
-            max_indices.append(anc.max().item())
-        else:
-            print(f"Warning: Skipping empty ancestor tensor (level with 0 nodes)")
-
-    if max_indices:
-        max_index_in_tree = max(max_indices)
-    else:
-        max_index_in_tree = 0  # fallback an toàn
-    print("max_index_in_tree =", max_index_in_tree)
+    
+    # Tính max từ tất cả leaves và ancestors
+    all_indices = []
+    for leaves, anc in zip(tree_leaves, tree_ancestors):
+        all_indices.append(leaves.max().item())
+        all_indices.append(anc.max().item())
+    
+    # Đảm bảo có A_ROOT
+    types = pickle.load(open(f"{TREE_PREFIX}.types", "rb"))
+    max_in_types = max(types.values()) if types else 0
+    all_indices.append(max_in_types)
+    
+    max_index_in_tree = max(all_indices)
+    print("max_index_in_tree (including A_ROOT) =", max_index_in_tree)
     # -------------------
     # Create GRAM model
     # -------------------
