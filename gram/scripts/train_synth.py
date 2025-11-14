@@ -1,12 +1,18 @@
-import argparse
+# gram/scripts/train_synth.py
+
 import subprocess
 
+# ========================
+# FIXED PATHS (KAGGLE)
+# ========================
+SEQ_FILE = "gram/data/synthetic_tree.seqs"
+LABEL_FILE = "gram/data/synthetic_tree.seqs"   # dùng chính synthetic để pretrain
+TREE_PREFIX = "gram/data/synthetic_tree"
+OUT_PREFIX = "gram/data/synth_pretrain"
+
+
 def train(seq_file, label_file, tree_prefix, out_prefix):
-    print("[TRAIN PRETRAIN GRAM]")
-    print(" Seq file:", seq_file)
-    print(" Label file:", label_file)
-    print(" Tree prefix:", tree_prefix)
-    print(" Out prefix:", out_prefix)
+    print("[TRAIN GRAM PRETRAIN]")
 
     cmd = [
         "python3",
@@ -22,19 +28,13 @@ def train(seq_file, label_file, tree_prefix, out_prefix):
         "--n_epochs", "20",
         "--L2", "0.001",
         "--dropout_rate", "0.5",
-        "--log_eps", "1e-8"
+        "--verbose"
     ]
 
-    print("[Running] ", " ".join(cmd))
+    print("Running:", " ".join(cmd))
     subprocess.run(cmd, check=True)
-    print("DONE training!")
+    print("✅ train_synth DONE!")
+
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--seq_file", required=True)
-    parser.add_argument("--label_file", required=True)
-    parser.add_argument("--tree_prefix", required=True)
-    parser.add_argument("--out_prefix", required=True)
-    args = parser.parse_args()
-
-    train(args.seq_file, args.label_file, args.tree_prefix, args.out_prefix)
+    train(SEQ_FILE, LABEL_FILE, TREE_PREFIX, OUT_PREFIX)
