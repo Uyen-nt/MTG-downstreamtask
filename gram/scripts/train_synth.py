@@ -58,13 +58,26 @@ def train():
     # -------------------
     # Load REAL tree
     # -------------------
+        # -------------------
+    # Load REAL tree
+    # -------------------
     tree_leaves, tree_ancestors = load_tree(TREE_PREFIX, device=device)
 
-    # Determine max index used in tree
-    max_index_in_tree = max([anc.max().item() for anc in tree_ancestors])
+    if len(tree_ancestors) == 0:
+        raise ValueError("No tree levels loaded! Check your tree files.")
 
+    max_indices = []
+    for anc in tree_ancestors:
+        if anc.numel() > 0:
+            max_indices.append(anc.max().item())
+        else:
+            print(f"Warning: Skipping empty ancestor tensor (level with 0 nodes)")
+
+    if max_indices:
+        max_index_in_tree = max(max_indices)
+    else:
+        max_index_in_tree = 0  # fallback an toàn
     print("max_index_in_tree =", max_index_in_tree)
-
     # -------------------
     # Create GRAM model
     # -------------------
