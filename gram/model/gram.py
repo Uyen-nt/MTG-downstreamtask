@@ -96,7 +96,8 @@ class GRAM(nn.Module):
         active_codes = (x.sum(dim=(0,1)) > 0).nonzero(as_tuple=True)[0]  # (N,)
         if len(active_codes) == 0:
             return torch.zeros(T, B, self.num_classes, device=device)
-    
+            
+        active_codes = active_codes.to(device)
         # Tính GRAM embedding CHỈ cho các mã active
         gram_embeddings = []
         for leaves, ancestors in zip(self.tree_leaves, self.tree_ancestors):
