@@ -7,8 +7,8 @@ import os
 # ========================
 # USER CONFIG
 # ========================
-SYNTH_NPZ = "/mnt/data/result/synthetic_mimic3.npz"
-CODE_MAP = "/mnt/data/mimic3/encoded/code_map.pkl"
+SYNTH_NPZ = "data/result/synthetic_mimic3.npz"
+CODE_MAP = "data/mimic3/encoded/code_map.pkl"
 TREE_TYPES = "gram/data/mimic3_tree.types"
 
 OUT_SEQS = "gram/data/synthetic_remap.seqs"
