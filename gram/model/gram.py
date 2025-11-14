@@ -56,8 +56,14 @@ class GRAM(nn.Module):
         # Embedding matrix W_emb (same dimension as Theano)
         # Shape: (input_dim + numAncestors) x emb_dim
         # ----------------------------------------------------------------
-        self.W_emb = nn.Embedding(input_dim + num_ancestors, emb_dim) # dùng khi train với data mimic3
-        #self.W_emb = nn.Embedding(max_index_in_tree + 1, emb_dim)
+        #self.W_emb = nn.Embedding(input_dim + num_ancestors, emb_dim) # dùng khi train với data mimic3
+        if max_index_in_tree is not None:
+            num_embeddings = max_index_in_tree + 1
+        else:
+            # fallback: trường hợp train trực tiếp trên mimc3, cây & input_dim khớp
+            num_embeddings = input_dim + num_ancestors
+
+        self.W_emb = nn.Embedding(num_embeddings, emb_dim)
 
         # Attention MLP parameters (same as GRAM)
         self.W_attention = nn.Linear(emb_dim * 2, att_dim)
