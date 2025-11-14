@@ -15,8 +15,8 @@ OUT_TYPES = "gram/data/synthetic_3digit.types"
 def to_3digit(icd):
     icd = str(icd)
     if icd.startswith("E"):
-        return icd[:4]        # Exxx → 4 digits (GRAM convention)
-    return icd[:3]            # xxx → 3 digits
+        return icd[:4] + "."   # E000.
+    return icd[:3] + "."       # 250. 428.
 
 
 def load_reverse_code_map(map_path):
