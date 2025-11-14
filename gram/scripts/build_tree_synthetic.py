@@ -1,14 +1,23 @@
-import argparse
+# gram/scripts/build_tree_synthetic.py
+
 import subprocess
+
+# ========================
+# FIXED PATHS (KAGGLE)
+# ========================
+CCS_FILE = "data/ccs_multi_dx_tool_2015.csv"
+SEQ_FILE = "gram/data/synthetic.seqs"
+TYPE_FILE = "gram/data/synthetic.types"
+OUT_PREFIX = "gram/data/synthetic_tree"
+
 
 def build_tree(ccs_file, seq_file, type_file, out_prefix):
     print("[BUILD TREE]")
-    print(" CCS file: ", ccs_file)
+    print(" CCS file:", ccs_file)
     print(" SEQ file:", seq_file)
     print(" TYPE file:", type_file)
     print(" OUT prefix:", out_prefix)
 
-    # Gọi build_trees.py trong thư mục model/
     cmd = [
         "python3",
         "gram/model/build_trees.py",
@@ -18,16 +27,10 @@ def build_tree(ccs_file, seq_file, type_file, out_prefix):
         out_prefix
     ]
 
-    print("[Running] ", " ".join(cmd))
+    print("Running:", " ".join(cmd))
     subprocess.run(cmd, check=True)
-    print("DONE building tree!")
+    print("✅ build_tree_synthetic DONE!")
+
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--ccs_file", required=True)
-    parser.add_argument("--seq_file", required=True)
-    parser.add_argument("--type_file", required=True)
-    parser.add_argument("--out_prefix", required=True)
-    args = parser.parse_args()
-
-    build_tree(args.ccs_file, args.seq_file, args.type_file, args.out_prefix)
+    build_tree(CCS_FILE, SEQ_FILE, TYPE_FILE, OUT_PREFIX)
