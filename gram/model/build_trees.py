@@ -1,5 +1,5 @@
 import sys, copy
-import cPickle as pickle
+import pickle
 
 if __name__ == '__main__':
     infile = sys.argv[1]
@@ -63,15 +63,14 @@ if __name__ == '__main__':
 
     rootCode = len(types)
     types['A_ROOT'] = rootCode
-    print rootCode
+    print(rootCode)
 
-    print 'cat1count: %d' % cat1count
-    print 'cat2count: %d' % cat2count
-    print 'cat3count: %d' % cat3count
-    print 'cat4count: %d' % cat4count
-    print 'Number of total ancestors: %d' % (cat1count + cat2count + cat3count + cat4count + 1)
-    #print 'hit count: %d' % len(set(hitList))
-    print 'miss count: %d' % len(startSet - set(hitList))
+    print(f"cat1count: {cat1count}")
+    print(f"cat2count: {cat2count}")
+    print(f"cat3count: {cat3count}")
+    print(f"cat4count: {cat4count}")
+    print(f"Number of total ancestors: {cat1count + cat2count + cat3count + cat4count + 1}")
+    print(f"miss count: {len(startSet - set(hitList))}")
     missSet = startSet - set(hitList)
 
     #pickle.dump(types, open(outFile + '.types', 'wb'), -1)
@@ -136,26 +135,26 @@ if __name__ == '__main__':
     newTwoMap = {}
     newOneMap = {}
     newTypes = {}
-    rtypes = dict([(v, k) for k, v in types.iteritems()])
+    rtypes = dict([(v, k) for k, v in types.items()])
 
     codeCount = 0
-    for icdCode, ancestors in fiveMap.iteritems():
+    for icdCode, ancestors in fiveMap.items():
         newTypes[rtypes[icdCode]] = codeCount
         newFiveMap[codeCount] = [codeCount] + ancestors[1:]
         codeCount += 1
-    for icdCode, ancestors in fourMap.iteritems():
+    for icdCode, ancestors in fourMap.items():
         newTypes[rtypes[icdCode]] = codeCount
         newFourMap[codeCount] = [codeCount] + ancestors[1:]
         codeCount += 1
-    for icdCode, ancestors in threeMap.iteritems():
+    for icdCode, ancestors in threeMap.items():
         newTypes[rtypes[icdCode]] = codeCount
         newThreeMap[codeCount] = [codeCount] + ancestors[1:]
         codeCount += 1
-    for icdCode, ancestors in twoMap.iteritems():
+    for icdCode, ancestors in twoMap.items():
         newTypes[rtypes[icdCode]] = codeCount
         newTwoMap[codeCount] = [codeCount] + ancestors[1:]
         codeCount += 1
-    for icdCode, ancestors in oneMap.iteritems():
+    for icdCode, ancestors in oneMap.items():
         newTypes[rtypes[icdCode]] = codeCount
         newOneMap[codeCount] = [codeCount] + ancestors[1:]
         codeCount += 1
