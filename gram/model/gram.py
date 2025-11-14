@@ -12,16 +12,20 @@ import pickle
 def load_tree(tree_prefix, device="cpu"):
     leaves_list = []
     ancestors_list = []
-
     for i in range(5, 0, -1):
-        tree = pickle.load(open(f"{tree_prefix}.level{i}.pk", "rb"))
-        # tree is dict: key=leaf_id, value=[leaf, root, cat1, cat2 ...]
-        ancestors = np.array(list(tree.values())).astype("int64")
-        leaves = np.array([[k] * ancestors.shape[1] for k in tree.keys()]).astype("int64")
-
-        leaves_list.append(torch.tensor(leaves, dtype=torch.long, device=device))
-        ancestors_list.append(torch.tensor(ancestors, dtype=torch.long, device=device))
-
+        path = f"{tree_prefix}.level{i}.pk"
+        try:
+            tree = pickle.load(open(path, "rb"))
+            if len(tree) == 0:
+                print(f"Warning: {path} is empty. Skipping level {i}.")
+                continue
+            ancestors = np.array(list(tree.values())).astype("int64")
+            leaves = np.array([[k] * ancestors.shape[1] for k in tree.keys()]).astype("int64")
+            leaves_list.append(torch.tensor(leaves, dtype=torch.long, device=device))
+            ancestors_list.append(torch.tensor(ancestors, dtype=torch.long, device=device))
+        except Exception as e:
+            print(f"Error loading {path}: {e}")
+            continue
     return leaves_list, ancestors_list
 
 
