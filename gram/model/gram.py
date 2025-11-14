@@ -39,7 +39,8 @@ class GRAM(nn.Module):
         hidden_dim=128,
         tree_leaves=None,
         tree_ancestors=None,
-        device="cpu"
+        device="cpu",
+        max_index_in_tree=None 
     ):
         super().__init__()
 
@@ -55,7 +56,7 @@ class GRAM(nn.Module):
         # Embedding matrix W_emb (same dimension as Theano)
         # Shape: (input_dim + numAncestors) x emb_dim
         # ----------------------------------------------------------------
-        # self.W_emb = nn.Embedding(input_dim + num_ancestors, emb_dim) # dùng khi train với data mimic3
+        #self.W_emb = nn.Embedding(input_dim + num_ancestors, emb_dim) # dùng khi train với data mimic3
         self.W_emb = nn.Embedding(max_index_in_tree + 1, emb_dim)
 
         # Attention MLP parameters (same as GRAM)
