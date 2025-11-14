@@ -12,8 +12,9 @@ import torch.optim as optim
 from gram.model.gram import GRAM, load_tree, pad_batch
 
 
-SEQ_FILE = "gram/data/synthetic_remapped_to_real.seqs"
+SEQ_FILE = "gram/data/synthetic_3digit.seqs"
 TREE_PREFIX = "gram/data/mimic3_tree"
+
 MODEL_OUT = "gram/data/synth_train.pt"
 
 
