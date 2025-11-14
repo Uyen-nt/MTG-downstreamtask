@@ -51,6 +51,7 @@ class GRAM(nn.Module):
         self.input_dim = input_dim
         self.num_classes = num_classes
         self.num_ancestors = num_ancestors
+        self.num_levels = len(tree_leaves)
         self.emb_dim = emb_dim
         self.att_dim = att_dim
         self.hidden_dim = hidden_dim
@@ -124,7 +125,11 @@ class GRAM(nn.Module):
     
         # Tách thành 5 embedding riêng (mỗi level một ma trận)
         emb_matrices = torch.split(code_to_emb, self.emb_dim, dim=-1)  # 5 x (input_dim, D)
-        final_emb = torch.cat(emb_matrices, dim=0)  # (5*input_dim, D)
+        # Thay vì split cố định 5 phần
+        emb_per_level = gram_emb_batch.shape[1] // self.num_levels
+        emb_matrices = torch.split(gram_emb_batch, emb_per_level, dim=-1)
+        final_emb = torch.cat(emb_matrices, dim=0)  # (num_levels * input_dim, D)
+        #final_emb = torch.cat(emb_matrices, dim=0)  # (5*input_dim, D)
     
         # Ánh xạ input → embedding
         x_flat = x.view(-1, self.input_dim)  # (T*B, input_dim)
