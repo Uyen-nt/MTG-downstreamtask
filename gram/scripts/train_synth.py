@@ -6,11 +6,10 @@ sys.path.append(ROOT)
 
 import pickle
 import torch
-from gram.model.gram import GRAM
-from gram.model.dataset import VisitDataset
-from torch.utils.data import DataLoader
+from gram.model.gram import GRAM, load_tree, pad_batch
 import torch.nn as nn
 import torch.optim as optim
+from torch.utils.data import DataLoader
 
 
 SEQ_FILE = "gram/data/synthetic_tree.seqs"
@@ -18,84 +17,96 @@ TREE_PREFIX = "gram/data/synthetic_tree"
 MODEL_OUT = "gram/data/synth_train.pt"
 
 
-def build_labels_from_seqs(seqs):
-    """Tạo next-visit labels y từ seqs."""
+def build_labels(seqs):
+    """Tạo next-visit labels đúng chuẩn GRAM."""
     labels = []
-    for patient in seqs:
-        if len(patient) < 2:
-            continue
-        labels.append(patient)   # Sử dụng negative sampling implicit
-    return labels
+    X = []
 
+    for p in seqs:
+        if len(p) >= 2:
+            X.append(p[:-1])
+            labels.append(p[1:])
+    return X, labels
 
-def load_tree_levels(prefix):
-    tree = {}
-    for i in range(1, 6):
-        level_path = f"{prefix}.level{i}.pk"
-        with open(level_path, "rb") as f:
-            tree[f"level{i}"] = pickle.load(f)
-    return tree
 
 def clean_seqs(seqs):
     clean = []
     for patient in seqs:
-        visits = [v for v in patient if len(v) > 0]  # bỏ visit rỗng
-        if len(visits) >= 2:  # cần >=2 visit
+        visits = [v for v in patient if len(v) > 0]
+        if len(visits) >= 2:
             clean.append(visits)
     return clean
 
+
 def train():
+
+    device = "cuda" if torch.cuda.is_available() else "cpu"
     print("===== TRAIN GRAM =====")
 
+    # -------------------
+    # Load cleaned seqs
+    # -------------------
     seqs = pickle.load(open(SEQ_FILE, "rb"))
     seqs = clean_seqs(seqs)
 
-    labels = build_labels_from_seqs(seqs)
-    tree = load_tree_levels(TREE_PREFIX)
+    X, Y = build_labels(seqs)
 
-    # Thông số cần thiết từ tree
-    num_codes = max(
-        max(max(v) if len(v) > 0 else 0 for v in patient)
-        for patient in seqs
-    ) + 1
-    
-    num_classes = num_codes  # multi-label prediction
+    # -------------------
+    # Compute num_codes
+    # -------------------
+    num_codes = max(max(max(v) for v in patient) for patient in seqs) + 1
+    num_classes = num_codes  # same output size
 
-    dataset = VisitDataset(seqs, labels)
-    loader = DataLoader(dataset, batch_size=32, shuffle=True, collate_fn=dataset.pad)
+    # -------------------
+    # Load tree
+    # -------------------
+    tree_leaves, tree_ancestors = load_tree(TREE_PREFIX, device=device)
+    num_ancestors = tree_ancestors[0].shape[1] - 1
 
+    # -------------------
+    # Create model
+    # -------------------
     model = GRAM(
-        num_codes=num_codes,
+        input_dim=num_codes,
         num_classes=num_classes,
+        num_ancestors=num_ancestors,
         emb_dim=128,
+        att_dim=128,
         hidden_dim=128,
-        attention_dim=128,
-        tree=tree
-    )
+        tree_leaves=tree_leaves,
+        tree_ancestors=tree_ancestors,
+        device=device
+    ).to(device)
 
-    model = model.cuda()
     optimizer = optim.Adam(model.parameters(), lr=0.001)
-    criterion = nn.BCELoss()
+    loss_fn = nn.BCELoss(reduction="none")
 
-    print("Training...")
+    # -------------------
+    # Training loop
+    # -------------------
     for epoch in range(20):
+        model.train()
         total_loss = 0
 
-        for x, y, mask in loader:
-            x = x.cuda()
-            y = y.cuda()
-            mask = mask.cuda()
+        for i in range(0, len(X), 32):
+            batch_X = X[i:i+32]
+            batch_Y = Y[i:i+32]
+
+            x, y, mask, lengths = pad_batch(batch_X, num_classes, num_codes, device)
+            y = pad_batch(batch_Y, num_classes, num_codes, device)[1]
 
             pred = model(x, mask)
-            loss = criterion(pred, y)
+
+            loss_raw = loss_fn(pred, y)       # (T,B,C)
+            loss_masked = (loss_raw.sum(2).sum(0) / lengths).mean()
 
             optimizer.zero_grad()
-            loss.backward()
+            loss_masked.backward()
             optimizer.step()
 
-            total_loss += loss.item()
+            total_loss += loss_masked.item()
 
-        print(f"Epoch {epoch+1} | Loss: {total_loss:.4f}")
+        print(f"[Epoch {epoch+1}] Loss = {total_loss:.4f}")
 
     torch.save(model.state_dict(), MODEL_OUT)
     print("Model saved:", MODEL_OUT)
