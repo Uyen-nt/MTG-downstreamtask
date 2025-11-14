@@ -3,8 +3,8 @@
 import subprocess
 
 CCS_FILE = "data/ccs_multi_dx_tool_2015.csv"
-SEQ_FILE = "gram/data/mimic3.seqs"
-TYPE_FILE = "gram/data/mimic3.types"
+SEQ_FILE = "gram/data/data.3digitICD9.seqs"   
+TYPE_FILE = "gram/data/data.3digitICD9.types" 
 OUT_PREFIX = "gram/data/mimic3_tree"
 
 def build_tree():
