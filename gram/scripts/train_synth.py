@@ -6,29 +6,15 @@ sys.path.append(ROOT)
 
 import pickle
 import torch
-from gram.model.gram import GRAM, load_tree, pad_batch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader
+
+from gram.model.gram import GRAM, load_tree, pad_batch
 
 
-SEQ_FILE = "gram/data/synthetic_tree.seqs"
-TREE_PREFIX = "gram/data/synthetic_tree"
-MODEL_OUT = "gram/data/synth_train.pt"
-
-print("max code index in sevs:", num_codes - 1)
-print("max index in tree:", max_index_in_tree)
-
-def build_labels(seqs):
-    """Tạo next-visit labels đúng chuẩn GRAM."""
-    labels = []
-    X = []
-
-    for p in seqs:
-        if len(p) >= 2:
-            X.append(p[:-1])
-            labels.append(p[1:])
-    return X, labels
+SEQ_FILE = "gram/data/synthetic.seqs"        # synthetic seqs
+TREE_PREFIX = "gram/data/mimic3_tree"        # REAL tree !!!
+MODEL_OUT = "gram/data/synth_pretrained_gram.pt"
 
 
 def clean_seqs(seqs):
@@ -40,45 +26,52 @@ def clean_seqs(seqs):
     return clean
 
 
+def build_labels(seqs):
+    X, Y = [], []
+    for p in seqs:
+        if len(p) >= 2:
+            X.append(p[:-1])
+            Y.append(p[1:])
+    return X, Y
+
+
 def train():
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    print("===== TRAIN GRAM =====")
+    print("===== TRAIN GRAM WITH SYNTHETIC DATA =====")
 
     # -------------------
-    # Load cleaned seqs
+    # Load synthetic seqs
     # -------------------
     seqs = pickle.load(open(SEQ_FILE, "rb"))
     seqs = clean_seqs(seqs)
-
     X, Y = build_labels(seqs)
 
     # -------------------
     # Compute num_codes
     # -------------------
     num_codes = max(max(max(v) for v in patient) for patient in seqs) + 1
-    num_classes = num_codes  # same output size
+    num_classes = num_codes
 
-    
+    print("num_codes =", num_codes)
+
     # -------------------
-    # Load tree
+    # Load REAL tree
     # -------------------
     tree_leaves, tree_ancestors = load_tree(TREE_PREFIX, device=device)
-    num_ancestors = tree_ancestors[0].shape[1] - 1
 
-    # Tính max index trong toàn bộ tree để tạo embedding cho synthetic
-    max_index_in_tree = 0
-    for ancestors in tree_ancestors:
-        # ancestors: (num_codes, num_levels)
-        max_index_in_tree = max(max_index_in_tree, ancestors.max().item())
+    # Determine max index used in tree
+    max_index_in_tree = max([anc.max().item() for anc in tree_ancestors])
+
+    print("max_index_in_tree =", max_index_in_tree)
 
     # -------------------
-    # Create model
+    # Create GRAM model
     # -------------------
     model = GRAM(
         input_dim=num_codes,
         num_classes=num_classes,
-        num_ancestors=num_ancestors,
+        num_ancestors=tree_ancestors[0].shape[1] - 1,
         emb_dim=128,
         att_dim=128,
         hidden_dim=128,
@@ -92,7 +85,7 @@ def train():
     loss_fn = nn.BCELoss(reduction="none")
 
     # -------------------
-    # Training loop
+    # Training
     # -------------------
     for epoch in range(20):
         model.train()
@@ -102,24 +95,24 @@ def train():
             batch_X = X[i:i+32]
             batch_Y = Y[i:i+32]
 
-            x, y, mask, lengths = pad_batch(batch_X, num_classes, num_codes, device)
-            y = pad_batch(batch_Y, num_classes, num_codes, device)[1]
+            x, _, mask, lengths = pad_batch(batch_X, num_classes, num_codes, device)
+            _, y, _, _ = pad_batch(batch_Y, num_classes, num_codes, device)
 
             pred = model(x, mask)
 
-            loss_raw = loss_fn(pred, y)       # (T,B,C)
-            loss_masked = (loss_raw.sum(2).sum(0) / lengths).mean()
+            loss_raw = loss_fn(pred, y)
+            loss = (loss_raw.sum(2).sum(0) / lengths).mean()
 
             optimizer.zero_grad()
-            loss_masked.backward()
+            loss.backward()
             optimizer.step()
 
-            total_loss += loss_masked.item()
+            total_loss += loss.item()
 
         print(f"[Epoch {epoch+1}] Loss = {total_loss:.4f}")
 
     torch.save(model.state_dict(), MODEL_OUT)
-    print("Model saved:", MODEL_OUT)
+    print("Model saved to:", MODEL_OUT)
 
 
 if __name__ == "__main__":
