@@ -7,7 +7,7 @@ import pickle
 # FIXED PATHS (KAGGLE)
 # ========================
 NPZ_PATH = "data/result/synthetic_mimic3.npz"
-CODE_MAP_PATH = "data/code_map.pkl"
+CODE_MAP_PATH = "data/mimic3/encoded/code_map.pkl"
 SEQ_OUT = "gram/data/synthetic.seqs"
 TYPES_OUT = "gram/data/synthetic.types"
 
