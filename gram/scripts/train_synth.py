@@ -16,6 +16,8 @@ SEQ_FILE = "gram/data/synthetic_tree.seqs"
 TREE_PREFIX = "gram/data/synthetic_tree"
 MODEL_OUT = "gram/data/synth_train.pt"
 
+print("max code index in sevs:", num_codes - 1)
+print("max index in tree:", max_index_in_tree)
 
 def build_labels(seqs):
     """Tạo next-visit labels đúng chuẩn GRAM."""
