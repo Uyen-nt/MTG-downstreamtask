@@ -57,11 +57,18 @@ def train():
     num_codes = max(max(max(v) for v in patient) for patient in seqs) + 1
     num_classes = num_codes  # same output size
 
+    
     # -------------------
     # Load tree
     # -------------------
     tree_leaves, tree_ancestors = load_tree(TREE_PREFIX, device=device)
     num_ancestors = tree_ancestors[0].shape[1] - 1
+
+    # Tính max index trong toàn bộ tree để tạo embedding cho synthetic
+    max_index_in_tree = 0
+    for ancestors in tree_ancestors:
+        # ancestors: (num_codes, num_levels)
+        max_index_in_tree = max(max_index_in_tree, ancestors.max().item())
 
     # -------------------
     # Create model
@@ -75,7 +82,8 @@ def train():
         hidden_dim=128,
         tree_leaves=tree_leaves,
         tree_ancestors=tree_ancestors,
-        device=device
+        device=device,
+        max_index_in_tree=max_index_in_tree
     ).to(device)
 
     optimizer = optim.Adam(model.parameters(), lr=0.001)
