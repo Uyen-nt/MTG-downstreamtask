@@ -56,8 +56,8 @@ class GRAM(nn.Module):
         # Embedding matrix W_emb (same dimension as Theano)
         # Shape: (input_dim + numAncestors) x emb_dim
         # ----------------------------------------------------------------
-        #self.W_emb = nn.Embedding(input_dim + num_ancestors, emb_dim) # dùng khi train với data mimic3
-        self.W_emb = nn.Embedding(max_index_in_tree + 1, emb_dim)
+        self.W_emb = nn.Embedding(input_dim + num_ancestors, emb_dim) # dùng khi train với data mimic3
+        #self.W_emb = nn.Embedding(max_index_in_tree + 1, emb_dim)
 
         # Attention MLP parameters (same as GRAM)
         self.W_attention = nn.Linear(emb_dim * 2, att_dim)
@@ -76,63 +76,59 @@ class GRAM(nn.Module):
         # Save tree tensors
         self.tree_leaves = tree_leaves
         self.tree_ancestors = tree_ancestors
-
-
-    # ----------------------------------------------------------------
-    # Compute GRAM embedding for all codes (matrix of shape input_dim x emb_dim)
-    # ----------------------------------------------------------------
-    def build_gram_embedding(self):
-        emb_list = []
-        for leaves, ancestors in zip(self.tree_leaves, self.tree_ancestors):
-            # W_emb[leaves]: (num_codes, num_ancestors, emb_dim)
-            # W_emb[ancestors]: same shape
-
-            leaf_emb = self.W_emb(leaves)          # (C, K, D)
-            anc_emb  = self.W_emb(ancestors)       # (C, K, D)
-
-            att_input = torch.cat([leaf_emb, anc_emb], dim=-1)  # (C, K, 2D)
-            mlp_out = torch.tanh(self.W_attention(att_input))    # (C, K, A)
-            att_logits = self.v_attention(mlp_out).squeeze(-1)   # (C, K)
-
-            att_weight = torch.softmax(att_logits, dim=-1)       # (C, K)
-
-            # Weighted sum over ancestors: Σ att * ancestor_embedding
-            code_emb = torch.sum(att_weight.unsqueeze(-1) * anc_emb, dim=1)  # (C, D)
-            emb_list.append(code_emb)
-
-        # Concatenate embeddings of all levels (same as Theano concatenate)
-        final_embedding = torch.cat(emb_list, dim=0)  # shape: (5*C, D)
-        return final_embedding
-
-
-    # ----------------------------------------------------------------
-    # Forward
-    # Inputs:
-    #   x: (T, B, input_dim) multi-hot
-    #   mask: (T, B)
-    # ----------------------------------------------------------------
+   
     def forward(self, x, mask):
-
-        # Build GRAM embedding
-        gram_emb = self.build_gram_embedding()  # (total_codes, emb_dim)
-
-        # Encode visits: x @ gram_emb  (weighted sum of embeddings)
-        # x shape: (T, B, input_dim)
-        # → result: (T, B, emb_dim)
-        x_emb = torch.tanh(torch.matmul(x, gram_emb[:self.input_dim, :]))
-
+        T, B, _ = x.shape
+        device = x.device
+    
+        # Lấy chỉ các mã xuất hiện trong batch
+        active_codes = (x.sum(dim=(0,1)) > 0).nonzero(as_tuple=True)[0]  # (N,)
+        if len(active_codes) == 0:
+            return torch.zeros(T, B, self.num_classes, device=device)
+    
+        # Tính GRAM embedding CHỈ cho các mã active
+        gram_embeddings = []
+        for leaves, ancestors in zip(self.tree_leaves, self.tree_ancestors):
+            # leaves: (C_total, K), ancestors: (C_total, K)
+            # Chỉ lấy các dòng tương ứng với active_codes
+            leaves_batch = leaves[active_codes]      # (N, K)
+            anc_batch = ancestors[active_codes]      # (N, K)
+    
+            leaf_emb = self.W_emb(leaves_batch)      # (N, K, D)
+            anc_emb = self.W_emb(anc_batch)          # (N, K, D)
+    
+            att_input = torch.cat([leaf_emb, anc_emb], dim=-1)  # (N, K, 2D)
+            mlp_out = torch.tanh(self.W_attention(att_input))   # (N, K, A)
+            att_logits = self.v_attention(mlp_out).squeeze(-1)  # (N, K)
+            att_weight = torch.softmax(att_logits, dim=-1)      # (N, K)
+    
+            weighted_emb = (att_weight.unsqueeze(-1) * anc_emb).sum(dim=1)  # (N, D)
+            gram_embeddings.append(weighted_emb)
+    
+        # Concat theo level → (N, 5*D)
+        gram_emb_batch = torch.cat(gram_embeddings, dim=-1)  # (N, 5*D)
+    
+        # Ánh xạ lại: active_codes → gram_emb_batch
+        code_to_emb = torch.zeros(self.input_dim, 5 * self.emb_dim, device=device)
+        code_to_emb = code_to_emb.index_copy_(0, active_codes, gram_emb_batch)
+    
+        # Tách thành 5 embedding riêng (mỗi level một ma trận)
+        emb_matrices = torch.split(code_to_emb, self.emb_dim, dim=-1)  # 5 x (input_dim, D)
+        final_emb = torch.cat(emb_matrices, dim=0)  # (5*input_dim, D)
+    
+        # Ánh xạ input → embedding
+        x_flat = x.view(-1, self.input_dim)  # (T*B, input_dim)
+        visit_emb = torch.tanh(torch.matmul(x_flat, final_emb[:self.input_dim]))  # (T*B, D)
+        visit_emb = visit_emb.view(T, B, self.emb_dim)
+    
         # GRU
-        h, _ = self.gru(x_emb)  # (T, B, hidden_dim)
-
-        # Apply mask
+        h, _ = self.gru(visit_emb)  # (T, B, hidden_dim)
         h = h * mask.unsqueeze(-1)
-
-        # Predict next-visit codes
-        logits = self.output_layer(h)    # (T, B, num_classes)
-        y_hat = torch.sigmoid(logits)    # multi-label sigmoid
-
+    
+        # Output
+        logits = self.output_layer(h)
+        y_hat = torch.sigmoid(logits)
         return y_hat
-
 
 
 # ----------------------------------------------------------------
