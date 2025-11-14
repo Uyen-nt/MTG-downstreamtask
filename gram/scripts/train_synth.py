@@ -12,9 +12,9 @@ import torch.optim as optim
 from gram.model.gram import GRAM, load_tree, pad_batch
 
 
-SEQ_FILE = "gram/data/synthetic.seqs"        # synthetic seqs
-TREE_PREFIX = "gram/data/mimic3_tree"        # REAL tree !!!
-MODEL_OUT = "gram/data/synth_pretrained_gram.pt"
+SEQ_FILE = "gram/data/synthetic.seqs"        
+TREE_PREFIX = "gram/data/mimic3_tree"        
+MODEL_OUT = "gram/data/synth_train.pt"
 
 
 def clean_seqs(seqs):
