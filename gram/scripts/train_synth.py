@@ -1,5 +1,9 @@
 # gram/scripts/train_synth.py
 
+import sys, os
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+sys.path.append(ROOT)
+
 import pickle
 import torch
 from gram.model.gram import GRAM
