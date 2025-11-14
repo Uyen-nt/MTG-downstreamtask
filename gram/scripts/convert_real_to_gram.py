@@ -6,9 +6,9 @@ import numpy as np
 # ========================
 # FIXED PATHS (KAGGLE)
 # ========================
-PATIENT_ADM_PATH = "data/patient_admission.pkl"
-ADMISSION_CODES_PATH = "data/admission_codes.pkl"
-CODE_MAP_PATH = "data/code_map.pkl"      # MUST MATCH SYNTHETIC
+PATIENT_ADM_PATH = "data/mimic3/encoded/patient_admission.pkl"
+ADMISSION_CODES_PATH = "data/mimic3/parsed/admission_codes.pkl"
+CODE_MAP_PATH = "data/mimic3/encoded/code_map.pkl"      
 SEQ_OUT = "gram/data/mimic3.seqs"
 TYPE_OUT = "gram/data/mimic3.types"
 
