@@ -6,8 +6,8 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path.append(ROOT)
 
 CCS_FILE = "data/ccs_multi_dx_tool_2015.csv"
-SEQ_FILE = "gram/data/data.3digitICD9.seqs"   
-TYPE_FILE = "gram/data/data.3digitICD9.types" 
+SEQ_FILE = "gram/data/mimic.3digitICD9.seqs"   
+TYPE_FILE = "gram/data/mimic.3digitICD9.types" 
 OUT_PREFIX = "gram/data/mimic3_tree"
 
 def build_tree():
