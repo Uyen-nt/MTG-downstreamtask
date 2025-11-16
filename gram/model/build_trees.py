@@ -1,174 +1,177 @@
-import sys, copy
+# build_trees.py
+import sys
 import pickle
 
 if __name__ == '__main__':
-    infile = sys.argv[1]
-    seqFile = sys.argv[2]
-    typeFile = sys.argv[3]
-    outFile = sys.argv[4]
+    # -------------------------------
+    # 1. Đọc tham số
+    # -------------------------------
+    infile = sys.argv[1]      # ccs_multi_dx_tool_2015.csv
+    seqFile = sys.argv[2]     # mimic.seqs
+    typeFile = sys.argv[3]    # mimic.types
+    outFile = sys.argv[4]     # mimic3_tree
 
-    infd = open(infile, 'r')
-    _ = infd.readline()
+    print(f"[BUILD TREE] Input: {infile}")
+    print(f"             seqs: {seqFile}")
+    print(f"             types: {typeFile}")
+    print(f"             output: {outFile}.level*.pk")
 
+    # -------------------------------
+    # 2. Đọc dữ liệu
+    # -------------------------------
     seqs = pickle.load(open(seqFile, 'rb'))
     types = pickle.load(open(typeFile, 'rb'))
-
     startSet = set(types.keys())
+    print(f"Đã đọc: {len(seqs)} bệnh nhân, {len(types)} mã lá")
+
+    # -------------------------------
+    # 3. Xây tổ tiên (pass 1)
+    # -------------------------------
     hitList = []
-    missList = []
-    cat1count = 0
-    cat2count = 0
-    cat3count = 0
-    cat4count = 0
-    for line in infd:
-        tokens = line.strip().split(',')
-        icd9 = tokens[0][1:-1].strip()
-        cat1 = tokens[1][1:-1].strip()
-        desc1 = 'A_' + tokens[2][1:-1].strip()
-        cat2 = tokens[3][1:-1].strip()
-        desc2 = 'A_' + tokens[4][1:-1].strip()
-        cat3 = tokens[5][1:-1].strip()
-        desc3 = 'A_' + tokens[6][1:-1].strip()
-        cat4 = tokens[7][1:-1].strip()
-        desc4 = 'A_' + tokens[8][1:-1].strip()
-        
-        if icd9.startswith('E'):
-            if len(icd9) > 4: icd9 = icd9[:4] + '.' + icd9[4:]
-        else:
-            if len(icd9) > 3: icd9 = icd9[:3] + '.' + icd9[3:]
-        icd9 = 'D_' + icd9
+    cat1count = cat2count = cat3count = cat4count = 0
 
-        if icd9 not in types: 
-            missList.append(icd9)
-        else: 
-            hitList.append(icd9)
+    with open(infile, 'r') as infd:
+        _ = infd.readline()  # bỏ header
+        for line in infd:
+            tokens = line.strip().split(',')
+            if len(tokens) < 9: continue
 
-        if desc1 not in types: 
-            cat1count += 1
-            types[desc1] = len(types)
+            icd9 = tokens[0][1:-1].strip()
+            desc1 = 'A_' + tokens[2][1:-1].strip()
+            desc2 = 'A_' + tokens[4][1:-1].strip() if len(tokens[4]) > 2 else ""
+            desc3 = 'A_' + tokens[6][1:-1].strip() if len(tokens[6]) > 2 else ""
+            desc4 = 'A_' + tokens[8][1:-1].strip() if len(tokens[8]) > 2 else ""
 
-        if len(cat2) > 0:
-            if desc2 not in types: 
-                cat2count += 1
+            # Chuẩn hóa ICD9
+            if icd9.startswith('E'):
+                icd9 = icd9[:4] + '.' + icd9[4:] if len(icd9) > 4 else icd9
+            else:
+                icd9 = icd9[:3] + '.' + icd9[3:] if len(icd9) > 3 else icd9
+            icd9 = 'D_' + icd9
+
+            if icd9 in types:
+                hitList.append(icd9)
+
+            # Thêm tổ tiên
+            if desc1 not in types:
+                types[desc1] = len(types)
+                cat1count += 1
+            if desc2 and desc2 not in types:
                 types[desc2] = len(types)
-        if len(cat3) > 0:
-            if desc3 not in types: 
-                cat3count += 1
+                cat2count += 1
+            if desc3 and desc3 not in types:
                 types[desc3] = len(types)
-        if len(cat4) > 0:
-            if desc4 not in types: 
-                cat4count += 1
+                cat3count += 1
+            if desc4 and desc4 not in types:
                 types[desc4] = len(types)
-    infd.close()
+                cat4count += 1
 
+    # -------------------------------
+    # 4. Thêm ROOT
+    # -------------------------------
     rootCode = len(types)
     types['A_ROOT'] = rootCode
-    print(rootCode)
 
-    print(f"cat1count: {cat1count}")
-    print(f"cat2count: {cat2count}")
-    print(f"cat3count: {cat3count}")
-    print(f"cat4count: {cat4count}")
-    print(f"Number of total ancestors: {cat1count + cat2count + cat3count + cat4count + 1}")
-    print(f"miss count: {len(startSet - set(hitList))}")
-    missSet = startSet - set(hitList)
+    print(f"\nTổ tiên:")
+    print(f"  L1: {cat1count}, L2: {cat2count}, L3: {cat3count}, L4: {cat4count}")
+    print(f"  ROOT: {rootCode}")
+    print(f"  Tổng tổ tiên: {cat1count + cat2count + cat3count + cat4count + 1}")
+    print(f"  Miss: {len(startSet - set(hitList))}")
 
-    #pickle.dump(types, open(outFile + '.types', 'wb'), -1)
-    #pickle.dump(missSet, open(outFile + '.miss', 'wb'), -1)
-
-
+    # -------------------------------
+    # 5. Xây map theo level (pass 2)
+    # -------------------------------
     fiveMap = {}
     fourMap = {}
     threeMap = {}
     twoMap = {}
-    oneMap = dict([(types[icd], [types[icd], rootCode]) for icd in missSet])
+    oneMap = {}
 
-    infd = open(infile, 'r')
-    infd.readline()
+    # Miss → level1
+    missSet = startSet - set(hitList)
+    for icd in missSet:
+        if icd in types:
+            oneMap[types[icd]] = [types[icd], rootCode]
 
-    for line in infd:
-        tokens = line.strip().split(',')
-        icd9 = tokens[0][1:-1].strip()
-        cat1 = tokens[1][1:-1].strip()
-        desc1 = 'A_' + tokens[2][1:-1].strip()
-        cat2 = tokens[3][1:-1].strip()
-        desc2 = 'A_' + tokens[4][1:-1].strip()
-        cat3 = tokens[5][1:-1].strip()
-        desc3 = 'A_' + tokens[6][1:-1].strip()
-        cat4 = tokens[7][1:-1].strip()
-        desc4 = 'A_' + tokens[8][1:-1].strip()
+    with open(infile, 'r') as infd:
+        _ = infd.readline()
+        for line in infd:
+            tokens = line.strip().split(',')
+            if len(tokens) < 9: continue
 
-        if icd9.startswith('E'):
-            if len(icd9) > 4: icd9 = icd9[:4] + '.' + icd9[4:]
-        else:
-            if len(icd9) > 3: icd9 = icd9[:3] + '.' + icd9[3:]
-        icd9 = 'D_' + icd9
+            icd9 = tokens[0][1:-1].strip()
+            desc1 = 'A_' + tokens[2][1:-1].strip()
+            desc2 = 'A_' + tokens[4][1:-1].strip() if len(tokens[4]) > 2 else ""
+            desc3 = 'A_' + tokens[6][1:-1].strip() if len(tokens[6]) > 2 else ""
+            desc4 = 'A_' + tokens[8][1:-1].strip() if len(tokens[8]) > 2 else ""
 
-        if icd9 not in types: continue
-        icdCode = types[icd9]
+            if icd9.startswith('E'):
+                icd9 = icd9[:4] + '.' + icd9[4:] if len(icd9) > 4 else icd9
+            else:
+                icd9 = icd9[:3] + '.' + icd9[3:] if len(icd9) > 3 else icd9
+            icd9 = 'D_' + icd9
+            if icd9 not in types: continue
 
-        codeVec = []
-
-        if len(cat4) > 0:
-            code4 = types[desc4]
-            code3 = types[desc3]
-            code2 = types[desc2]
+            icdCode = types[icd9]
             code1 = types[desc1]
-            fiveMap[icdCode] = [icdCode, rootCode, code1, code2, code3, code4]
-        elif len(cat3) > 0:
-            code3 = types[desc3]
-            code2 = types[desc2]
-            code1 = types[desc1]
-            fourMap[icdCode] = [icdCode, rootCode, code1, code2, code3]
-        elif len(cat2) > 0:
-            code2 = types[desc2]
-            code1 = types[desc1]
-            threeMap[icdCode] = [icdCode, rootCode, code1, code2]
-        else:
-            code1 = types[desc1]
-            twoMap[icdCode] = [icdCode, rootCode, code1]
-    
-    # Now we re-map the integers to all medical codes.
+
+            if desc4:
+                fiveMap[icdCode] = [icdCode, rootCode, code1, types[desc2], types[desc3], types[desc4]]
+            elif desc3:
+                fourMap[icdCode] = [icdCode, rootCode, code1, types[desc2], types[desc3]]
+            elif desc2:
+                threeMap[icdCode] = [icdCode, rootCode, code1, types[desc2]]
+            else:
+                twoMap[icdCode] = [icdCode, rootCode, code1]
+
+    # -------------------------------
+    # 6. Tái ánh xạ index (rất quan trọng!)
+    # -------------------------------
     newFiveMap = {}
     newFourMap = {}
     newThreeMap = {}
     newTwoMap = {}
     newOneMap = {}
     newTypes = {}
-    rtypes = dict([(v, k) for k, v in types.items()])
-
+    rtypes = {v: k for k, v in types.items()}
     codeCount = 0
-    for icdCode, ancestors in fiveMap.items():
-        newTypes[rtypes[icdCode]] = codeCount
-        newFiveMap[codeCount] = [codeCount] + ancestors[1:]
-        codeCount += 1
-    for icdCode, ancestors in fourMap.items():
-        newTypes[rtypes[icdCode]] = codeCount
-        newFourMap[codeCount] = [codeCount] + ancestors[1:]
-        codeCount += 1
-    for icdCode, ancestors in threeMap.items():
-        newTypes[rtypes[icdCode]] = codeCount
-        newThreeMap[codeCount] = [codeCount] + ancestors[1:]
-        codeCount += 1
-    for icdCode, ancestors in twoMap.items():
-        newTypes[rtypes[icdCode]] = codeCount
-        newTwoMap[codeCount] = [codeCount] + ancestors[1:]
-        codeCount += 1
-    for icdCode, ancestors in oneMap.items():
-        newTypes[rtypes[icdCode]] = codeCount
-        newOneMap[codeCount] = [codeCount] + ancestors[1:]
-        codeCount += 1
 
+    # Duyệt đúng thứ tự: level5 → level1
+    for old_map, new_map in [
+        (fiveMap, newFiveMap),
+        (fourMap, newFourMap),
+        (threeMap, newThreeMap),
+        (twoMap, newTwoMap),
+        (oneMap, newOneMap)
+    ]:
+        for oldCode, ancestors in old_map.items():
+            orig_str = rtypes[oldCode]
+            newTypes[orig_str] = codeCount
+            new_map[codeCount] = [codeCount] + ancestors[1:]
+            codeCount += 1
+
+    print(f"\nTái ánh xạ:")
+    print(f"  level5: {len(newFiveMap)}")
+    print(f"  level4: {len(newFourMap)}")
+    print(f"  level3: {len(newThreeMap)}")
+    print(f"  level2: {len(newTwoMap)}")
+    print(f"  level1: {len(newOneMap)}")
+    print(f"  Tổng mã mới: {len(newTypes)}")
+
+    # -------------------------------
+    # 7. Cập nhật seqs
+    # -------------------------------
     newSeqs = []
     for patient in seqs:
         newPatient = []
         for visit in patient:
-            newVisit = []
-            for code in visit:
-                newVisit.append(newTypes[rtypes[code]])
+            newVisit = [newTypes[rtypes[code]] for code in visit]
             newPatient.append(newVisit)
         newSeqs.append(newPatient)
 
+    # -------------------------------
+    # 8. LƯU FILE
+    # -------------------------------
     pickle.dump(newFiveMap, open(outFile + '.level5.pk', 'wb'), -1)
     pickle.dump(newFourMap, open(outFile + '.level4.pk', 'wb'), -1)
     pickle.dump(newThreeMap, open(outFile + '.level3.pk', 'wb'), -1)
@@ -176,3 +179,10 @@ if __name__ == '__main__':
     pickle.dump(newOneMap, open(outFile + '.level1.pk', 'wb'), -1)
     pickle.dump(newTypes, open(outFile + '.types', 'wb'), -1)
     pickle.dump(newSeqs, open(outFile + '.seqs', 'wb'), -1)
+
+    print(f"\nSAVED:")
+    for i in range(1, 6):
+        print(f"  {outFile}.level{i}.pk")
+    print(f"  {outFile}.types")
+    print(f"  {outFile}.seqs")
+    print("DONE")
