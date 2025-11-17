@@ -10,22 +10,45 @@ import pickle
 # Returns: leaves_list, ancestors_list for levels 5→1
 # ----------------------------------------------------------------
 def load_tree(tree_prefix, device="cpu"):
+    ancestors_list = []   # after padding
     leaves_list = []
-    ancestors_list = []
+    max_K = 0
+
+    raw_ancestors = []
+    raw_leaves = []
+
+    # Load raw
     for i in range(5, 0, -1):
         path = f"{tree_prefix}.level{i}.pk"
         try:
             tree = pickle.load(open(path, "rb"))
             if len(tree) == 0:
-                print(f"Warning: {path} is empty. Skipping level {i}.")
+                print(f"Warning: empty level {i}, skip")
                 continue
-            ancestors = np.array(list(tree.values())).astype("int64")
-            leaves = np.array([[k] * ancestors.shape[1] for k in tree.keys()]).astype("int64")
-            leaves_list.append(torch.tensor(leaves, dtype=torch.long, device=device))
-            ancestors_list.append(torch.tensor(ancestors, dtype=torch.long, device=device))
-        except Exception as e:
-            print(f"Error loading {path}: {e}")
+
+            ancestors = np.array(list(tree.values()))
+            leaves = np.array(list(tree.keys()))[:, None]   # shape (N, 1)
+
+            raw_ancestors.append(ancestors)
+            raw_leaves.append(leaves)
+
+            max_K = max(max_K, ancestors.shape[1])
+
+        except:
             continue
+
+    # PAD ALL LEVELS TO SAME K
+    for leaves, ancestors in zip(raw_leaves, raw_ancestors):
+
+        K = ancestors.shape[1]
+        if K < max_K:
+            pad_width = max_K - K
+            ancestors = np.pad(ancestors, ((0, 0), (0, pad_width)), mode="edge")
+            leaves = np.pad(leaves, ((0, 0), (0, pad_width)), mode="edge")
+
+        ancestors_list.append(torch.tensor(ancestors, device=device))
+        leaves_list.append(torch.tensor(leaves, device=device))
+
     return leaves_list, ancestors_list
 
 
