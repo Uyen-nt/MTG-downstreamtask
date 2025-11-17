@@ -58,8 +58,8 @@ if __name__ == '__main__':
     for line in infd:
         tokens = line.strip().split(',')
         admId = int(tokens[2])
-        dxStr = 'D_' + convert_to_icd9(tokens[4][1:-1]) ############## Uncomment this line and comment the line below, if you want to use the entire ICD9 digits.
-        dxStr_3digit = 'D_' + convert_to_3digit_icd9(tokens[4][1:-1])
+        dxStr = 'D_' + convert_to_icd9(tokens[4].strip())
+        dxStr_3digit = 'D_' + convert_to_3digit_icd9(tokens[4].strip())
 
         if admId in admDxMap: 
             admDxMap[admId].append(dxStr)
