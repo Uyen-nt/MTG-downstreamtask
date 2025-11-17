@@ -76,7 +76,7 @@ class GRAM(nn.Module):
 
         # GRU must receive total_emb_dim
         self.gru = nn.GRU(
-            input_size=self.total_emb_dim,
+            input_size=num_levels * emb_dim,
             hidden_size=hidden_dim,
             batch_first=False
         )
@@ -135,11 +135,11 @@ class GRAM(nn.Module):
                        device=device)
         code_emb.index_copy_(0, active_codes, gram_emb)
 
-        final_emb = code_emb[:self.input_dim]
+        final_emb = code_emb
         
         x_flat = x.view(-1, self.input_dim)
         visit_emb = torch.tanh(x_flat @ final_emb)
-        visit_emb = visit_emb.view(Tt, B, self.total_emb_dim)
+        visit_emb = visit_emb.view(Tt, B, self.num_levels * self.emb_dim)
 
         # GRU
         h, _ = self.gru(visit_emb)
