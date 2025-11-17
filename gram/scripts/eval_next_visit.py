@@ -7,7 +7,7 @@ sys.path.append(ROOT)
 import pickle
 import torch
 import numpy as np
-from sklearn.metrics import f1_score, jaccard_score
+from sklearn.metrics import jaccard_score
 
 from gram.model.gram import GRAM, load_tree, pad_batch
 
@@ -15,9 +15,9 @@ from gram.model.gram import GRAM, load_tree, pad_batch
 # ==========================
 # CONFIG
 # ==========================
-MODEL_FILE = "gram/data/synth_train_best.pt"          # model pretrained trên synthetic
-TREE_PREFIX = "gram/data/mimic3_tree"            # cây thật
-TEST_FILE = "gram/data/mimic.seqs"               # seqs thật của mimic3
+MODEL_FILE = "gram/data/synth_train_best.pt"
+TREE_PREFIX = "gram/data/mimic3_tree"
+TEST_FILE = "gram/data/mimic.seqs"
 
 
 def clean_seqs(seqs):
@@ -94,14 +94,25 @@ def evaluate():
     y_pred_list = []
     jaccards = []
 
-    for p in seqs:
+    for idx, p in enumerate(seqs):
+
+        # Skip bệnh nhân không đủ dữ liệu để tránh lỗi GRU(T=0)
+        if len(p) < 2:
+            print(f"[Skip] Patient {idx}: only 1 visit")
+            continue
+
         # input = visits 1..(T-1)
         # target = visits 2..T
         x = [p[:-1]]
         y = [p[1:]]
 
-        Xpad, _, mask, _ = pad_batch(x, num_classes, num_codes, device)
+        Xpad, _, mask, lengths = pad_batch(x, num_classes, num_codes, device)
         _, Ypad, _, _ = pad_batch(y, num_classes, num_codes, device)
+
+        # Nếu T = 0 → skip
+        if Xpad.size(0) == 0:
+            print(f"[Skip] Patient {idx}: T=0 after padding")
+            continue
 
         with torch.no_grad():
             pred = model(Xpad, mask)  # (T,1,num_classes)
