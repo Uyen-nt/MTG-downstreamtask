@@ -15,7 +15,7 @@ from gram.model.gram import GRAM, load_tree, pad_batch
 # ==========================
 # CONFIG
 # ==========================
-MODEL_FILE = "gram/data/synth_train.pt"          # model pretrained trên synthetic
+MODEL_FILE = "gram/data/synth_train_best.pt"          # model pretrained trên synthetic
 TREE_PREFIX = "gram/data/mimic3_tree"            # cây thật
 TEST_FILE = "gram/data/mimic.seqs"               # seqs thật của mimic3
 
