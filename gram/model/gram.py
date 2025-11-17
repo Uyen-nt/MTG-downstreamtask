@@ -130,17 +130,15 @@ class GRAM(nn.Module):
         gram_emb = torch.cat(per_level_emb, dim=-1)
 
         # Fill full code embedding table
-        code_emb = torch.zeros(self.input_dim, self.total_emb_dim, device=device)
+        code_emb = torch.zeros(self.max_index_in_tree + 1,
+                       gram_emb.shape[1],
+                       device=device)
         code_emb.index_copy_(0, active_codes, gram_emb)
 
-        # ---------------------------------------------------------
-        # Project multi-hot → visit embedding
-        # x_flat: (T*B, input_dim)
-        # final_emb: (input_dim, total_emb_dim)
-        # visit_emb: (T*B, total_emb_dim)
-        # ---------------------------------------------------------
+        final_emb = code_emb[:self.input_dim]
+        
         x_flat = x.view(-1, self.input_dim)
-        visit_emb = torch.tanh(x_flat @ code_emb)
+        visit_emb = torch.tanh(x_flat @ final_emb)
         visit_emb = visit_emb.view(Tt, B, self.total_emb_dim)
 
         # GRU
