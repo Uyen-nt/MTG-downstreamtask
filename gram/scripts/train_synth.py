@@ -92,6 +92,9 @@ def train():
     loss_fn = nn.BCELoss(reduction="none")
 
     # 5) TRAIN LOOP
+    # DÙNG CrossEntropyLoss thay vì BCELoss vì đây là multi-class
+    loss_fn = nn.CrossEntropyLoss(reduction='none')
+    
     for epoch in range(20):
         model.train()
         total_loss = 0
@@ -101,23 +104,28 @@ def train():
             y_batch = Y[i : i+32]
 
             x, _, mask, lengths = pad_batch(x_batch, num_classes, num_codes, device)
-            _, y, _, _          = pad_batch(y_batch, num_classes, num_codes, device)
+            _, y, _, _ = pad_batch(y_batch, num_classes, num_codes, device)
 
-            pred = model(x, mask)
-
-            loss_raw = loss_fn(pred, y)
-            loss = (loss_raw.sum(dim=2).sum(dim=0) / lengths).mean()
+            pred = model(x, mask)  # (T, B, num_classes)
+            
+            # Chuẩn bị target cho CrossEntropy
+            # Chuyển y từ one-hot sang class indices
+            y_labels = y.argmax(dim=-1)  # (T, B)
+            
+            # Tính loss chỉ cho các time steps valid
+            loss_per_step = loss_fn(pred.permute(0, 2, 1), y_labels)  # (T, B)
+            loss_masked = loss_per_step * mask
+            loss = loss_masked.sum() / mask.sum()  # Chuẩn hóa theo số time steps valid
 
             optimizer.zero_grad()
             loss.backward()
+            # Thêm gradient clipping để ổn định
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             optimizer.step()
 
             total_loss += loss.item()
 
         print(f"[Epoch {epoch+1}] Loss = {total_loss:.4f}")
-
-    torch.save(model.state_dict(), MODEL_OUT)
-    print("Model saved to:", MODEL_OUT)
 
 
 
