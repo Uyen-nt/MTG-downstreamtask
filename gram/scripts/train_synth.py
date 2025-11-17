@@ -9,7 +9,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-from gram.model.gram import GRAM, load_tree, pad_batch
+from gram.model.gram import GRAM, load_tree
 
 
 SEQ_FILE = "gram/data/synthetic_converted/synthetic_mapped.seqs"
@@ -35,6 +35,25 @@ def build_labels(seqs):
             Y.append(p[1:])
     return X, Y
 
+def pad_batch(seqs, num_classes, input_dim, device="cpu"):
+
+    lengths = [len(p) - 1 for p in seqs]
+    T = max(lengths)
+    B = len(seqs)
+
+    x = torch.zeros(T, B, input_dim, device=device)
+    y = torch.zeros(T, B, num_classes, device=device)
+    mask = torch.zeros(T, B, device=device)
+
+    for b, patient in enumerate(seqs):
+        for t in range(len(patient)-1):
+            for code in patient[t]:
+                x[t, b, code] = 1.0
+            for code in patient[t+1]:
+                y[t, b, code] = 1.0
+        mask[: lengths[b], b] = 1.0
+
+    return x, y, mask, torch.tensor(lengths, device=device)
 
 def train():
 
