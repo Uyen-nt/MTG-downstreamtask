@@ -10,56 +10,53 @@ import pickle
 # Returns: leaves_list, ancestors_list for levels 5→1
 # ----------------------------------------------------------------
 def load_tree(tree_prefix, device="cpu"):
-
-    raw_ancestors = []
     raw_leaves = []
+    raw_ancestors = []
     max_K = 0
 
-    # ---- Load all tree levels ----
-    for i in range(5, 0, -1):
-        path = f"{tree_prefix}.level{i}.pk"
+    # ---- Load all levels ----
+    for level in range(5, 0, -1):
+        path = f"{tree_prefix}.level{level}.pk"
         try:
             tree = pickle.load(open(path, "rb"))
             if len(tree) == 0:
-                print(f"Warning: empty level {i}, skip")
+                print(f"[WARN] Empty level {level}, skip.")
                 continue
 
-            ancestors = np.array(list(tree.values()))  # (num_codes, K)
-            leaves = np.array(list(tree.keys()))       # (num_codes,)
+            ancestors = np.array(list(tree.values()))  # (C, K)
+            leaves = np.array(list(tree.keys()))       # (C,)
 
-            raw_ancestors.append(ancestors)
             raw_leaves.append(leaves)
+            raw_ancestors.append(ancestors)
 
             max_K = max(max_K, ancestors.shape[1])
 
         except Exception as e:
-            print(f"Error loading {path}: {e}")
+            print(f"[ERR] cannot load {path}: {e}")
+            continue
 
-    # ---- PAD LEVELS to have same K ----
-    final_leaves = []
-    final_ancestors = []
+
+    # ---- Pad levels to max_K ----
+    fixed_leaves = []
+    fixed_ancestors = []
 
     for leaves, ancestors in zip(raw_leaves, raw_ancestors):
+        C, K = ancestors.shape
 
-        num_codes = len(leaves)
-        K = ancestors.shape[1]
-
-        # pad ancestors to max_K
+        # Pad ancestors (repeat last ancestor ID)
         if K < max_K:
-            ancestors = np.pad(
-                ancestors,
-                ((0, 0), (0, max_K - K)),
-                mode="edge"
-            )
+            pad_width = max_K - K
+            last_col = ancestors[:, -1:]
+            pad_block = np.repeat(last_col, pad_width, axis=1)
+            ancestors = np.concatenate([ancestors, pad_block], axis=1)
 
-        # IMPORTANT: expand leaves to shape (num_codes, max_K)
+        # Expand leaves to shape (C, max_K)
         leaves_expanded = np.repeat(leaves[:, None], max_K, axis=1)
 
-        final_leaves.append(torch.tensor(leaves_expanded, dtype=torch.long, device=device))
-        final_ancestors.append(torch.tensor(ancestors, dtype=torch.long, device=device))
+        fixed_leaves.append(torch.tensor(leaves_expanded, dtype=torch.long, device=device))
+        fixed_ancestors.append(torch.tensor(ancestors, dtype=torch.long, device=device))
 
-    return final_leaves, final_ancestors
-
+    return fixed_leaves, fixed_ancestors
 
 
 # ----------------------------------------------------------------
