@@ -126,6 +126,7 @@ def train():
             total_loss += loss.item()
 
         print(f"[Epoch {epoch+1}] Loss = {total_loss:.4f}")
+        torch.save(model.state_dict(), MODEL_OUT)
 
     
 if __name__ == "__main__":
