@@ -173,6 +173,10 @@ class GRAM(nn.Module):
     
         # Output per time-step - DÙNG SOFTMAX CHO MULTI-CLASS
         y_hat = F.softmax(self.out(h), dim=-1)  # (T, B, num_classes)
+        # Thêm kiểm tra
+        print(f"active_codes range: {active_codes.min()} - {active_codes.max()}")
+        print(f"leaves shape: {leaves.shape}")
+        print(f"valid_idx range: {valid_idx.min()} - {valid_idx.max()}")
         return y_hat
 
 
