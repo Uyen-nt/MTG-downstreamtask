@@ -10,14 +10,12 @@ import pickle
 # Returns: leaves_list, ancestors_list for levels 5→1
 # ----------------------------------------------------------------
 def load_tree(tree_prefix, device="cpu"):
-    ancestors_list = []   # after padding
-    leaves_list = []
-    max_K = 0
 
     raw_ancestors = []
     raw_leaves = []
+    max_K = 0
 
-    # Load raw
+    # ---- Load all tree levels ----
     for i in range(5, 0, -1):
         path = f"{tree_prefix}.level{i}.pk"
         try:
@@ -26,30 +24,42 @@ def load_tree(tree_prefix, device="cpu"):
                 print(f"Warning: empty level {i}, skip")
                 continue
 
-            ancestors = np.array(list(tree.values()))
-            leaves = np.array(list(tree.keys()))[:, None]   # shape (N, 1)
+            ancestors = np.array(list(tree.values()))  # (num_codes, K)
+            leaves = np.array(list(tree.keys()))       # (num_codes,)
 
             raw_ancestors.append(ancestors)
             raw_leaves.append(leaves)
 
             max_K = max(max_K, ancestors.shape[1])
 
-        except:
-            continue
+        except Exception as e:
+            print(f"Error loading {path}: {e}")
 
-    # PAD ALL LEVELS TO SAME K
+    # ---- PAD LEVELS to have same K ----
+    final_leaves = []
+    final_ancestors = []
+
     for leaves, ancestors in zip(raw_leaves, raw_ancestors):
 
+        num_codes = len(leaves)
         K = ancestors.shape[1]
+
+        # pad ancestors to max_K
         if K < max_K:
-            pad_width = max_K - K
-            ancestors = np.pad(ancestors, ((0, 0), (0, pad_width)), mode="edge")
-            leaves = np.pad(leaves, ((0, 0), (0, pad_width)), mode="edge")
+            ancestors = np.pad(
+                ancestors,
+                ((0, 0), (0, max_K - K)),
+                mode="edge"
+            )
 
-        ancestors_list.append(torch.tensor(ancestors, device=device))
-        leaves_list.append(torch.tensor(leaves, device=device))
+        # IMPORTANT: expand leaves to shape (num_codes, max_K)
+        leaves_expanded = np.repeat(leaves[:, None], max_K, axis=1)
 
-    return leaves_list, ancestors_list
+        final_leaves.append(torch.tensor(leaves_expanded, dtype=torch.long, device=device))
+        final_ancestors.append(torch.tensor(ancestors, dtype=torch.long, device=device))
+
+    return final_leaves, final_ancestors
+
 
 
 # ----------------------------------------------------------------
