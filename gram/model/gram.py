@@ -1,262 +1,146 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import numpy as np
 import pickle
+import numpy as np
 
 
-# ----------------------------------------------------------------
-# Load ancestor tree (same logic as GRAM build_tree)
-# Returns: leaves_list, ancestors_list for levels 5→1
-# ----------------------------------------------------------------
+# ============================================================
+# Load ancestor tree (always return a single ancestor chain per code)
+# ============================================================
 def load_tree(tree_prefix, device="cpu"):
-    raw_leaves = []
-    raw_ancestors = []
-    max_K = 0
+    """
+    Return:
+       ancestors: tensor shape (C, K)
+          where K = length of ancestor chain including leaf
+          Example: [leaf, A5, A4, A3, A2, A1, ROOT]
+    """
+    full_chain = []
 
-    # ---- Load all levels ----
-    for level in range(5, 0, -1):
-        path = f"{tree_prefix}.level{level}.pk"
+    # level5 → level1
+    levels = []
+    for i in range(5, 0, -1):
+        path = f"{tree_prefix}.level{i}.pk"
         try:
             tree = pickle.load(open(path, "rb"))
             if len(tree) == 0:
-                print(f"[WARN] Empty level {level}, skip.")
                 continue
+            levels.append(tree)
+        except:
+            pass
 
-            ancestors = np.array(list(tree.values()))  # (C, K)
-            leaves = np.array(list(tree.keys()))       # (C,)
+    # build a full chain for every leaf code
+    # all level dicts have same keys: leaf_index → list of ancestors
+    # we concatenate levels vertically
+    master_keys = list(levels[0].keys())
+    C = len(master_keys)
 
-            raw_leaves.append(leaves)
-            raw_ancestors.append(ancestors)
+    # Determine K
+    K = sum(len(levels[i][master_keys[0]]) for i in range(len(levels)))
 
-            max_K = max(max_K, ancestors.shape[1])
+    ancestors = torch.zeros((C, K), dtype=torch.long, device=device)
 
-        except Exception as e:
-            print(f"[ERR] cannot load {path}: {e}")
-            continue
+    ptr = 0
+    for level in levels:
+        for leaf_idx, leaf_key in enumerate(master_keys):
+            arr = torch.tensor(level[leaf_key], dtype=torch.long, device=device)
+            ancestors[leaf_idx, ptr:ptr+len(arr)] = arr
+        ptr += len(arr)
 
-
-    # ---- Pad levels to max_K ----
-    fixed_leaves = []
-    fixed_ancestors = []
-
-    for leaves, ancestors in zip(raw_leaves, raw_ancestors):
-        C, K = ancestors.shape
-
-        # Pad ancestors (repeat last ancestor ID)
-        if K < max_K:
-            pad_width = max_K - K
-            last_col = ancestors[:, -1:]
-            pad_block = np.repeat(last_col, pad_width, axis=1)
-            ancestors = np.concatenate([ancestors, pad_block], axis=1)
-
-        # Expand leaves to shape (C, max_K)
-        leaves_expanded = np.repeat(leaves[:, None], max_K, axis=1)
-
-        fixed_leaves.append(torch.tensor(leaves_expanded, dtype=torch.long, device=device))
-        fixed_ancestors.append(torch.tensor(ancestors, dtype=torch.long, device=device))
-
-    return fixed_leaves, fixed_ancestors
+    return ancestors  # shape (C, K)
 
 
-# ----------------------------------------------------------------
-# GRAM Model in PyTorch
-# ----------------------------------------------------------------
+# ============================================================
+# GRAM model — ORIGINAL (Theano version)
+# ============================================================
 class GRAM(nn.Module):
     def __init__(
         self,
-        input_dim,        # number of codes
-        num_classes,      # number of prediction classes
-        num_ancestors,    # inputDimSize + numAncestors, same as GRAM
+        input_dim,          # number of leaf codes (C)
+        num_classes,
+        ancestors_tensor,   # shape (C, K)
         emb_dim=128,
         att_dim=128,
         hidden_dim=128,
-        tree_leaves=None,
-        tree_ancestors=None,
-        device="cpu",
-        max_index_in_tree=None 
+        device="cpu"
     ):
         super().__init__()
-
-        self.input_dim = input_dim
+        self.C = input_dim
         self.num_classes = num_classes
-        self.num_ancestors = num_ancestors
-        self.num_levels = len(tree_leaves)
-        self.emb_dim = emb_dim
-        self.att_dim = att_dim
-        self.hidden_dim = hidden_dim
         self.device = device
 
-        # ----------------------------------------------------------------
-        # Embedding matrix W_emb (same dimension as Theano)
-        # Shape: (input_dim + numAncestors) x emb_dim
-        # ----------------------------------------------------------------
-        #self.W_emb = nn.Embedding(input_dim + num_ancestors, emb_dim) # dùng khi train với data mimic3
-        if max_index_in_tree is not None:
-            num_embeddings = max_index_in_tree + 1
-        else:
-            # fallback: trường hợp train trực tiếp trên mimc3, cây & input_dim khớp
-            num_embeddings = input_dim + num_ancestors
+        # ancestors tensor: (C, K)
+        self.ancestors = ancestors_tensor
+        self.K = ancestors_tensor.shape[1]
 
-        self.W_emb = nn.Embedding(num_embeddings, emb_dim)
+        # max index in tree
+        self.num_embeddings = int(ancestors_tensor.max().item()) + 1
 
-        # Attention MLP parameters (same as GRAM)
-        self.W_attention = nn.Linear(emb_dim * 2, att_dim)
-        self.v_attention = nn.Linear(att_dim, 1, bias=False)
+        # embedding matrix
+        self.W_emb = nn.Embedding(self.num_embeddings, emb_dim)
 
-        # GRU layer
+        # attention
+        self.W_att = nn.Linear(emb_dim * 2, att_dim)
+        self.v_att = nn.Linear(att_dim, 1, bias=False)
+
+        # GRU
         self.gru = nn.GRU(
             input_size=emb_dim,
             hidden_size=hidden_dim,
-            batch_first=False,
+            batch_first=False
         )
 
-        # Output layer
+        # output
         self.output_layer = nn.Linear(hidden_dim, num_classes)
 
-        # Save tree tensors
-        self.tree_leaves = tree_leaves
-        self.tree_ancestors = tree_ancestors
-   
-    def forward(self, x, mask):
-        T, B, _ = x.shape
-        device = x.device
-    
-        # Lấy chỉ các mã xuất hiện trong batch
-        active_codes = (x.sum(dim=(0,1)) > 0).nonzero(as_tuple=True)[0]  # (N,)
-        if len(active_codes) == 0:
-            return torch.zeros(T, B, self.num_classes, device=device)
-            
-        active_codes = active_codes.to(device)
-        # Tính GRAM embedding CHỈ cho các mã active
-        gram_embeddings = []
-        for leaves, ancestors in zip(self.tree_leaves, self.tree_ancestors):
-            valid_idx = active_codes[active_codes < leaves.shape[0]]
+    # --------------------------------------------------------
+    # Compute embedding for all codes
+    # --------------------------------------------------------
+    def compute_gram_embedding(self):
+        """
+        Return embedding E shape (C, D)
+        """
 
-            if len(valid_idx) == 0:
-                gram_embeddings.append(
-                    torch.zeros((0, self.emb_dim), device=device)
-                )
-                continue
-        
-            leaves_batch = leaves[valid_idx]
-            anc_batch = ancestors[valid_idx]
-    
-            leaf_emb = self.W_emb(leaves_batch)      # (N, K, D)
-            anc_emb = self.W_emb(anc_batch)          # (N, K, D)
-    
-            att_input = torch.cat([leaf_emb, anc_emb], dim=-1)  # (N, K, 2D)
-            mlp_out = torch.tanh(self.W_attention(att_input))   # (N, K, A)
-            att_logits = self.v_attention(mlp_out).squeeze(-1)  # (N, K)
-            att_weight = torch.softmax(att_logits, dim=-1)      # (N, K)
-    
-            weighted_emb = (att_weight.unsqueeze(-1) * anc_emb).sum(dim=1)  # (N, D)
-            gram_embeddings.append(weighted_emb)
-    
-        # Concat theo level → (N, 5*D)
-        gram_emb_batch = torch.cat(gram_embeddings, dim=-1)  # (N, 5*D)
-    
-        # Ánh xạ lại: active_codes → gram_emb_batch
-        code_to_emb = torch.zeros(self.input_dim, 5 * self.emb_dim, device=device)
-        code_to_emb = code_to_emb.index_copy_(0, active_codes, gram_emb_batch)
-    
-        # Tách thành 5 embedding riêng (mỗi level một ma trận)
-        emb_matrices = torch.split(code_to_emb, self.emb_dim, dim=-1)  # 5 x (input_dim, D)
-        # Thay vì split cố định 5 phần
-        emb_per_level = gram_emb_batch.shape[1] // self.num_levels
-        emb_matrices = torch.split(gram_emb_batch, emb_per_level, dim=-1)
-        final_emb = torch.cat(emb_matrices, dim=0)  # (num_levels * input_dim, D)
-        #final_emb = torch.cat(emb_matrices, dim=0)  # (5*input_dim, D)
-    
-        # Ánh xạ input → embedding
-        x_flat = x.view(-1, self.input_dim)  # (T*B, input_dim)
-        visit_emb = torch.tanh(torch.matmul(x_flat, final_emb[:self.input_dim]))  # (T*B, D)
-        visit_emb = visit_emb.view(T, B, self.emb_dim)
-    
+        leaf_ids = self.ancestors[:, 0]   # leaf index
+        anc_ids  = self.ancestors         # full chain
+
+        leaf_emb = self.W_emb(leaf_ids)              # (C, D)
+        anc_emb  = self.W_emb(anc_ids)               # (C, K, D)
+
+        # repeat leaf embedding as (C, K, D)
+        leaf_rep = leaf_emb.unsqueeze(1).repeat(1, self.K, 1)
+
+        att_input = torch.cat([leaf_rep, anc_emb], dim=-1)   # (C, K, 2D)
+        h = torch.tanh(self.W_att(att_input))                # (C, K, A)
+        alpha = F.softmax(self.v_att(h).squeeze(-1), dim=-1) # (C, K)
+
+        # sum of ancestor embeddings weighted by alpha
+        e = torch.sum(anc_emb * alpha.unsqueeze(-1), dim=1)  # (C, D)
+        return e
+
+    # --------------------------------------------------------
+    # Forward
+    # --------------------------------------------------------
+    def forward(self, x, mask):
+        """
+        x:    (T, B, C)
+        mask: (T, B)
+        """
+
+        T, B, C = x.shape
+
+        # embedding (C, D)
+        E = self.compute_gram_embedding()
+
+        # visit embedding
+        x_flat = x.reshape(T * B, C)
+        visit_emb = torch.matmul(x_flat, E)        # (T*B, D)
+        visit_emb = visit_emb.reshape(T, B)
+
         # GRU
-        h, _ = self.gru(visit_emb)  # (T, B, hidden_dim)
+        h, _ = self.gru(visit_emb)
         h = h * mask.unsqueeze(-1)
-    
-        # Output
+
         logits = self.output_layer(h)
         y_hat = torch.sigmoid(logits)
         return y_hat
-
-
-# ----------------------------------------------------------------
-# Padding function (same as padMatrix in GRAM)
-# seqs: list of list of list (patients -> visits -> codes)
-# ----------------------------------------------------------------
-def pad_batch(seqs, num_classes, input_dim, device="cpu"):
-
-    lengths = [len(p) - 1 for p in seqs]
-    T = max(lengths)
-    B = len(seqs)
-
-    x = torch.zeros(T, B, input_dim, device=device)
-    y = torch.zeros(T, B, num_classes, device=device)
-    mask = torch.zeros(T, B, device=device)
-
-    for b, patient in enumerate(seqs):
-        for t in range(len(patient)-1):
-            for code in patient[t]:
-                x[t, b, code] = 1.0
-            for code in patient[t+1]:
-                y[t, b, code] = 1.0
-        mask[: lengths[b], b] = 1.0
-
-    return x, y, mask, torch.tensor(lengths, device=device)
-
-
-
-# ----------------------------------------------------------------
-# Training GRAM (pretrain or finetune)
-# ----------------------------------------------------------------
-def train_gram(
-        model,
-        train_seqs,
-        valid_seqs,
-        input_dim,
-        num_classes,
-        batch_size=32,
-        lr=0.001,
-        epochs=20,
-        device="cpu"
-    ):
-
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    loss_fn = nn.BCELoss(reduction="none")
-
-    def run_epoch(data, train=True):
-        total_loss = 0
-        steps = 0
-
-        if train:
-            model.train()
-        else:
-            model.eval()
-
-        for i in range(0, len(data), batch_size):
-            batch = data[i : i+batch_size]
-            x, y, mask, lengths = pad_batch(batch, num_classes, input_dim, device)
-
-            y_hat = model(x, mask)
-            loss = loss_fn(y_hat, y)
-            loss = (loss.sum(dim=2).sum(dim=0) / lengths).mean()
-
-            if train:
-                optimizer.zero_grad()
-                loss.backward()
-                optimizer.step()
-
-            total_loss += loss.item()
-            steps += 1
-
-        return total_loss / steps
-
-    for ep in range(epochs):
-        tr = run_epoch(train_seqs, train=True)
-        va = run_epoch(valid_seqs, train=False)
-        print(f"[Epoch {ep}] Train loss={tr:.4f} | Valid loss={va:.4f}")
-
-    return model
