@@ -88,6 +88,10 @@ def train():
         max_index_in_tree=max_index_in_tree
     ).to(device)
 
+    best_loss = float('inf')
+    BEST_MODEL_OUT = "gram/data/synth_train_best.pt"   # model tốt nhất
+    LAST_MODEL_OUT = "gram/data/synth_train_last.pt"
+    
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     # 5) TRAIN LOOP
     # DÙNG CrossEntropyLoss thay vì BCELoss vì đây là multi-class
@@ -125,9 +129,24 @@ def train():
 
             total_loss += loss.item()
 
+        # lưu model
         print(f"[Epoch {epoch+1}] Loss = {total_loss:.4f}")
-        torch.save(model.state_dict(), MODEL_OUT)
 
+        # Lưu model tốt nhất (dựa trên training loss)
+        if total_loss < best_loss:
+            best_loss = total_loss
+            torch.save(model.state_dict(), BEST_MODEL_OUT)
+            print(" → Saved NEW BEST model!")
+
+        # Luôn lưu lại model của epoch hiện tại (nếu muốn theo dõi từng epoch)
+        # torch.save(model.state_dict(), f"gram/data/synth_train_epoch{epoch+1}.pt")
+
+    # Sau khi hết toàn bộ 20 epoch → lưu thêm model cuối cùng (phòng trường hợp epoch 20 tốt hơn best)
+    torch.save(model.state_dict(), LAST_MODEL_OUT)
+    print(f"Training finished! Best model: {BEST_MODEL_OUT}")
+    print(f"                     Last model: {LAST_MODEL_OUT}")
+
+        
     
 if __name__ == "__main__":
     train()
