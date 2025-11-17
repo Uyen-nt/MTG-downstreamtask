@@ -60,7 +60,7 @@ def train():
     print("num_codes =", num_codes)
 
     # 3) LOAD TREE (REAL MIMIC3)
-    tree_leaves, tree_ancestors = load_tree(TREE_PREFIX, device=device)
+    tree_leaves, tree_ancestors = load_tree(TREE_PREFIX, num_codes, device=device)
 
     # Compute max index in tree for embedding table size
     all_idx = []
