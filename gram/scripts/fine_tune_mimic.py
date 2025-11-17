@@ -10,7 +10,7 @@ import torch.optim as optim
 
 from gram.model.gram import GRAM, load_tree, pad_batch
 
-SYNTH_MODEL = "gram/data/synth_train.pt"
+SYNTH_MODEL = "gram/data/synth_train_best.pt"
 TREE_PREFIX = "gram/data/mimic3_tree"
 MIMIC_FILE = "gram/data/mimic.seqs"
 
