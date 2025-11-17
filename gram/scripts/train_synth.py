@@ -78,6 +78,7 @@ def train():
     model = GRAM(
         input_dim=num_codes,
         num_classes=num_classes,
+        num_levels=len(tree_leaves),
         emb_dim=128,
         att_dim=128,
         hidden_dim=128,
