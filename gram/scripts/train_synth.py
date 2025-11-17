@@ -89,46 +89,9 @@ def train():
     ).to(device)
 
     optimizer = optim.Adam(model.parameters(), lr=0.001)
-    # # 5) TRAIN LOOP
-    # # DÙNG CrossEntropyLoss thay vì BCELoss vì đây là multi-class
-    # #loss_fn = nn.CrossEntropyLoss(reduction='none')
-    
-    # for epoch in range(20):
-    #     model.train()
-    #     total_loss = 0
-
-    #     for i in range(0, len(X), 32):
-    #         x_batch = X[i : i+32]
-    #         y_batch = Y[i : i+32]
-
-    #         x, _, mask, lengths = pad_batch(x_batch, num_classes, num_codes, device)
-    #         _, y, _, _ = pad_batch(y_batch, num_classes, num_codes, device)
-
-    #         pred = model(x, mask)  # (T, B, num_classes)
-            
-    #         # Chuẩn bị target cho CrossEntropy
-    #         # Chuyển y từ one-hot sang class indices
-    #         y_labels = y.argmax(dim=-1)  # (T, B)
-            
-    #         # Tính loss chỉ cho các time steps valid
-    #         loss_per_step = loss_fn(pred.permute(0, 2, 1), y_labels)  # (T, B)
-            
-    #         loss_masked = loss_per_step * mask
-    #         loss = loss_masked.sum() / mask.sum()  # Chuẩn hóa theo số time steps valid
-            
-
-    #         optimizer.zero_grad()
-    #         loss.backward()
-    #         # Thêm gradient clipping để ổn định
-    #         torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
-    #         optimizer.step()
-
-    #         total_loss += loss.item()
-
-    #     print(f"[Epoch {epoch+1}] Loss = {total_loss:.4f}")
-
-    # DÙNG BCELoss cho multi-label prediction
-    loss_fn = nn.BCELoss(reduction='none')
+    # 5) TRAIN LOOP
+    # DÙNG CrossEntropyLoss thay vì BCELoss vì đây là multi-class
+    #loss_fn = nn.CrossEntropyLoss(reduction='none')
     
     for epoch in range(20):
         model.train()
@@ -138,22 +101,25 @@ def train():
             x_batch = X[i : i+32]
             y_batch = Y[i : i+32]
 
-            x, y, mask, lengths = pad_batch(x_batch, num_classes, num_codes, device)
-            # KHÔNG cần pad_batch thứ hai cho y
+            x, _, mask, lengths = pad_batch(x_batch, num_classes, num_codes, device)
+            _, y, _, _ = pad_batch(y_batch, num_classes, num_codes, device)
 
-            pred = model(x, mask)  # (T, B, num_classes) - sigmoid output
-
-            # TÍNH LOSS CHO MULTI-LABEL (giống bản gốc GRAM)
-            loss_raw = loss_fn(pred, y)  # (T, B, num_classes)
+            pred = model(x, mask)  # (T, B, num_classes)
             
-            # Mask loss và chuẩn hóa theo lengths (giống bản gốc)
-            loss_masked = loss_raw * mask.unsqueeze(-1)  # (T, B, num_classes)
-            loss_sum_per_patient = loss_masked.sum(dim=0).sum(dim=1)  # (B,)
-            loss_normalized = loss_sum_per_patient / lengths  # (B,)
-            loss = loss_normalized.mean()
+            # Chuẩn bị target cho CrossEntropy
+            # Chuyển y từ one-hot sang class indices
+            y_labels = y.argmax(dim=-1)  # (T, B)
+            
+            # Tính loss chỉ cho các time steps valid
+            loss_per_step = loss_fn(pred.permute(0, 2, 1), y_labels)  # (T, B)
+            
+            loss_masked = loss_per_step * mask
+            loss = loss_masked.sum() / mask.sum()  # Chuẩn hóa theo số time steps valid
+            
 
             optimizer.zero_grad()
             loss.backward()
+            # Thêm gradient clipping để ổn định
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             optimizer.step()
 
@@ -161,7 +127,6 @@ def train():
 
         print(f"[Epoch {epoch+1}] Loss = {total_loss:.4f}")
 
-
-
+    
 if __name__ == "__main__":
     train()
