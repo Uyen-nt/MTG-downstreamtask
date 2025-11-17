@@ -101,10 +101,16 @@ class GRAM(nn.Module):
         # Tính GRAM embedding CHỈ cho các mã active
         gram_embeddings = []
         for leaves, ancestors in zip(self.tree_leaves, self.tree_ancestors):
-            # leaves: (C_total, K), ancestors: (C_total, K)
-            # Chỉ lấy các dòng tương ứng với active_codes
-            leaves_batch = leaves[active_codes]      # (N, K)
-            anc_batch = ancestors[active_codes]      # (N, K)
+            valid_idx = active_codes[active_codes < leaves.shape[0]]
+
+            if len(valid_idx) == 0:
+                gram_embeddings.append(
+                    torch.zeros((0, self.emb_dim), device=device)
+                )
+                continue
+        
+            leaves_batch = leaves[valid_idx]
+            anc_batch = ancestors[valid_idx]
     
             leaf_emb = self.W_emb(leaves_batch)      # (N, K, D)
             anc_emb = self.W_emb(anc_batch)          # (N, K, D)
