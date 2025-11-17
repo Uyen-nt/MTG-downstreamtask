@@ -62,15 +62,21 @@ class GRAM(nn.Module):
         self.emb_dim = emb_dim
         self.att_dim = att_dim
         self.hidden_dim = hidden_dim
+        self.device = device
+        
+        # Total dim = L * D
+        self.total_emb_dim = num_levels * emb_dim
 
-        # Embedding: must include ancestors (max_index_in_tree)
+        # Embedding table (codes + ancestors)
         self.W_emb = nn.Embedding(max_index_in_tree + 1, emb_dim)
 
+        # Attention network
         self.W_att = nn.Linear(emb_dim * 2, att_dim)
         self.v_att = nn.Linear(att_dim, 1, bias=False)
 
+        # GRU must receive total_emb_dim
         self.gru = nn.GRU(
-            input_size=emb_dim,
+            input_size=self.total_emb_dim,
             hidden_size=hidden_dim,
             batch_first=False
         )
@@ -85,53 +91,63 @@ class GRAM(nn.Module):
         """
         x: (T, B, input_dim)
         """
-
         Tt, B, _ = x.shape
         device = x.device
 
+        # find all active codes in batch
         active_codes = (x.sum(dim=(0,1)) > 0).nonzero(as_tuple=True)[0]
+
         if len(active_codes) == 0:
             return torch.zeros(Tt, B, self.num_classes, device=device)
 
         per_level_emb = []
 
+        # ---------------------------------------------------------
+        # Compute GRAM embedding for each level
+        # ---------------------------------------------------------
         for leaves, ancestors in zip(self.tree_leaves, self.tree_anc):
 
-            # Filter valid indices
-            valid = active_codes[active_codes < leaves.shape[0]]
+            valid_idx = active_codes
 
-            leaves_b = leaves[valid]      # (N, K)
-            anc_b = ancestors[valid]      # (N, K)
+            leaves_b = leaves[valid_idx]      # (N, K)
+            anc_b = ancestors[valid_idx]      # (N, K)
 
             leaf_emb = self.W_emb(leaves_b)   # (N, K, D)
-            anc_emb = self.W_emb(anc_b)       # (N, K, D)
+            anc_emb  = self.W_emb(anc_b)      # (N, K, D)
 
             att_in = torch.cat([leaf_emb, anc_emb], dim=-1)
             att_h = torch.tanh(self.W_att(att_in))
-            att_logits = self.v_att(att_h).squeeze(-1)
+            att_logits = self.v_att(att_h).squeeze(-1)     # (N,K)
             att = torch.softmax(att_logits, dim=-1)
 
-            final = (att.unsqueeze(-1) * anc_emb).sum(dim=1)   # (N, D)
+            final = (att.unsqueeze(-1) * anc_emb).sum(dim=1) # (N,D)
             per_level_emb.append(final)
 
-        # Now all are (N, D)
-        gram_emb = torch.cat(per_level_emb, dim=-1)    # (N, num_levels*D)
+        # ---------------------------------------------------------
+        # CONCAT LEVEL EMBEDDINGS THEO CHIỀU FEATURES
+        # result: (N, total_emb_dim)
+        # ---------------------------------------------------------
+        gram_emb = torch.cat(per_level_emb, dim=-1)
 
-        # Broadcast to full embedding matrix
-        code_emb = torch.zeros(self.input_dim, gram_emb.shape[1], device=device)
+        # Fill full code embedding table
+        code_emb = torch.zeros(self.input_dim, self.total_emb_dim, device=device)
         code_emb.index_copy_(0, active_codes, gram_emb)
 
-        # Extract first segment (GRAM original logic)
-        final_emb = code_emb[:, :self.emb_dim]         # (input_dim, D)
-
-        # Convert x multi-hot to embedding
+        # ---------------------------------------------------------
+        # Project multi-hot → visit embedding
+        # x_flat: (T*B, input_dim)
+        # final_emb: (input_dim, total_emb_dim)
+        # visit_emb: (T*B, total_emb_dim)
+        # ---------------------------------------------------------
         x_flat = x.view(-1, self.input_dim)
-        visit_emb = torch.tanh(x_flat @ final_emb)      # (T*B, D)
-        visit_emb = visit_emb.view(Tt, B, self.emb_dim)
+        visit_emb = torch.tanh(x_flat @ code_emb)
+        visit_emb = visit_emb.view(Tt, B, self.total_emb_dim)
 
+        # GRU
         h, _ = self.gru(visit_emb)
         h = h * mask.unsqueeze(-1)
 
+        # Output per time-step
         y_hat = torch.sigmoid(self.out(h))
         return y_hat
 
