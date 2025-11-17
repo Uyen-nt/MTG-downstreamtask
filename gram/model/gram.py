@@ -105,29 +105,19 @@ class GRAM(nn.Module):
         Tt, B, _ = x.shape
         device = x.device
     
-        # Tìm tất cả các mã active trong batch - sửa cách tìm
-        active_codes = torch.unique(x.nonzero()[:, 2])  # Lấy tất cả unique codes xuất hiện
+        # Tạo code embedding table trực tiếp (không cần xử lý active codes phức tạp)
+        code_emb = torch.zeros(self.input_dim, self.num_levels * self.emb_dim, device=device)
         
-        if len(active_codes) == 0:
-            return torch.zeros(Tt, B, self.num_classes, device=device)
-    
+        # Tính GRAM embedding cho TẤT CẢ codes (an toàn hơn)
+        all_codes = torch.arange(self.input_dim, device=device)
+        
         per_level_emb = []
-    
-        # ---------------------------------------------------------
-        # Compute GRAM embedding for each level
-        # ---------------------------------------------------------
         for leaves, ancestors in zip(self.tree_leaves, self.tree_anc):
-            # CHỈ lấy các codes nằm trong phạm vi hợp lệ
-            valid_idx = active_codes[active_codes < len(leaves)]
+            # Đảm bảo không vượt quá phạm vi
+            safe_codes = all_codes[all_codes < len(leaves)]
             
-            if len(valid_idx) == 0:
-                # Nếu không có code nào valid, tạo embedding zero
-                dummy_emb = torch.zeros(len(active_codes), self.emb_dim, device=device)
-                per_level_emb.append(dummy_emb)
-                continue
-    
-            leaves_b = leaves[valid_idx]      # (N, K)
-            anc_b = ancestors[valid_idx]      # (N, K)
+            leaves_b = leaves[safe_codes]      # (N, K)
+            anc_b = ancestors[safe_codes]      # (N, K)
     
             leaf_emb = self.W_emb(leaves_b)   # (N, K, D)
             anc_emb  = self.W_emb(anc_b)      # (N, K, D)
@@ -138,27 +128,15 @@ class GRAM(nn.Module):
             att = torch.softmax(att_logits, dim=-1)
     
             final = (att.unsqueeze(-1) * anc_emb).sum(dim=1) # (N,D)
-            per_level_emb.append(final)
+            
+            # Mở rộng về đúng kích thước input_dim
+            full_emb = torch.zeros(self.input_dim, self.emb_dim, device=device)
+            full_emb[safe_codes] = final
+            per_level_emb.append(full_emb)
     
-        # ---------------------------------------------------------
-        # CONCAT LEVEL EMBEDDINGS
-        # ---------------------------------------------------------
-        if len(per_level_emb) > 0 and len(per_level_emb[0]) > 0:
-            gram_emb = torch.cat(per_level_emb, dim=-1)  # (N, num_levels * emb_dim)
-        else:
-            # Fallback: tạo embedding zero
-            gram_emb = torch.zeros(len(active_codes), self.num_levels * self.emb_dim, device=device)
-    
-        # Tạo code embedding table
-        code_emb = torch.zeros(self.input_dim, self.num_levels * self.emb_dim, device=device)
-        
-        # CHỈ copy các codes hợp lệ (nằm trong phạm vi input_dim)
-        valid_codes = active_codes[active_codes < self.input_dim]
-        if len(valid_codes) > 0:
-            # Đảm bảo indices hợp lệ
-            valid_indices = valid_codes[valid_codes < len(gram_emb)]
-            if len(valid_indices) > 0:
-                code_emb.index_copy_(0, valid_codes, gram_emb[valid_indices])
+        # Concatenate tất cả levels
+        if len(per_level_emb) > 0:
+            code_emb = torch.cat(per_level_emb, dim=-1)  # (input_dim, num_levels * emb_dim)
     
         # ---------------------------------------------------------
         # TÍNH VISIT EMBEDDING
@@ -171,14 +149,9 @@ class GRAM(nn.Module):
         h, _ = self.gru(visit_emb)  # (T, B, hidden_dim)
         h = h * mask.unsqueeze(-1)
     
-        # Output per time-step - DÙNG SOFTMAX CHO MULTI-CLASS
+        # Output per time-step
         y_hat = F.softmax(self.out(h), dim=-1)  # (T, B, num_classes)
-        # Thêm kiểm tra
-        print(f"active_codes range: {active_codes.min()} - {active_codes.max()}")
-        print(f"leaves shape: {leaves.shape}")
-        print(f"valid_idx range: {valid_idx.min()} - {valid_idx.max()}")
         return y_hat
-
 
 
 # ===============================================================
