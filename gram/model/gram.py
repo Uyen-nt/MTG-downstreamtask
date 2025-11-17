@@ -129,11 +129,11 @@ class GRAM(nn.Module):
         # ---------------------------------------------------------
         gram_emb = torch.cat(per_level_emb, dim=-1)
 
-        # Fill full code embedding table
-        code_emb = torch.zeros(self.max_index_in_tree + 1,
-                       gram_emb.shape[1],
-                       device=device)
-        code_emb.index_copy_(0, active_codes, gram_emb)
+        code_emb = torch.zeros(self.input_dim, gram_emb.shape[1], device=device)
+        # chỉ copy vào các row tương ứng code trong input_dim
+        valid_codes = active_codes[active_codes < self.input_dim]
+        code_emb.index_copy_(0, valid_codes, gram_emb[active_codes < self.input_dim])
+
 
         final_emb = code_emb
         
