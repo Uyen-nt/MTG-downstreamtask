@@ -8,51 +8,33 @@ import pickle
 # ===============================================================
 # LOAD TREE (PAD TO SAME ANCESTOR LENGTH)
 # ===============================================================
-def load_tree(tree_prefix, device="cpu"):
+def load_tree(prefix, num_codes, device):
+    leaves_list = []
+    ancestors_list = []
 
-    raw_leaves = []
-    raw_anc = []
-    max_K = 0
-
-    # Load levels 5 → 1
     for level in range(5, 0, -1):
-        path = f"{tree_prefix}.level{level}.pk"
-        try:
-            tree = pickle.load(open(path, "rb"))
-            if len(tree) == 0:
-                print(f"[WARN] {path} empty → skip")
-                continue
+        path = f"{prefix}.level{level}.pk"
+        tree = pickle.load(open(path, "rb"))
 
-            leaves = np.array(list(tree.keys()))          # (C,)
-            ancestors = np.array(list(tree.values()))     # (C, K)
+        # treeMap: {leaf_code: [anc1, anc2, ...]}
+        # GRAM gốc yêu cầu đủ num_codes dòng
+        leaves = np.zeros((num_codes, len(next(iter(tree.values())))), dtype=np.int32)
+        ancestors = np.zeros((num_codes, len(next(iter(tree.values())))), dtype=np.int32)
 
-            raw_leaves.append(leaves)
-            raw_anc.append(ancestors)
+        for leaf_id in range(num_codes):
+            if leaf_id in tree:
+                ancestors[leaf_id] = tree[leaf_id]
+                leaves[leaf_id] = leaf_id
+            else:
+                # nếu code không có trong tree → dùng A_ROOT (theo GRAM gốc)
+                root = list(tree.values())[0][-1]
+                ancestors[leaf_id] = [root] * ancestors.shape[1]
+                leaves[leaf_id] = leaf_id
 
-            max_K = max(max_K, ancestors.shape[1])
+        leaves_list.append(torch.tensor(leaves, device=device))
+        ancestors_list.append(torch.tensor(ancestors, device=device))
 
-        except:
-            print(f"[ERR] cannot load {path}")
-            continue
-
-    fixed_leaves = []
-    fixed_anc = []
-
-    # Pad all ancestor lists to same K
-    for leaves, ancestors in zip(raw_leaves, raw_anc):
-        C, K = ancestors.shape
-        if K < max_K:
-            pad_width = max_K - K
-            last_col = ancestors[:, -1:]
-            pad_block = np.repeat(last_col, pad_width, axis=1)
-            ancestors = np.concatenate([ancestors, pad_block], axis=1)
-
-        leaves_exp = np.repeat(leaves[:, None], max_K, axis=1)
-
-        fixed_leaves.append(torch.tensor(leaves_exp, dtype=torch.long, device=device))
-        fixed_anc.append(torch.tensor(ancestors, dtype=torch.long, device=device))
-
-    return fixed_leaves, fixed_anc
+    return leaves_list, ancestors_list
 
 
 
