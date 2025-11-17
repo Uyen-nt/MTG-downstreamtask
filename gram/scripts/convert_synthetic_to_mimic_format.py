@@ -117,19 +117,13 @@ def convert_synthetic(npz_path, code_map_path, output_dir):
 
 
 # ============================================================
-# 5) CLI interface
+# 5) RUN
 # ============================================================
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Convert MTGAN synthetic data → mimic3 GRAM format")
 
-    parser.add_argument("--npz", required=True,
-                        help="Path to synthetic_mimic3.npz")
-    parser.add_argument("--code_map", required=True,
-                        help="Path to code_map.pkl")
-    parser.add_argument("--out", required=True,
-                        help="Output directory to save synthetic.pids / seqs / types")
+    npz_path = os.path.join(ROOT, "data/result/synthetic_mimic3.npz")
+    code_map_path = os.path.join(ROOT, "data/mimic3/encoded/code_map.pkl")
+    output_dir = os.path.join(ROOT, "data/mimic3/synthetic_converted")
 
-    args = parser.parse_args()
-
-    convert_synthetic(args.npz, args.code_map, args.out)
+    convert_synthetic(npz_path, code_map_path, output_dir)
