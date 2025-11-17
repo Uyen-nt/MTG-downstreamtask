@@ -69,6 +69,7 @@ class GRAM(nn.Module):
 
         # Embedding table (codes + ancestors)
         self.W_emb = nn.Embedding(max_index_in_tree + 1, emb_dim)
+        self.W_reduce = nn.Linear(self.num_levels * self.emb_dim, self.emb_dim)
 
         # Attention network
         self.W_att = nn.Linear(emb_dim * 2, att_dim)
@@ -129,13 +130,14 @@ class GRAM(nn.Module):
         # ---------------------------------------------------------
         gram_emb = torch.cat(per_level_emb, dim=-1)
 
-        code_emb = torch.zeros(self.input_dim, gram_emb.shape[1], device=device)
-        # chỉ copy vào các row tương ứng code trong input_dim
+        code_emb = torch.zeros(self.input_dim, self.num_levels * self.emb_dim, device=device)
+
         valid_codes = active_codes[active_codes < self.input_dim]
         code_emb.index_copy_(0, valid_codes, gram_emb[active_codes < self.input_dim])
+        
+        # reduce 5D → D
+        final_emb = self.W_reduce(code_emb)     # (input_dim, D)
 
-
-        final_emb = code_emb
         
         x_flat = x.view(-1, self.input_dim)
         visit_emb = torch.tanh(x_flat @ final_emb)
