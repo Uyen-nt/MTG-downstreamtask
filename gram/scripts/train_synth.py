@@ -91,7 +91,7 @@ def train():
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     # 5) TRAIN LOOP
     # DÙNG CrossEntropyLoss thay vì BCELoss vì đây là multi-class
-    #loss_fn = nn.CrossEntropyLoss(reduction='none')
+    loss_fn = nn.CrossEntropyLoss(reduction='none')
     
     for epoch in range(20):
         model.train()
