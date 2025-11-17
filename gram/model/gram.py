@@ -14,26 +14,36 @@ def load_tree(prefix, num_codes, device):
 
     for level in range(5, 0, -1):
         path = f"{prefix}.level{level}.pk"
-        tree = pickle.load(open(path, "rb"))
+        try:
+            tree = pickle.load(open(path, "rb"))
+        except:
+            print(f"Warning: Cannot load {path}")
+            continue
 
-        # treeMap: {leaf_code: [anc1, anc2, ...]}
-        # GRAM gốc yêu cầu đủ num_codes dòng
-        leaves = np.zeros((num_codes, len(next(iter(tree.values())))), dtype=np.int32)
-        ancestors = np.zeros((num_codes, len(next(iter(tree.values())))), dtype=np.int32)
+        # Tạo arrays với kích thước chính xác
+        sample_ancestors = next(iter(tree.values()))
+        K = len(sample_ancestors)  # Số ancestors
+        
+        leaves = np.zeros((num_codes, K), dtype=np.int32)
+        ancestors = np.zeros((num_codes, K), dtype=np.int32)
 
+        # Lấy root code từ tree
+        root_code = sample_ancestors[-1]  # Root thường là phần tử cuối
+        
         for leaf_id in range(num_codes):
             if leaf_id in tree:
+                # Code có trong tree
                 ancestors[leaf_id] = tree[leaf_id]
                 leaves[leaf_id] = leaf_id
             else:
-                # nếu code không có trong tree → dùng A_ROOT (theo GRAM gốc)
-                root = list(tree.values())[0][-1]
-                ancestors[leaf_id] = [root] * ancestors.shape[1]
+                # Code không có trong tree → dùng root
+                ancestors[leaf_id] = [root_code] * K
                 leaves[leaf_id] = leaf_id
 
-        leaves_list.append(torch.tensor(leaves, device=device))
-        ancestors_list.append(torch.tensor(ancestors, device=device))
+        leaves_list.append(torch.tensor(leaves, device=device, dtype=torch.long))
+        ancestors_list.append(torch.tensor(ancestors, device=device, dtype=torch.long))
 
+    print(f"Loaded {len(leaves_list)} tree levels")
     return leaves_list, ancestors_list
 
 
@@ -95,9 +105,9 @@ class GRAM(nn.Module):
         Tt, B, _ = x.shape
         device = x.device
     
-        # find all active codes in batch
-        active_codes = (x.sum(dim=(0,1)) > 0).nonzero(as_tuple=True)[0]
-    
+        # Tìm tất cả các mã active trong batch - sửa cách tìm
+        active_codes = torch.unique(x.nonzero()[:, 2])  # Lấy tất cả unique codes xuất hiện
+        
         if len(active_codes) == 0:
             return torch.zeros(Tt, B, self.num_classes, device=device)
     
@@ -107,7 +117,14 @@ class GRAM(nn.Module):
         # Compute GRAM embedding for each level
         # ---------------------------------------------------------
         for leaves, ancestors in zip(self.tree_leaves, self.tree_anc):
-            valid_idx = active_codes
+            # CHỈ lấy các codes nằm trong phạm vi hợp lệ
+            valid_idx = active_codes[active_codes < len(leaves)]
+            
+            if len(valid_idx) == 0:
+                # Nếu không có code nào valid, tạo embedding zero
+                dummy_emb = torch.zeros(len(active_codes), self.emb_dim, device=device)
+                per_level_emb.append(dummy_emb)
+                continue
     
             leaves_b = leaves[valid_idx]      # (N, K)
             anc_b = ancestors[valid_idx]      # (N, K)
@@ -125,20 +142,24 @@ class GRAM(nn.Module):
     
         # ---------------------------------------------------------
         # CONCAT LEVEL EMBEDDINGS
-        # result: (N, num_levels * emb_dim)
         # ---------------------------------------------------------
-        gram_emb = torch.cat(per_level_emb, dim=-1)  # (N, num_levels * emb_dim)
+        if len(per_level_emb) > 0 and len(per_level_emb[0]) > 0:
+            gram_emb = torch.cat(per_level_emb, dim=-1)  # (N, num_levels * emb_dim)
+        else:
+            # Fallback: tạo embedding zero
+            gram_emb = torch.zeros(len(active_codes), self.num_levels * self.emb_dim, device=device)
     
-        # Tạo code embedding table với đúng kích thước
+        # Tạo code embedding table
         code_emb = torch.zeros(self.input_dim, self.num_levels * self.emb_dim, device=device)
         
+        # CHỈ copy các codes hợp lệ (nằm trong phạm vi input_dim)
         valid_codes = active_codes[active_codes < self.input_dim]
         if len(valid_codes) > 0:
-            code_emb.index_copy_(0, valid_codes, gram_emb[valid_codes])
-        
-        # KHÔNG reduce dimension ở đây - giữ nguyên num_levels * emb_dim
-        # final_emb = self.W_reduce(code_emb)  # COMMENT DÒNG NÀY
-        
+            # Đảm bảo indices hợp lệ
+            valid_indices = valid_codes[valid_codes < len(gram_emb)]
+            if len(valid_indices) > 0:
+                code_emb.index_copy_(0, valid_codes, gram_emb[valid_indices])
+    
         # ---------------------------------------------------------
         # TÍNH VISIT EMBEDDING
         # ---------------------------------------------------------
@@ -146,12 +167,12 @@ class GRAM(nn.Module):
         visit_emb = torch.tanh(x_flat @ code_emb)  # (T*B, num_levels * emb_dim)
         visit_emb = visit_emb.view(Tt, B, self.num_levels * self.emb_dim)  # (T, B, num_levels * emb_dim)
     
-        # GRU - input_size phải khớp với num_levels * emb_dim
+        # GRU
         h, _ = self.gru(visit_emb)  # (T, B, hidden_dim)
         h = h * mask.unsqueeze(-1)
     
-        # Output per time-step
-        y_hat = torch.sigmoid(self.out(h))  # (T, B, num_classes)
+        # Output per time-step - DÙNG SOFTMAX CHO MULTI-CLASS
+        y_hat = F.softmax(self.out(h), dim=-1)  # (T, B, num_classes)
         return y_hat
 
 
