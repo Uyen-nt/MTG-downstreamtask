@@ -89,11 +89,11 @@ def train():
     ).to(device)
 
     optimizer = optim.Adam(model.parameters(), lr=0.001)
+    
     loss_fn = nn.BCELoss(reduction="none")
-
     # 5) TRAIN LOOP
     # DÙNG CrossEntropyLoss thay vì BCELoss vì đây là multi-class
-    loss_fn = nn.CrossEntropyLoss(reduction='none')
+    #loss_fn = nn.CrossEntropyLoss(reduction='none')
     
     for epoch in range(20):
         model.train()
@@ -114,8 +114,13 @@ def train():
             
             # Tính loss chỉ cho các time steps valid
             loss_per_step = loss_fn(pred.permute(0, 2, 1), y_labels)  # (T, B)
-            loss_masked = loss_per_step * mask
-            loss = loss_masked.sum() / mask.sum()  # Chuẩn hóa theo số time steps valid
+            
+            # loss_masked = loss_per_step * mask
+            # loss = loss_masked.sum() / mask.sum()  # Chuẩn hóa theo số time steps valid
+            # Và tính loss như sau:
+            loss_raw = loss_fn(pred, y)
+            loss_masked = (loss_raw * mask.unsqueeze(-1)).sum(dim=2).sum(dim=0) / lengths
+            loss = loss_masked.mean()
 
             optimizer.zero_grad()
             loss.backward()
