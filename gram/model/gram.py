@@ -54,7 +54,7 @@ class GRAM(nn.Module):
                  tree_ancestors,
                  max_index_in_tree,
                  device="cpu"):
-        
+    
         super().__init__()
         self.input_dim = input_dim
         self.num_classes = num_classes
@@ -64,26 +64,26 @@ class GRAM(nn.Module):
         self.hidden_dim = hidden_dim
         self.device = device
         self.max_index_in_tree = max_index_in_tree
-        # Total dim = L * D
-        self.total_emb_dim = num_levels * emb_dim
-
+    
         # Embedding table (codes + ancestors)
         self.W_emb = nn.Embedding(max_index_in_tree + 1, emb_dim)
-        self.W_reduce = nn.Linear(self.num_levels * self.emb_dim, self.emb_dim)
-
+        
+        # BỎ layer reduce này - không cần thiết
+        # self.W_reduce = nn.Linear(self.num_levels * self.emb_dim, self.emb_dim)
+    
         # Attention network
         self.W_att = nn.Linear(emb_dim * 2, att_dim)
         self.v_att = nn.Linear(att_dim, 1, bias=False)
-
-        # GRU must receive total_emb_dim
+    
+        # GRU phải nhận input_size = num_levels * emb_dim
         self.gru = nn.GRU(
-            input_size=num_levels * emb_dim,
+            input_size=num_levels * emb_dim,  # Đảm bảo đúng kích thước
             hidden_size=hidden_dim,
-            batch_first=False
+            batch_first=False  # (T, B, features)
         )
-
+    
         self.out = nn.Linear(hidden_dim, num_classes)
-
+    
         self.tree_leaves = tree_leaves
         self.tree_anc = tree_ancestors
 
@@ -94,61 +94,64 @@ class GRAM(nn.Module):
         """
         Tt, B, _ = x.shape
         device = x.device
-
+    
         # find all active codes in batch
         active_codes = (x.sum(dim=(0,1)) > 0).nonzero(as_tuple=True)[0]
-
+    
         if len(active_codes) == 0:
             return torch.zeros(Tt, B, self.num_classes, device=device)
-
+    
         per_level_emb = []
-
+    
         # ---------------------------------------------------------
         # Compute GRAM embedding for each level
         # ---------------------------------------------------------
         for leaves, ancestors in zip(self.tree_leaves, self.tree_anc):
-
             valid_idx = active_codes
-
+    
             leaves_b = leaves[valid_idx]      # (N, K)
             anc_b = ancestors[valid_idx]      # (N, K)
-
+    
             leaf_emb = self.W_emb(leaves_b)   # (N, K, D)
             anc_emb  = self.W_emb(anc_b)      # (N, K, D)
-
+    
             att_in = torch.cat([leaf_emb, anc_emb], dim=-1)
             att_h = torch.tanh(self.W_att(att_in))
             att_logits = self.v_att(att_h).squeeze(-1)     # (N,K)
             att = torch.softmax(att_logits, dim=-1)
-
+    
             final = (att.unsqueeze(-1) * anc_emb).sum(dim=1) # (N,D)
             per_level_emb.append(final)
-
+    
         # ---------------------------------------------------------
-        # CONCAT LEVEL EMBEDDINGS THEO CHIỀU FEATURES
-        # result: (N, total_emb_dim)
+        # CONCAT LEVEL EMBEDDINGS
+        # result: (N, num_levels * emb_dim)
         # ---------------------------------------------------------
-        gram_emb = torch.cat(per_level_emb, dim=-1)
-
+        gram_emb = torch.cat(per_level_emb, dim=-1)  # (N, num_levels * emb_dim)
+    
+        # Tạo code embedding table với đúng kích thước
         code_emb = torch.zeros(self.input_dim, self.num_levels * self.emb_dim, device=device)
-
+        
         valid_codes = active_codes[active_codes < self.input_dim]
-        code_emb.index_copy_(0, valid_codes, gram_emb[active_codes < self.input_dim])
+        if len(valid_codes) > 0:
+            code_emb.index_copy_(0, valid_codes, gram_emb[valid_codes])
         
-        # reduce 5D → D
-        final_emb = self.W_reduce(code_emb)     # (input_dim, D)
-
+        # KHÔNG reduce dimension ở đây - giữ nguyên num_levels * emb_dim
+        # final_emb = self.W_reduce(code_emb)  # COMMENT DÒNG NÀY
         
-        x_flat = x.view(-1, self.input_dim)
-        visit_emb = torch.tanh(x_flat @ final_emb)
-        visit_emb = visit_emb.view(Tt, B, self.num_levels * self.emb_dim)
-
-        # GRU
-        h, _ = self.gru(visit_emb)
+        # ---------------------------------------------------------
+        # TÍNH VISIT EMBEDDING
+        # ---------------------------------------------------------
+        x_flat = x.view(-1, self.input_dim)  # (T*B, input_dim)
+        visit_emb = torch.tanh(x_flat @ code_emb)  # (T*B, num_levels * emb_dim)
+        visit_emb = visit_emb.view(Tt, B, self.num_levels * self.emb_dim)  # (T, B, num_levels * emb_dim)
+    
+        # GRU - input_size phải khớp với num_levels * emb_dim
+        h, _ = self.gru(visit_emb)  # (T, B, hidden_dim)
         h = h * mask.unsqueeze(-1)
-
+    
         # Output per time-step
-        y_hat = torch.sigmoid(self.out(h))
+        y_hat = torch.sigmoid(self.out(h))  # (T, B, num_classes)
         return y_hat
 
 
