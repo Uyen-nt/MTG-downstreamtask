@@ -1,4 +1,4 @@
-# gram/scripts/build_tree_real.py
+# gram/scripts/build_tree_synth.py
 
 import subprocess
 import sys, os
