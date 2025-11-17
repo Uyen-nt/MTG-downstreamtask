@@ -1,6 +1,6 @@
 import numpy as np
 import pickle
-import os
+import os, sys
 import argparse
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path.append(ROOT)
