@@ -4,6 +4,7 @@ import sys, os
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path.append(ROOT)
 os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
+
 import pickle
 import torch
 import torch.nn as nn
@@ -12,74 +13,71 @@ import torch.optim as optim
 from gram.model.gram import GRAM, load_tree, pad_batch
 
 
-SEQ_FILE = "gram/data/synthetic_converted/synthetic_mapped.seqs"
-TREE_PREFIX = "gram/data/mimic3_tree"
+# ==========================
+# PATH CONFIG
+# ==========================
 
+SEQ_FILE = "gram/data/synthetic_converted/synthetic_mapped.seqs"
+TREE_PREFIX = "gram/data/mimic3_tree"      
 MODEL_OUT = "gram/data/synth_train.pt"
+
 
 
 def clean_seqs(seqs):
     clean = []
-    for patient in seqs:
-        visits = [v for v in patient if len(v) > 0]
-        if len(visits) >= 2:
-            clean.append(visits)
+    for p in seqs:
+        v = [x for x in p if len(x) > 0]
+        if len(v) >= 2:
+            clean.append(v)
     return clean
 
 
 def build_labels(seqs):
     X, Y = [], []
     for p in seqs:
-        if len(p) >= 2:
-            X.append(p[:-1])
-            Y.append(p[1:])
+        X.append(p[:-1])
+        Y.append(p[1:])
     return X, Y
+
+
+# ==========================
+# TRAINING FUNCTION
+# ==========================
 
 def train():
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print("===== TRAIN GRAM WITH SYNTHETIC DATA =====")
 
-    # -------------------
-    # Load synthetic seqs
-    # -------------------
+    # 1) LOAD SEQS
     seqs = pickle.load(open(SEQ_FILE, "rb"))
     seqs = clean_seqs(seqs)
     X, Y = build_labels(seqs)
 
-    # -------------------
-    # Compute num_codes
-    # -------------------
+    # 2) Compute num_codes
     num_codes = max(max(max(v) for v in patient) for patient in seqs) + 1
     num_classes = num_codes
-
     print("num_codes =", num_codes)
 
-    # Load REAL tree
-    # -------------------
-    # Sau khi load tree
+    # 3) LOAD TREE (REAL MIMIC3)
     tree_leaves, tree_ancestors = load_tree(TREE_PREFIX, device=device)
-    
-    # Tính max từ tất cả leaves và ancestors
-    all_indices = []
-    for leaves, anc in zip(tree_leaves, tree_ancestors):
-        all_indices.append(leaves.max().item())
-        all_indices.append(anc.max().item())
-    
-    # Đảm bảo có A_ROOT
+
+    # Compute max index in tree for embedding table size
+    all_idx = []
+    for L, A in zip(tree_leaves, tree_ancestors):
+        all_idx.append(L.max().item())
+        all_idx.append(A.max().item())
+
     types = pickle.load(open(f"{TREE_PREFIX}.types", "rb"))
-    max_in_types = max(types.values()) if types else 0
-    all_indices.append(max_in_types)
-    
-    max_index_in_tree = max(all_indices)
-    print("max_index_in_tree (including A_ROOT) =", max_index_in_tree)
-    # -------------------
-    # Create GRAM model
-    # -------------------
+    all_idx.append(max(types.values()))
+
+    max_index_in_tree = max(all_idx)
+    print("max_index_in_tree =", max_index_in_tree)
+
+    # 4) CREATE MODEL — KHÔNG CÓ num_ancestors NỮA
     model = GRAM(
         input_dim=num_codes,
         num_classes=num_classes,
-        num_ancestors=tree_ancestors[0].shape[1] - 1,
         emb_dim=128,
         att_dim=128,
         hidden_dim=128,
@@ -92,24 +90,22 @@ def train():
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     loss_fn = nn.BCELoss(reduction="none")
 
-    # -------------------
-    # Training
-    # -------------------
+    # 5) TRAIN LOOP
     for epoch in range(20):
         model.train()
         total_loss = 0
 
         for i in range(0, len(X), 32):
-            batch_X = X[i:i+32]
-            batch_Y = Y[i:i+32]
+            x_batch = X[i : i+32]
+            y_batch = Y[i : i+32]
 
-            x, _, mask, lengths = pad_batch(batch_X, num_classes, num_codes, device)
-            _, y, _, _ = pad_batch(batch_Y, num_classes, num_codes, device)
+            x, _, mask, lengths = pad_batch(x_batch, num_classes, num_codes, device)
+            _, y, _, _          = pad_batch(y_batch, num_classes, num_codes, device)
 
             pred = model(x, mask)
 
             loss_raw = loss_fn(pred, y)
-            loss = (loss_raw.sum(2).sum(0) / lengths).mean()
+            loss = (loss_raw.sum(dim=2).sum(dim=0) / lengths).mean()
 
             optimizer.zero_grad()
             loss.backward()
@@ -121,6 +117,7 @@ def train():
 
     torch.save(model.state_dict(), MODEL_OUT)
     print("Model saved to:", MODEL_OUT)
+
 
 
 if __name__ == "__main__":
