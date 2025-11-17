@@ -63,7 +63,7 @@ class GRAM(nn.Module):
         self.att_dim = att_dim
         self.hidden_dim = hidden_dim
         self.device = device
-        
+        self.max_index_in_tree = max_index_in_tree
         # Total dim = L * D
         self.total_emb_dim = num_levels * emb_dim
 
