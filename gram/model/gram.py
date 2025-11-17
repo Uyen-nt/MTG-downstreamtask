@@ -186,10 +186,6 @@ import torch.nn.functional as F
 import numpy as np
 import pickle
 
-
-# ===============================================================
-# LOAD TREE (PAD TO SAME ANCESTOR LENGTH)
-# ===============================================================
 def load_tree(prefix, num_codes, device):
     leaves_list = []
     ancestors_list = []
@@ -202,23 +198,19 @@ def load_tree(prefix, num_codes, device):
             print(f"Warning: Cannot load {path}")
             continue
 
-        # Tạo arrays với kích thước chính xác
         sample_ancestors = next(iter(tree.values()))
-        K = len(sample_ancestors)  # Số ancestors
+        K = len(sample_ancestors)
         
         leaves = np.zeros((num_codes, K), dtype=np.int32)
         ancestors = np.zeros((num_codes, K), dtype=np.int32)
 
-        # Lấy root code từ tree
-        root_code = sample_ancestors[-1]  # Root thường là phần tử cuối
+        root_code = sample_ancestors[-1]
         
         for leaf_id in range(num_codes):
             if leaf_id in tree:
-                # Code có trong tree
                 ancestors[leaf_id] = tree[leaf_id]
                 leaves[leaf_id] = leaf_id
             else:
-                # Code không có trong tree → dùng root
                 ancestors[leaf_id] = [root_code] * K
                 leaves[leaf_id] = leaf_id
 
@@ -228,13 +220,7 @@ def load_tree(prefix, num_codes, device):
     print(f"Loaded {len(leaves_list)} tree levels")
     return leaves_list, ancestors_list
 
-
-
-# ===============================================================
-# GRAM MODEL
-# ===============================================================
 class GRAM(nn.Module):
-
     def __init__(self,
                  input_dim,
                  num_classes,
@@ -245,7 +231,7 @@ class GRAM(nn.Module):
                  tree_leaves,
                  tree_ancestors,
                  max_index_in_tree,
-                 dropout_rate=0.5,  # THÊM dropout_rate
+                 dropout_rate=0.5,
                  device="cpu"):
     
         super().__init__()
@@ -258,96 +244,71 @@ class GRAM(nn.Module):
         self.device = device
         self.max_index_in_tree = max_index_in_tree
     
-        # Embedding table (codes + ancestors)
         self.W_emb = nn.Embedding(max_index_in_tree + 1, emb_dim)
-    
-        # Attention network
         self.W_att = nn.Linear(emb_dim * 2, att_dim)
         self.v_att = nn.Linear(att_dim, 1, bias=False)
     
-        # GRU phải nhận input_size = num_levels * emb_dim
         self.gru = nn.GRU(
             input_size=num_levels * emb_dim,
             hidden_size=hidden_dim,
             batch_first=False
         )
     
-        # THÊM DROPOUT như bản gốc
         self.dropout = nn.Dropout(dropout_rate)
-        
         self.out = nn.Linear(hidden_dim, num_classes)
     
         self.tree_leaves = tree_leaves
         self.tree_anc = tree_ancestors
 
-
     def forward(self, x, mask):
-        """
-        x: (T, B, input_dim) - multi-hot vectors
-        """
         Tt, B, _ = x.shape
         device = x.device
     
-        # Tạo code embedding table 
         code_emb = torch.zeros(self.input_dim, self.num_levels * self.emb_dim, device=device)
-        
-        # Tính GRAM embedding cho TẤT CẢ codes
         all_codes = torch.arange(self.input_dim, device=device)
         
         per_level_emb = []
         for leaves, ancestors in zip(self.tree_leaves, self.tree_anc):
-            # Đảm bảo không vượt quá phạm vi
             safe_codes = all_codes[all_codes < len(leaves)]
             
-            leaves_b = leaves[safe_codes]      # (N, K)
-            anc_b = ancestors[safe_codes]      # (N, K)
-    
-            leaf_emb = self.W_emb(leaves_b)   # (N, K, D)
-            anc_emb  = self.W_emb(anc_b)      # (N, K, D)
-    
+            if len(safe_codes) == 0:
+                full_emb = torch.zeros(self.input_dim, self.emb_dim, device=device)
+                per_level_emb.append(full_emb)
+                continue
+                
+            leaves_b = leaves[safe_codes]
+            anc_b = ancestors[safe_codes]
+
+            leaf_emb = self.W_emb(leaves_b)
+            anc_emb = self.W_emb(anc_b)
+
             att_in = torch.cat([leaf_emb, anc_emb], dim=-1)
             att_h = torch.tanh(self.W_att(att_in))
-            att_logits = self.v_att(att_h).squeeze(-1)     # (N,K)
+            att_logits = self.v_att(att_h).squeeze(-1)
             att = torch.softmax(att_logits, dim=-1)
-    
-            final = (att.unsqueeze(-1) * anc_emb).sum(dim=1) # (N,D)
+
+            final = (att.unsqueeze(-1) * anc_emb).sum(dim=1)
             
-            # Mở rộng về đúng kích thước input_dim
             full_emb = torch.zeros(self.input_dim, self.emb_dim, device=device)
             full_emb[safe_codes] = final
             per_level_emb.append(full_emb)
     
-        # Concatenate tất cả levels
         if len(per_level_emb) > 0:
-            code_emb = torch.cat(per_level_emb, dim=-1)  # (input_dim, num_levels * emb_dim)
-    
-        # ---------------------------------------------------------
-        # FIX: XỬ LÝ MULTI-HOT INPUT ĐÚNG CÁCH
-        # ---------------------------------------------------------
-        # Sử dụng einsum để xử lý multi-hot vectors giống bản gốc
-        # x: (T, B, input_dim), code_emb: (input_dim, num_levels * emb_dim)
-        # Kết quả: (T, B, num_levels * emb_dim)
+            code_emb = torch.cat(per_level_emb, dim=-1)
+
+        # FIXED: Multi-hot embedding với einsum
         visit_emb = torch.einsum('tbi,id->tbd', x, code_emb)
         visit_emb = torch.tanh(visit_emb)
     
-        # GRU
-        h, _ = self.gru(visit_emb)  # (T, B, hidden_dim)
-        
-        # THÊM DROPOUT như bản gốc
+        h, _ = self.gru(visit_emb)
         h = self.dropout(h)
         h = h * mask.unsqueeze(-1)
     
-        # Output per time-step
-        # SỬA: Dùng sigmoid cho multi-label classification (giống bản gốc)
-        y_hat = torch.sigmoid(self.out(h))  # (T, B, num_classes)
+        # FIXED: Sigmoid cho multi-label
+        y_hat = torch.sigmoid(self.out(h))
         return y_hat
 
-
-# ===============================================================
-# PADDING (OUTSIDE MODEL)
-# ===============================================================
 def pad_batch(seqs, num_classes, input_dim, device="cpu"):
-
     lengths = [len(p) - 1 for p in seqs]
     T = max(lengths)
     B = len(seqs)
