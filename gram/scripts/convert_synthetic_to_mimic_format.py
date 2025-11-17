@@ -124,6 +124,6 @@ if __name__ == "__main__":
 
     npz_path = os.path.join(ROOT, "data/result/synthetic_mimic3.npz")
     code_map_path = os.path.join(ROOT, "data/mimic3/encoded/code_map.pkl")
-    output_dir = os.path.join(ROOT, "data/mimic3/synthetic_converted")
+    output_dir = os.path.join(ROOT, "gram/data/synthetic_converted")
 
     convert_synthetic(npz_path, code_map_path, output_dir)
