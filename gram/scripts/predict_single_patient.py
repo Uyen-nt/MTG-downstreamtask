@@ -15,30 +15,46 @@ TREE_PREFIX = "gram/data/mimic3_tree"
 MIMIC_TYPES = "gram/data/mimic3_tree.types"
 
 
-def predict_next(visits):
+def convert_icd_list_to_idx(list_icd, types):
+    """Convert ICD string list → index list."""
+    idx_list = []
+    for icd in list_icd:
+        if icd in types:
+            idx_list.append(types[icd])
+        else:
+            print(f"[WARNING] ICD {icd} không có trong mapping → bỏ qua")
+    return idx_list
+
+
+def predict_next(visits_icd):
     """
-    visits: list các lần khám của bệnh nhân, mỗi lần là list index code
-            ví dụ:
-              [
-                 [4019, 25000, 4280],
-                 [4280, 25000]
-              ]
+    visits_icd: list các visit, mỗi visit dùng ICD9 string, ví dụ:
+        [
+           ["4019", "25000", "4280"],
+           ["4280", "25000"]
+        ]
     """
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    # =====================================================
-    # 1. Load mapping MIMIC3
-    # =====================================================
+    # ------------------------------------------
+    # 1. Load mapping
+    # ------------------------------------------
     types = pickle.load(open(MIMIC_TYPES, "rb"))
     num_codes = max(types.values()) + 1
     num_classes = num_codes
 
     idx2code = {v: k for k, v in types.items()}
 
-    # =====================================================
+    # Convert visits ICD → index
+    visits = [convert_icd_list_to_idx(v, types) for v in visits_icd]
+
+    if len(visits) < 2:
+        raise ValueError("Cần ít nhất 2 visit.")
+
+    # ------------------------------------------
     # 2. Load tree + model
-    # =====================================================
+    # ------------------------------------------
     tree_leaves, tree_anc = load_tree(TREE_PREFIX, num_codes, device)
 
     all_idx = []
@@ -46,7 +62,6 @@ def predict_next(visits):
         all_idx.append(L.max().item())
         all_idx.append(A.max().item())
     all_idx.append(max(types.values()))
-
     max_index_in_tree = max(all_idx)
 
     model = GRAM(
@@ -59,79 +74,56 @@ def predict_next(visits):
         tree_leaves=tree_leaves,
         tree_ancestors=tree_anc,
         max_index_in_tree=max_index_in_tree,
-        device=device
+        device=device,
     ).to(device)
 
     model.load_state_dict(torch.load(MODEL, map_location=device))
     model.eval()
 
-    # =====================================================
-    # 3. Chuẩn bị lịch sử & ground truth
-    # =====================================================
-    if len(visits) < 2:
-        raise ValueError("Cần ít nhất 2 lần khám: 1 lịch sử và 1 ground-truth.")
-
-    history_visits = visits[:-1]
+    # ------------------------------------------
+    # 3. Prepare history
+    # ------------------------------------------
+    history = visits[:-1]
     true_next = visits[-1]
 
-    # -------- FIX: nếu chỉ có 1 visit history → thêm visit rỗng ----------
-    if len(history_visits) == 1:
-        history_visits = [history_visits[0], []]
+    if len(history) == 1:
+        history.append([])
 
-    # Pad batch (batch = 1 bệnh nhân)
-    x = [history_visits]
-    Xpad, _, mask, _ = pad_batch(x, num_classes, num_codes, device)
+    Xpad, _, mask, _ = pad_batch([history], num_classes, num_codes, device)
 
-    # An toàn: nếu vẫn T = 0
-    if Xpad.size(0) == 0:
-        print("⚠ Cảnh báo: T=0, tạo visit rỗng để chạy model...")
-        Xpad = torch.zeros(1, 1, num_codes, device=device)
-        mask = torch.ones(1, 1, device=device)
-
-    # =====================================================
+    # ------------------------------------------
     # 4. Predict
-    # =====================================================
+    # ------------------------------------------
     with torch.no_grad():
         pred = model(Xpad, mask).squeeze(1)
 
     last_pred = pred[-1].cpu().numpy()
-    top10_idx = np.argsort(-last_pred)[:10].tolist()
+    top10 = np.argsort(-last_pred)[:10].tolist()
 
-    # =====================================================
-    # 5. Print kết quả
-    # =====================================================
-    print("\n========== SINGLE PATIENT PREDICTION ==========")
-    print("Device:", device)
+    # ------------------------------------------
+    # 5. Print
+    # ------------------------------------------
+    print("\n========= PREDICTION RESULT =========")
+    print("--- HISTORY ---")
+    for i, visit in enumerate(visits_icd[:-1], 1):
+        print(f"Visit {i}: {visit}")
 
-    print("\n--- Lịch sử khám ---")
-    for t, visit in enumerate(history_visits, start=1):
-        icds = [idx2code.get(c, f"<idx:{c}>") for c in visit]
-        print(f"Visit {t}: {icds}")
+    print("\n--- TRUE NEXT VISIT ---")
+    print("ICD:", visits_icd[-1])
 
-    print("\n--- Ground-truth next visit ---")
-    true_icd = [idx2code.get(c, f"<idx:{c}>") for c in true_next]
-    print("Mã index:", true_next)
-    print("Mã ICD  :", true_icd)
-
-    print("\n--- Top-10 dự đoán ---")
-    for rank, idx in enumerate(top10_idx, start=1):
+    print("\n--- TOP-10 PREDICTIONS ---")
+    for rank, idx in enumerate(top10, 1):
         icd = idx2code.get(idx, f"<idx:{idx}>")
-        score = float(last_pred[idx])
         hit = "✓" if idx in true_next else " "
-        print(f"{rank:2d}. idx={idx:5d} | ICD={icd:10s} | score={score:.4f} {hit}")
+        print(f"{rank:2d}. ICD={icd:10s} | score={last_pred[idx]:.4f} {hit}")
 
-    return {
-        "top10_idx": top10_idx,
-        "top10_icd": [idx2code.get(i, f"<idx:{i}>") for i in top10_idx],
-        "true_idx": true_next,
-        "true_icd": true_icd
-    }
+    return top10
 
 
 if __name__ == "__main__":
     patient = [
-        [4019, 25000, 4280],
-        [4280, 25000]
+        ["4019", "25000", "4280"],
+        ["4280", "25000"]
     ]
-    result = predict_next(patient)
-    print(result)
+
+    predict_next(patient)
