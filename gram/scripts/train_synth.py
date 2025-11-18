@@ -69,6 +69,7 @@ def evaluate_model(model, val_seqs, num_codes, num_classes, device):
     total_loss = 0
     all_true = []
     all_pred = []
+    batch_count = 0
     
     loss_fn = nn.CrossEntropyLoss(reduction='none')
     
@@ -91,6 +92,7 @@ def evaluate_model(model, val_seqs, num_codes, num_classes, device):
             batch_loss = loss_masked.sum() / mask.sum()
             
             total_loss += batch_loss.item()
+            batch_count += 1
             
             # Collect predictions for last visit for metrics calculation
             for b in range(pred.size(1)):
@@ -107,7 +109,7 @@ def evaluate_model(model, val_seqs, num_codes, num_classes, device):
     
     # Calculate metrics
     metrics = calculate_metrics(all_true, all_pred, num_codes)
-    metrics['loss'] = total_loss / max(1, len(val_seqs) // 32)
+    metrics['loss'] = total_loss / batch_count if batch_count > 0 else float('inf')
     
     return metrics
 
@@ -129,18 +131,21 @@ def calculate_metrics(true_list, pred_list, num_codes):
         pred_binary = np.zeros(num_codes)
         
         true_binary[list(true_codes)] = 1
-        pred_binary[list(pred_codes)] = 1
+        pred_binary[list(pred_codes[:len(true_codes)])] = 1  # Use same number of predictions as true codes
         
         all_true_binary.append(true_binary)
         all_pred_binary.append(pred_binary)
     
-    all_true_binary = np.array(all_true_binary)
-    all_pred_binary = np.array(all_pred_binary)
-    
-    precision = precision_score(all_true_binary, all_pred_binary, average='micro', zero_division=0)
-    recall = recall_score(all_true_binary, all_pred_binary, average='micro', zero_division=0)
-    f1 = f1_score(all_true_binary, all_pred_binary, average='micro', zero_division=0)
-    jaccard = jaccard_score(all_true_binary, all_pred_binary, average='micro')
+    if all_true_binary:
+        all_true_binary = np.array(all_true_binary)
+        all_pred_binary = np.array(all_pred_binary)
+        
+        precision = precision_score(all_true_binary, all_pred_binary, average='micro', zero_division=0)
+        recall = recall_score(all_true_binary, all_pred_binary, average='micro', zero_division=0)
+        f1 = f1_score(all_true_binary, all_pred_binary, average='micro', zero_division=0)
+        jaccard = jaccard_score(all_true_binary, all_pred_binary, average='micro')
+    else:
+        precision = recall = f1 = jaccard = 0
     
     return {
         'precision': precision,
@@ -219,14 +224,15 @@ def train():
     ).to(device)
 
     # 5) TRAINING SETUP
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-5)
     loss_fn = nn.CrossEntropyLoss(reduction='none')
     
-    # Early stopping
+    # Improved Early stopping với tolerance
     best_val_loss = float('inf')
     patience = 5
     patience_counter = 0
     best_epoch = 0
+    min_delta = 0.001  # Chỉ coi là improvement nếu giảm ít nhất 0.001
     
     # Training history
     train_losses = []
@@ -237,7 +243,7 @@ def train():
     print("-" * 65)
     
     # 6) TRAIN LOOP
-    for epoch in range(50):  # Tăng epoch vì có early stopping
+    for epoch in range(50):
         model.train()
         total_train_loss = 0
         batch_count = 0
@@ -280,8 +286,8 @@ def train():
               f"{val_metrics['top5_acc']:9.4f} | {val_metrics['top10_acc']:10.4f} | "
               f"{val_metrics['f1']:8.4f}")
         
-        # Early stopping check
-        if val_metrics['loss'] < best_val_loss:
+        # Improved Early stopping check với min_delta
+        if val_metrics['loss'] < best_val_loss - min_delta:
             best_val_loss = val_metrics['loss']
             best_epoch = epoch
             patience_counter = 0
@@ -289,9 +295,17 @@ def train():
             print(f" → Saved NEW BEST model! (val_loss: {best_val_loss:.4f})")
         else:
             patience_counter += 1
+            print(f" → No improvement for {patience_counter}/{patience} epochs")
+            
             if patience_counter >= patience:
-                print(f"\nEarly stopping at epoch {epoch+1}. Best epoch: {best_epoch+1}")
+                print(f"\n🚨 Early stopping triggered at epoch {epoch+1}")
+                print(f"🏆 Best model was at epoch {best_epoch+1} with val_loss: {best_val_loss:.4f}")
                 break
+
+        # Additional stopping condition: nếu loss quá cao và không cải thiện
+        if epoch > 10 and avg_train_loss > 7.8 and best_val_loss > 8.2:
+            print(f"\n⚠️  Training stuck at high loss. Stopping...")
+            break
 
     # 7) FINAL EVALUATION
     print("\n" + "="*60)
@@ -299,17 +313,20 @@ def train():
     print("="*60)
     
     # Load best model for final evaluation
-    model.load_state_dict(torch.load(BEST_MODEL_OUT))
-    test_metrics = evaluate_model(model, test_seqs, num_codes, num_classes, device)
-    
-    print("Test Set Metrics:")
-    print(f"Loss:     {test_metrics['loss']:.4f}")
-    print(f"Top-5 Acc: {test_metrics['top5_acc']:.4f}")
-    print(f"Top-10 Acc: {test_metrics['top10_acc']:.4f}")
-    print(f"Precision: {test_metrics['precision']:.4f}")
-    print(f"Recall:    {test_metrics['recall']:.4f}")
-    print(f"F1-Score:  {test_metrics['f1']:.4f}")
-    print(f"Jaccard:   {test_metrics['jaccard']:.4f}")
+    try:
+        model.load_state_dict(torch.load(BEST_MODEL_OUT))
+        test_metrics = evaluate_model(model, test_seqs, num_codes, num_classes, device)
+        
+        print("Test Set Metrics:")
+        print(f"Loss:     {test_metrics['loss']:.4f}")
+        print(f"Top-5 Acc: {test_metrics['top5_acc']:.4f}")
+        print(f"Top-10 Acc: {test_metrics['top10_acc']:.4f}")
+        print(f"Precision: {test_metrics['precision']:.4f}")
+        print(f"Recall:    {test_metrics['recall']:.4f}")
+        print(f"F1-Score:  {test_metrics['f1']:.4f}")
+        print(f"Jaccard:   {test_metrics['jaccard']:.4f}")
+    except Exception as e:
+        print(f"Error in final evaluation: {e}")
     
     # Save final model
     torch.save(model.state_dict(), LAST_MODEL_OUT)
