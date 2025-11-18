@@ -7,129 +7,56 @@ sys.path.append(ROOT)
 import pickle
 import torch
 import numpy as np
-from sklearn.metrics import jaccard_score
+from sklearn.metrics import precision_score, recall_score, f1_score, jaccard_score
 
 from gram.model.gram import GRAM, load_tree, pad_batch
-
+from gram.scripts.train_synth import evaluate_model, calculate_metrics, top_k_accuracy
 
 # ===============================
 # CONFIG
 # ===============================
 TREE_PREFIX = "gram/data/mimic3_tree"
-TEST_FILE = "gram/data/mimic.seqs"
+TEST_FILE = "gram/data/mimic_test.seqs"  # Use the saved test set
 
 SYNTH_MODEL = "gram/data/synth_train_best.pt"
-FINETUNE_MODEL = "gram/data/finetuned.pt"
-
-
-# ===============================
-# UTILITIES
-# ===============================
-def clean_seqs(seqs):
-    clean = []
-    for p in seqs:
-        v = [x for x in p if len(x) > 0]
-        if len(v) >= 2:
-            clean.append(v)
-    return clean
-
-
-def top_k_accuracy(y_true, y_pred, k=10):
-    correct = 0
-    total = 0
-    for t, p in zip(y_true, y_pred):
-        if len(set(t) & set(p[:k])) > 0:
-            correct += 1
-        total += 1
-    return correct / total
-
+FINETUNE_MODEL = "gram/data/finetuned_best.pt"
 
 # ===============================
-# EVALUATE A SINGLE MODEL
+# COMPREHENSIVE EVALUATION
 # ===============================
-def evaluate_model(model_file, seqs, tree_leaves, tree_anc, num_codes, max_index_tree, device):
 
-    print(f"\n===== Evaluate model: {model_file} =====")
+def load_test_data():
+    """Load test data for evaluation"""
+    try:
+        test_seqs = pickle.load(open(TEST_FILE, "rb"))
+        print(f"Loaded test set: {len(test_seqs)} patients")
+        return test_seqs
+    except:
+        print("Test set not found, using full dataset...")
+        full_seqs = pickle.load(open("gram/data/mimic.seqs", "rb"))
+        # Clean and take subset for testing
+        clean_seqs = []
+        for p in full_seqs:
+            v = [x for x in p if len(x) > 0]
+            if len(v) >= 2:
+                clean_seqs.append(v)
+        return clean_seqs[:1000]  # Use subset for faster evaluation
 
-    model = GRAM(
-        input_dim=num_codes,
-        num_classes=num_codes,
-        num_levels=len(tree_leaves),
-        emb_dim=128,
-        att_dim=128,
-        hidden_dim=128,
-        tree_leaves=tree_leaves,
-        tree_ancestors=tree_anc,
-        max_index_in_tree=max_index_tree,
-        device=device,
-    ).to(device)
-
-    model.load_state_dict(torch.load(model_file, map_location=device))
-    model.eval()
-
-    y_true_list = []
-    y_pred_list = []
-    jaccards = []
-
-    for idx, p in enumerate(seqs):
-
-        if len(p) < 2:
-            continue
-
-        x = [p[:-1]]
-        y = [p[1:]]
-
-        Xpad, _, mask, _ = pad_batch(x, num_codes, num_codes, device)
-        _, Ypad, _, _ = pad_batch(y, num_codes, num_codes, device)
-
-        if Xpad.size(0) == 0:
-            continue
-
-        with torch.no_grad():
-            pred = model(Xpad, mask)
-
-        pred = pred.squeeze(1)
-        Ypad = Ypad.squeeze(1)
-
-        last_pred = pred[-1].cpu().numpy()
-        last_true = np.where(Ypad[-1].cpu().numpy() == 1)[0].tolist()
-
-        pred_top = np.argsort(-last_pred).tolist()
-
-        y_true_list.append(last_true)
-        y_pred_list.append(pred_top)
-
-        y_bin = np.zeros(num_codes); y_bin[last_true] = 1
-        yhat_bin = np.zeros(num_codes); yhat_bin[pred_top[:10]] = 1
-
-        jaccards.append(jaccard_score(y_bin, yhat_bin))
-
-    result = {
-        "Top5": top_k_accuracy(y_true_list, y_pred_list, k=5),
-        "Top10": top_k_accuracy(y_true_list, y_pred_list, k=10),
-        "Jaccard": float(np.mean(jaccards)),
-    }
-
-    return result
-
-
-# ===============================
-# MAIN COMPARE
-# ===============================
-def main():
-
+def evaluate_all_models():
+    """Evaluate both pretrained and fine-tuned models"""
+    
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    print("===== LOAD DATA =====")
-
-    seqs = pickle.load(open(TEST_FILE, "rb"))
-    seqs = clean_seqs(seqs)
-
-    # Compute number of codes
-    num_codes = max(max(max(v) for v in p) for p in seqs) + 1
-
+    print("===== COMPREHENSIVE MODEL EVALUATION =====")
+    
+    # Load test data
+    test_seqs = load_test_data()
+    
+    # Compute num_codes
+    num_codes = max(max(max(v) for v in p) for p in test_seqs) + 1
+    
     # Load tree
     tree_leaves, tree_anc = load_tree(TREE_PREFIX, num_codes, device)
-
+    
     all_idx = []
     for L, A in zip(tree_leaves, tree_anc):
         all_idx.append(L.max().item())
@@ -137,26 +64,90 @@ def main():
     types = pickle.load(open(f"{TREE_PREFIX}.types", "rb"))
     all_idx.append(max(types.values()))
     max_index_tree = max(all_idx)
-
-    # Evaluate pretrained synthetic
-    res_synth = evaluate_model(
-        SYNTH_MODEL, seqs, tree_leaves, tree_anc, num_codes, max_index_tree, device
-    )
-
-    # Evaluate fine-tuned real
-    res_ft = evaluate_model(
-        FINETUNE_MODEL, seqs, tree_leaves, tree_anc, num_codes, max_index_tree, device
-    )
-
-    # Print comparison
-    print("\n================= COMPARISON RESULT =================")
-    print(f"{'Metric':<15} | {'Synthetic Pretrain':<20} | {'Fine-tuned MIMIC':<20}")
-    print("-" * 65)
-    print(f"{'Top-5 Acc':<15} | {res_synth['Top5']:<20.4f} | {res_ft['Top5']:<20.4f}")
-    print(f"{'Top-10 Acc':<15} | {res_synth['Top10']:<20.4f} | {res_ft['Top10']:<20.4f}")
-    print(f"{'Jaccard':<15} | {res_synth['Jaccard']:<20.4f} | {res_ft['Jaccard']:<20.4f}")
-    print("======================================================\n")
-
+    
+    print(f"Number of codes: {num_codes}")
+    print(f"Test patients: {len(test_seqs)}")
+    
+    # Evaluate both models
+    results = {}
+    
+    for model_name, model_path in [("Synthetic Pretrained", SYNTH_MODEL), 
+                                   ("Fine-tuned MIMIC", FINETUNE_MODEL)]:
+        
+        print(f"\n{'='*50}")
+        print(f"Evaluating: {model_name}")
+        print(f"{'='*50}")
+        
+        # Create model
+        model = GRAM(
+            input_dim=num_codes,
+            num_classes=num_codes,
+            num_levels=len(tree_leaves),
+            emb_dim=128,
+            att_dim=128,
+            hidden_dim=128,
+            tree_leaves=tree_leaves,
+            tree_ancestors=tree_anc,
+            max_index_in_tree=max_index_tree,
+            device=device,
+        ).to(device)
+        
+        try:
+            model.load_state_dict(torch.load(model_path, map_location=device))
+            print(f"✅ Model loaded successfully")
+        except Exception as e:
+            print(f"❌ Error loading {model_name}: {e}")
+            continue
+        
+        # Evaluate
+        metrics = evaluate_model(model, test_seqs, num_codes, num_codes, device)
+        results[model_name] = metrics
+        
+        # Print results
+        print(f"Loss:          {metrics['loss']:.4f}")
+        print(f"Top-5 Accuracy: {metrics['top5_acc']:.4f}")
+        print(f"Top-10 Accuracy: {metrics['top10_acc']:.4f}")
+        print(f"Precision:     {metrics['precision']:.4f}")
+        print(f"Recall:        {metrics['recall']:.4f}")
+        print(f"F1-Score:      {metrics['f1']:.4f}")
+        print(f"Jaccard:       {metrics['jaccard']:.4f}")
+    
+    # Print comparison table
+    print("\n" + "="*80)
+    print("FINAL COMPARISON RESULTS")
+    print("="*80)
+    
+    if len(results) == 2:
+        synth_metrics = results["Synthetic Pretrained"]
+        ft_metrics = results["Fine-tuned MIMIC"]
+        
+        print(f"{'Metric':<15} | {'Synthetic Pretrain':<20} | {'Fine-tuned MIMIC':<20} | {'Improvement':<15}")
+        print("-" * 85)
+        
+        metrics_list = [
+            ('Top-5 Acc', synth_metrics['top5_acc'], ft_metrics['top5_acc']),
+            ('Top-10 Acc', synth_metrics['top10_acc'], ft_metrics['top10_acc']),
+            ('Precision', synth_metrics['precision'], ft_metrics['precision']),
+            ('Recall', synth_metrics['recall'], ft_metrics['recall']),
+            ('F1-Score', synth_metrics['f1'], ft_metrics['f1']),
+            ('Jaccard', synth_metrics['jaccard'], ft_metrics['jaccard']),
+            ('Loss', synth_metrics['loss'], ft_metrics['loss']),
+        ]
+        
+        for name, synth_val, ft_val in metrics_list:
+            if name == 'Loss':
+                improvement = synth_val - ft_val  # Lower loss is better
+            else:
+                improvement = ft_val - synth_val  # Higher is better
+            
+            print(f"{name:<15} | {synth_val:<20.4f} | {ft_val:<20.4f} | {improvement:>14.4f}")
+        
+        # Calculate overall improvement
+        key_metrics = ['top5_acc', 'top10_acc', 'f1']
+        avg_improvement = np.mean([ft_metrics[m] - synth_metrics[m] for m in key_metrics])
+        print(f"\n📈 Average improvement on key metrics: {avg_improvement:.4f}")
+    
+    print("="*80)
 
 if __name__ == "__main__":
-    main()
+    evaluate_all_models()
