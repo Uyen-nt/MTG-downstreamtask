@@ -18,7 +18,7 @@ from gram.model.gram import GRAM, load_tree, pad_batch
 # PATH CONFIG
 # ==========================
 
-SEQ_FILE = "gram/data/synthetic_converted/mimic.seqs"
+SEQ_FILE = "gram/data/mimic.seqs"
 TREE_PREFIX = "gram/data/mimic3_tree"      
 BEST_MODEL_OUT = "gram/data/real_train_best.pt"
 LAST_MODEL_OUT = "gram/data/real_train_last.pt"
