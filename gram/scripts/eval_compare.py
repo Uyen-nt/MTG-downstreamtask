@@ -57,14 +57,15 @@ def get_original_num_codes(model_path):
     return None
 
 def create_compatible_model(model_path, current_num_codes, tree_leaves, tree_anc, max_index_tree, device):
-    """Tạo model tương thích với số lượng codes hiện tại"""
+    """Tạo model tương thích với số lượng codes hiện tại - FIXED VERSION"""
     try:
         # Lấy số lượng codes gốc từ checkpoint
-        original_num_codes = get_original_num_codes(model_path)
-        if original_num_codes is None:
-            return None
-            
-        # Tạo model với số lượng codes gốc
+        checkpoint = torch.load(model_path, map_location='cpu')
+        original_num_codes = checkpoint['out.weight'].shape[0]
+        print(f"Original num_codes in {model_path}: {original_num_codes}")
+        
+        # QUAN TRỌNG: Luôn tạo model với original_num_codes
+        # và filter test data thay vì thay đổi model
         model = GRAM(
             input_dim=original_num_codes,
             num_classes=original_num_codes,
@@ -78,41 +79,21 @@ def create_compatible_model(model_path, current_num_codes, tree_leaves, tree_anc
             device=device,
         ).to(device)
         
-        # Load state dict
-        checkpoint = torch.load(model_path, map_location=device)
-        
-        # Nếu số lượng codes khác nhau, cần điều chỉnh output layer
-        if original_num_codes != current_num_codes:
-            print(f"⚠️  Adjusting model: {original_num_codes} → {current_num_codes} codes")
-            
-            # Tạo output layer mới với kích thước phù hợp
-            new_out_weight = torch.zeros(current_num_codes, 128, device=device)
-            new_out_bias = torch.zeros(current_num_codes, device=device)
-            
-            # Copy weights từ checkpoint (chỉ copy những codes có sẵn)
-            min_codes = min(original_num_codes, current_num_codes)
-            new_out_weight[:min_codes] = checkpoint['out.weight'][:min_codes]
-            new_out_bias[:min_codes] = checkpoint['out.bias'][:min_codes]
-            
-            # Cập nhật checkpoint
-            checkpoint['out.weight'] = new_out_weight
-            checkpoint['out.bias'] = new_out_bias
-            
-            print(f"✅ Adjusted output layer: {min_codes} codes preserved")
-        
-        # Load state dict đã điều chỉnh
+        # Load state dict gốc
         model.load_state_dict(checkpoint)
-        return model
+        print(f"✅ Model loaded with original size {original_num_codes}")
+        
+        return model, original_num_codes
         
     except Exception as e:
         print(f"Error creating compatible model: {e}")
-        return None
+        return None, None
 
 def evaluate_all_models():
-    """Evaluate both pretrained and fine-tuned models"""
+    """Evaluate both pretrained and fine-tuned models - FIXED VERSION"""
     
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    print("===== COMPREHENSIVE MODEL EVALUATION =====")
+    print("===== COMPREHENSIVE MODEL EVALUATION (FIXED) =====")
     
     # Load test data
     test_seqs = load_test_data()
@@ -145,17 +126,34 @@ def evaluate_all_models():
         print(f"Evaluating: {model_name}")
         print(f"{'='*50}")
         
-        # Tạo model tương thích
-        model = create_compatible_model(model_path, current_num_codes, tree_leaves, tree_anc, max_index_tree, device)
+        # Tạo model với kích thước gốc
+        model_result = create_compatible_model(model_path, current_num_codes, tree_leaves, tree_anc, max_index_tree, device)
         
-        if model is None:
+        if model_result is None:
             print(f"❌ Failed to load {model_name}")
             continue
+            
+        model, original_num_codes = model_result
         
-        print(f"✅ Model loaded successfully")
+        # Filter test data để phù hợp với model
+        filtered_test_seqs = []
+        for patient in test_seqs:
+            filtered_patient = []
+            for visit in patient:
+                filtered_visit = [code for code in visit if code < original_num_codes]
+                if filtered_visit:  # Chỉ thêm visit không rỗng
+                    filtered_patient.append(filtered_visit)
+            if len(filtered_patient) >= 2:  # Chỉ thêm patient có ít nhất 2 visits
+                filtered_test_seqs.append(filtered_patient)
         
-        # Evaluate - sử dụng current_num_codes cho evaluation
-        metrics = evaluate_model(model, test_seqs, current_num_codes, current_num_codes, device)
+        print(f"Filtered test set: {len(filtered_test_seqs)} patients")
+        
+        if not filtered_test_seqs:
+            print("❌ No valid patients after filtering")
+            continue
+        
+        # Evaluate với filtered test data
+        metrics = evaluate_model(model, filtered_test_seqs, original_num_codes, original_num_codes, device)
         results[model_name] = metrics
         
         # Print results
@@ -201,10 +199,20 @@ def evaluate_all_models():
         key_metrics = ['top5_acc', 'top10_acc', 'f1']
         avg_improvement = np.mean([ft_metrics[m] - synth_metrics[m] for m in key_metrics])
         print(f"\n📈 Average improvement on key metrics: {avg_improvement:.4f}")
+        
+        # Phân tích chi tiết hơn
+        print(f"\n📊 Detailed Analysis:")
+        print(f"• Top-10 Accuracy: {'✅ Cải thiện' if ft_metrics['top10_acc'] > synth_metrics['top10_acc'] else '❌ Giảm' if ft_metrics['top10_acc'] < synth_metrics['top10_acc'] else '➡️ Không thay đổi'}")
+        print(f"• F1-Score: {'✅ Cải thiện' if ft_metrics['f1'] > synth_metrics['f1'] else '❌ Giảm' if ft_metrics['f1'] < synth_metrics['f1'] else '➡️ Không thay đổi'}")
+        print(f"• Loss: {'✅ Giảm' if ft_metrics['loss'] < synth_metrics['loss'] else '❌ Tăng' if ft_metrics['loss'] > synth_metrics['loss'] else '➡️ Không thay đổi'}")
     
     elif len(results) == 1:
         model_name = list(results.keys())[0]
-        print(f"Only {model_name} available for evaluation")
+        metrics = results[model_name]
+        print(f"Only {model_name} available:")
+        print(f"Top-10 Accuracy: {metrics['top10_acc']:.4f}")
+        print(f"F1-Score: {metrics['f1']:.4f}")
+        print(f"Loss: {metrics['loss']:.4f}")
     
     else:
         print("No models available for evaluation")
