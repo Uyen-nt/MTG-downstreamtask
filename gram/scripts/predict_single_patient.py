@@ -12,7 +12,7 @@ from sklearn.metrics import precision_score, recall_score, f1_score, jaccard_sco
 
 from gram.model.gram import GRAM, load_tree, pad_batch
 
-MODEL = "gram/data/finetuned.pt"
+MODEL = "gram/data/finetuned_best.pt"
 TREE_PREFIX = "gram/data/mimic3_tree"
 MIMIC_TYPES = "gram/data/mimic3_tree.types"
 
