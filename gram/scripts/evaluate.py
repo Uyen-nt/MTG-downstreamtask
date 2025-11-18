@@ -1,4 +1,4 @@
-# gram/scripts/compare_finetune_vs_real.py
+# gram/scripts/compare_finetune_vs_real_fixed.py
 
 import sys, os
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
@@ -7,9 +7,7 @@ sys.path.append(ROOT)
 import pickle
 import torch
 import numpy as np
-import pandas as pd
 from sklearn.metrics import precision_score, recall_score, f1_score, jaccard_score, roc_auc_score
-from sklearn.preprocessing import label_binarize
 
 from gram.model.gram import GRAM, load_tree, pad_batch
 
@@ -25,7 +23,7 @@ MODELS = {
 }
 
 # ===============================
-# COMPREHENSIVE EVALUATION FUNCTIONS
+# COMPATIBILITY FUNCTIONS
 # ===============================
 
 def load_test_data():
@@ -38,13 +36,64 @@ def load_test_data():
         print("❌ Test set not found")
         return []
 
+def create_compatible_model(model_path, current_num_codes, tree_leaves, tree_anc, max_index_tree, device):
+    """Tạo model tương thích với số lượng codes hiện tại"""
+    try:
+        # Load checkpoint để lấy số lượng codes gốc
+        checkpoint = torch.load(model_path, map_location='cpu')
+        original_num_codes = checkpoint['out.weight'].shape[0]
+        print(f"Original num_codes in {model_path}: {original_num_codes}")
+        
+        # LUÔN tạo model với original_num_codes và filter test data
+        model = GRAM(
+            input_dim=original_num_codes,
+            num_classes=original_num_codes,
+            num_levels=len(tree_leaves),
+            emb_dim=128,
+            att_dim=128,
+            hidden_dim=128,
+            tree_leaves=tree_leaves,
+            tree_ancestors=tree_anc,
+            max_index_in_tree=max_index_tree,
+            device=device,
+        ).to(device)
+        
+        # Load state dict gốc
+        model.load_state_dict(checkpoint)
+        print(f"✅ Model loaded with original size {original_num_codes}")
+        
+        return model, original_num_codes
+        
+    except Exception as e:
+        print(f"Error creating compatible model: {e}")
+        return None, None
+
+def filter_test_seqs(test_seqs, max_code):
+    """Filter test sequences để chỉ giữ codes trong phạm vi model"""
+    filtered_seqs = []
+    
+    for patient in test_seqs:
+        filtered_patient = []
+        for visit in patient:
+            filtered_visit = [code for code in visit if code < max_code]
+            if filtered_visit:  # Chỉ thêm visit không rỗng
+                filtered_patient.append(filtered_visit)
+        if len(filtered_patient) >= 2:  # Chỉ thêm patient có ít nhất 2 visits
+            filtered_seqs.append(filtered_patient)
+    
+    print(f"Filtered test set: {len(filtered_seqs)} patients (from {len(test_seqs)})")
+    return filtered_seqs
+
+# ===============================
+# COMPREHENSIVE EVALUATION FUNCTIONS
+# ===============================
+
 def evaluate_model_comprehensive(model, test_seqs, num_codes, num_classes, device):
-    """Đánh giá model toàn diện với AUC và các metrics nâng cao"""
+    """Đánh giá model toàn diện"""
     model.eval()
     total_loss = 0
     all_true = []
     all_pred = []
-    all_pred_probs = []
     batch_count = 0
     
     loss_fn = torch.nn.CrossEntropyLoss(reduction='none')
@@ -70,7 +119,7 @@ def evaluate_model_comprehensive(model, test_seqs, num_codes, num_classes, devic
             total_loss += batch_loss.item()
             batch_count += 1
             
-            # Collect predictions for comprehensive analysis
+            # Collect predictions
             for b in range(pred.size(1)):
                 last_idx = mask[:, b].sum().int() - 1
                 if last_idx >= 0:
@@ -92,26 +141,24 @@ def evaluate_model_comprehensive(model, test_seqs, num_codes, num_classes, devic
                         'top10': pred_top10,
                         'probabilities': last_pred
                     })
-                    all_pred_probs.append(last_pred)
     
     # Calculate comprehensive metrics
-    metrics = calculate_comprehensive_metrics(all_true, all_pred, all_pred_probs, num_codes)
+    metrics = calculate_comprehensive_metrics(all_true, all_pred, num_codes)
     metrics['loss'] = total_loss / batch_count if batch_count > 0 else float('inf')
     metrics['num_patients'] = len(all_true)
     
     return metrics
 
-def calculate_comprehensive_metrics(true_list, pred_list, pred_probs_list, num_codes):
-    """Tính toán comprehensive metrics với AUC"""
+def calculate_comprehensive_metrics(true_list, pred_list, num_codes):
+    """Tính toán comprehensive metrics"""
     if not true_list:
         return {
             'top1_acc': 0, 'top3_acc': 0, 'top5_acc': 0, 'top10_acc': 0,
             'precision': 0, 'recall': 0, 'f1': 0, 'jaccard': 0,
-            'auc_micro': 0, 'auc_macro': 0, 'avg_true_codes': 0,
-            'avg_pred_codes': 0, 'coverage': 0
+            'avg_true_codes': 0, 'avg_pred_codes': 0, 'coverage': 0
         }
     
-    # Top-k accuracy for different k values
+    # Top-k accuracy
     top1_acc = top_k_accuracy(true_list, [p['top1'] for p in pred_list], k=1)
     top3_acc = top_k_accuracy(true_list, [p['top3'] for p in pred_list], k=3)
     top5_acc = top_k_accuracy(true_list, [p['top5'] for p in pred_list], k=5)
@@ -120,42 +167,37 @@ def calculate_comprehensive_metrics(true_list, pred_list, pred_probs_list, num_c
     # Binary metrics
     all_true_binary = []
     all_pred_binary = []
-    all_pred_probs_binary = []
     
     avg_true_codes = 0
     avg_pred_codes = 0
     
-    for true_codes, pred_dict, pred_probs in zip(true_list, pred_list, pred_probs_list):
+    for true_codes, pred_dict in zip(true_list, pred_list):
         true_binary = np.zeros(num_codes)
         pred_binary = np.zeros(num_codes)
         
         true_binary[list(true_codes)] = 1
-        # Use top-10 for binary metrics
         pred_binary[list(pred_dict['top10'])] = 1
         
         all_true_binary.append(true_binary)
         all_pred_binary.append(pred_binary)
-        all_pred_probs_binary.append(pred_probs)
         
         avg_true_codes += len(true_codes)
         avg_pred_codes += len(pred_dict['top10'])
     
-    all_true_binary = np.array(all_true_binary)
-    all_pred_binary = np.array(all_pred_binary)
-    all_pred_probs_binary = np.array(all_pred_probs_binary)
+    if all_true_binary:
+        all_true_binary = np.array(all_true_binary)
+        all_pred_binary = np.array(all_pred_binary)
+        
+        precision = precision_score(all_true_binary, all_pred_binary, average='micro', zero_division=0)
+        recall = recall_score(all_true_binary, all_pred_binary, average='micro', zero_division=0)
+        f1 = f1_score(all_true_binary, all_pred_binary, average='micro', zero_division=0)
+        jaccard = jaccard_score(all_true_binary, all_pred_binary, average='micro')
+    else:
+        precision = recall = f1 = jaccard = 0
     
-    # Calculate standard metrics
-    precision = precision_score(all_true_binary, all_pred_binary, average='micro', zero_division=0)
-    recall = recall_score(all_true_binary, all_pred_binary, average='micro', zero_division=0)
-    f1 = f1_score(all_true_binary, all_pred_binary, average='micro', zero_division=0)
-    jaccard = jaccard_score(all_true_binary, all_pred_binary, average='micro')
-    
-    # Calculate AUC (có thể tốn nhiều bộ nhớ với số classes lớn)
-    auc_micro, auc_macro = calculate_auc_safe(all_true_binary, all_pred_probs_binary, num_codes)
-    
-    # Coverage: percentage of unique codes predicted
-    unique_true_codes = len(np.unique(np.where(all_true_binary == 1)[1]))
-    unique_pred_codes = len(np.unique(np.where(all_pred_binary == 1)[1]))
+    # Coverage
+    unique_true_codes = len(np.unique(np.where(all_true_binary == 1)[1])) if all_true_binary.any() else 0
+    unique_pred_codes = len(np.unique(np.where(all_pred_binary == 1)[1])) if all_pred_binary.any() else 0
     coverage = unique_pred_codes / unique_true_codes if unique_true_codes > 0 else 0
     
     return {
@@ -167,35 +209,10 @@ def calculate_comprehensive_metrics(true_list, pred_list, pred_probs_list, num_c
         'recall': recall,
         'f1': f1,
         'jaccard': jaccard,
-        'auc_micro': auc_micro,
-        'auc_macro': auc_macro,
         'avg_true_codes': avg_true_codes / len(true_list),
         'avg_pred_codes': avg_pred_codes / len(pred_list),
         'coverage': coverage
     }
-
-def calculate_auc_safe(true_binary, pred_probs, num_codes, max_classes=1000):
-    """Tính AUC an toàn với số classes lớn"""
-    try:
-        # Giới hạn số classes để tính AUC (tránh memory issues)
-        if num_codes > max_classes:
-            # Chọn các classes phổ biến nhất
-            class_frequency = np.sum(true_binary, axis=0)
-            top_classes = np.argsort(-class_frequency)[:max_classes]
-            
-            true_binary_limited = true_binary[:, top_classes]
-            pred_probs_limited = pred_probs[:, top_classes]
-            
-            auc_micro = roc_auc_score(true_binary_limited, pred_probs_limited, average='micro')
-            auc_macro = roc_auc_score(true_binary_limited, pred_probs_limited, average='macro')
-        else:
-            auc_micro = roc_auc_score(true_binary, pred_probs, average='micro')
-            auc_macro = roc_auc_score(true_binary, pred_probs, average='macro')
-        
-        return auc_micro, auc_macro
-    except Exception as e:
-        print(f"⚠️  AUC calculation error: {e}")
-        return 0.0, 0.0
 
 def top_k_accuracy(true_list, pred_list, k=10):
     """Tính top-k accuracy"""
@@ -214,10 +231,9 @@ def analyze_prediction_patterns(model, test_seqs, num_codes, num_classes, device
     model.eval()
     
     print(f"\n🔍 PHÂN TÍCH PATTERNS DỰ ĐOÁN (mẫu {sample_size} patients)")
-    print("=" * 90)
+    print("=" * 80)
     
     sample_seqs = test_seqs[:sample_size]
-    analysis_results = []
     
     with torch.no_grad():
         for i, patient in enumerate(sample_seqs):
@@ -234,49 +250,17 @@ def analyze_prediction_patterns(model, test_seqs, num_codes, num_classes, device
             top5_pred = np.argsort(-last_pred)[:5]
             top10_pred = np.argsort(-last_pred)[:10]
             
-            # Tính confidence scores
-            top1_confidence = last_pred[top5_pred[0]]
-            top5_avg_confidence = np.mean(last_pred[top5_pred])
-            
             # Tính độ chính xác
             hit_top5 = len(set(true_next) & set(top5_pred)) > 0
             hit_top10 = len(set(true_next) & set(top10_pred)) > 0
             num_hits = len(set(true_next) & set(top10_pred))
-            precision_at_k = num_hits / len(top10_pred) if top10_pred.any() else 0
             
-            analysis_results.append({
-                'patient_id': i,
-                'history_len': len(history),
-                'true_codes_count': len(true_next),
-                'hit_top5': hit_top5,
-                'hit_top10': hit_top10,
-                'num_hits': num_hits,
-                'precision_at_10': precision_at_k,
-                'top1_confidence': top1_confidence,
-                'top5_avg_confidence': top5_avg_confidence
-            })
-            
-            # Print detailed analysis for each patient
             print(f"\nPatient {i}:")
             print(f"  Lịch sử: {len(history)} visits")
             print(f"  Mã thực tế: {true_next}")
             print(f"  Top-5 dự đoán: {top5_pred.tolist()}")
-            print(f"  Confidence: {top1_confidence:.4f} (top1), {top5_avg_confidence:.4f} (top5 avg)")
             print(f"  Hit Top-5: {'✅' if hit_top5 else '❌'}, Hit Top-10: {'✅' if hit_top10 else '❌'}")
-            print(f"  Precision@10: {precision_at_k:.1%}")
-    
-    # Summary statistics
-    if analysis_results:
-        hit_top5_rate = np.mean([r['hit_top5'] for r in analysis_results])
-        hit_top10_rate = np.mean([r['hit_top10'] for r in analysis_results])
-        avg_precision = np.mean([r['precision_at_10'] for r in analysis_results])
-        avg_confidence = np.mean([r['top1_confidence'] for r in analysis_results])
-        
-        print(f"\n📊 TỔNG HỢP MẪU:")
-        print(f"  Top-5 Accuracy: {hit_top5_rate:.1%}")
-        print(f"  Top-10 Accuracy: {hit_top10_rate:.1%}")
-        print(f"  Average Precision@10: {avg_precision:.1%}")
-        print(f"  Average Top-1 Confidence: {avg_confidence:.4f}")
+            print(f"  Số mã đúng: {num_hits}/{len(true_next)}")
 
 # ===============================
 # MAIN COMPARISON FUNCTION
@@ -286,20 +270,21 @@ def compare_finetune_vs_real():
     """So sánh chuyên sâu Fine-tuned vs Real Data Trained"""
     
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    print("=" * 100)
+    print("=" * 80)
     print("🤖 SO SÁNH CHUYÊN SÂU: FINE-TUNED vs REAL DATA TRAINED")
-    print("=" * 100)
+    print("=" * 80)
     
     # Load test data
     test_seqs = load_test_data()
     if not test_seqs:
         return
     
-    # Compute num_codes
-    num_codes = max(max(max(v) for v in p) for p in test_seqs) + 1
+    # Compute num_codes từ test data
+    current_num_codes = max(max(max(v) for v in p) for p in test_seqs) + 1
     
-    # Load tree
-    tree_leaves, tree_anc = load_tree(TREE_PREFIX, num_codes, device)
+    # Load tree với số lượng codes lớn hơn
+    max_num_codes = max(current_num_codes, 2879)
+    tree_leaves, tree_anc = load_tree(TREE_PREFIX, max_num_codes, device)
     
     all_idx = []
     for L, A in zip(tree_leaves, tree_anc):
@@ -311,7 +296,7 @@ def compare_finetune_vs_real():
     
     print(f"📊 Dataset Info:")
     print(f"  • Số patients test: {len(test_seqs)}")
-    print(f"  • Số mã bệnh: {num_codes}")
+    print(f"  • Current num_codes: {current_num_codes}")
     print(f"  • Device: {device}")
     print()
     
@@ -323,30 +308,25 @@ def compare_finetune_vs_real():
         print(f"Đánh giá: {model_name}")
         print(f"{'='*50}")
         
-        # Create model
-        model = GRAM(
-            input_dim=num_codes,
-            num_classes=num_codes,
-            num_levels=len(tree_leaves),
-            emb_dim=128,
-            att_dim=128,
-            hidden_dim=128,
-            tree_leaves=tree_leaves,
-            tree_ancestors=tree_anc,
-            max_index_in_tree=max_index_tree,
-            device=device,
-        ).to(device)
+        # Tạo model tương thích
+        model_result = create_compatible_model(model_path, current_num_codes, tree_leaves, tree_anc, max_index_tree, device)
         
-        try:
-            model.load_state_dict(torch.load(model_path, map_location=device))
-            print(f"✅ Model loaded successfully")
-        except Exception as e:
-            print(f"❌ Error loading {model_name}: {e}")
+        if model_result is None:
+            print(f"❌ Failed to load {model_name}")
+            continue
+            
+        model, original_num_codes = model_result
+        
+        # Filter test data để phù hợp với model
+        filtered_test_seqs = filter_test_seqs(test_seqs, original_num_codes)
+        
+        if not filtered_test_seqs:
+            print("❌ No valid patients after filtering")
             continue
         
         # Comprehensive evaluation
         print("Đang đánh giá model...")
-        metrics = evaluate_model_comprehensive(model, test_seqs, num_codes, num_codes, device)
+        metrics = evaluate_model_comprehensive(model, filtered_test_seqs, original_num_codes, original_num_codes, device)
         results[model_name] = metrics
         
         # Print detailed results
@@ -360,135 +340,105 @@ def compare_finetune_vs_real():
         print(f"  • Recall:            {metrics['recall']:.4f}")
         print(f"  • F1-Score:          {metrics['f1']:.4f}")
         print(f"  • Jaccard:           {metrics['jaccard']:.4f}")
-        print(f"  • AUC Micro:         {metrics['auc_micro']:.4f}")
-        print(f"  • AUC Macro:         {metrics['auc_macro']:.4f}")
         print(f"  • Coverage:          {metrics['coverage']:.1%}")
         print(f"  • Avg True Codes:    {metrics['avg_true_codes']:.2f}")
         print(f"  • Avg Pred Codes:    {metrics['avg_pred_codes']:.2f}")
         
         # Detailed analysis
-        analyze_prediction_patterns(model, test_seqs, num_codes, num_codes, device)
+        analyze_prediction_patterns(model, filtered_test_seqs, original_num_codes, original_num_codes, device)
     
     # Print comprehensive comparison table
-    print_comparison_table(results)
+    if len(results) >= 2:
+        print_comparison_table(results)
+    else:
+        print("\n❌ Không đủ models để so sánh")
 
 def print_comparison_table(results):
     """In bảng so sánh chi tiết"""
-    print("\n" + "=" * 120)
+    print("\n" + "=" * 100)
     print("📊 BẢNG SO SÁNH TOÀN DIỆN: FINE-TUNED vs REAL DATA TRAINED")
-    print("=" * 120)
+    print("=" * 100)
     
-    if len(results) < 2:
-        print("❌ Không đủ models để so sánh")
-        return
-    
-    # Metrics categories
-    accuracy_metrics = ['top1_acc', 'top3_acc', 'top5_acc', 'top10_acc']
-    classification_metrics = ['precision', 'recall', 'f1', 'jaccard']
-    advanced_metrics = ['auc_micro', 'auc_macro', 'coverage']
-    efficiency_metrics = ['loss', 'avg_true_codes', 'avg_pred_codes']
-    
-    model_names = list(results.keys())
     ft_metrics = results["Fine-tuned"]
     real_metrics = results["Real Data Trained"]
     
-    # Print comparison header
-    header = f"{'Metric':<20} | {'Fine-tuned':<12} | {'Real Data':<12} | {'Difference':<12} | {'% Change':<10} | {'Better':<8}"
-    print(header)
-    print("-" * len(header))
+    # Metrics to compare
+    metrics_list = [
+        ('Top-1 Acc', ft_metrics['top1_acc'], real_metrics['top1_acc']),
+        ('Top-3 Acc', ft_metrics['top3_acc'], real_metrics['top3_acc']),
+        ('Top-5 Acc', ft_metrics['top5_acc'], real_metrics['top5_acc']),
+        ('Top-10 Acc', ft_metrics['top10_acc'], real_metrics['top10_acc']),
+        ('Precision', ft_metrics['precision'], real_metrics['precision']),
+        ('Recall', ft_metrics['recall'], real_metrics['recall']),
+        ('F1-Score', ft_metrics['f1'], real_metrics['f1']),
+        ('Jaccard', ft_metrics['jaccard'], real_metrics['jaccard']),
+        ('Coverage', ft_metrics['coverage'], real_metrics['coverage']),
+        ('Loss', ft_metrics['loss'], real_metrics['loss']),
+    ]
     
-    # Compare all metrics
-    all_metrics = accuracy_metrics + classification_metrics + advanced_metrics + efficiency_metrics
+    # Print header
+    print(f"{'Metric':<15} | {'Fine-tuned':<12} | {'Real Data':<12} | {'Difference':<12} | {'% Change':<10} | {'Better':<8}")
+    print("-" * 85)
     
-    for metric in all_metrics:
-        ft_val = ft_metrics[metric]
-        real_val = real_metrics[metric]
-        
-        # Calculate difference and percentage change
-        if metric == 'loss':
+    ft_wins = 0
+    real_wins = 0
+    
+    for name, ft_val, real_val in metrics_list:
+        if name == 'Loss':
             # Lower loss is better
             difference = ft_val - real_val
             better = "Real" if real_val < ft_val else "Fine-tuned"
+            pct_change = (difference / ft_val) * 100 if ft_val != 0 else 0
         else:
             # Higher is better
             difference = real_val - ft_val
             better = "Real" if real_val > ft_val else "Fine-tuned"
+            pct_change = (difference / ft_val) * 100 if ft_val != 0 else 0
         
-        # Calculate percentage change
-        if ft_val != 0:
-            pct_change = (difference / ft_val) * 100
-        else:
-            pct_change = 0
-        
-        # Format values based on metric type
-        if metric == 'loss':
-            ft_str = f"{ft_val:.4f}"
-            real_str = f"{real_val:.4f}"
-            diff_str = f"{difference:+.4f}"
-        elif metric == 'coverage':
+        # Format values
+        if name == 'Coverage':
             ft_str = f"{ft_val:.1%}"
             real_str = f"{real_val:.1%}"
             diff_str = f"{difference:+.1%}"
+        elif name == 'Loss':
+            ft_str = f"{ft_val:.4f}"
+            real_str = f"{real_val:.4f}"
+            diff_str = f"{difference:+.4f}"
         else:
             ft_str = f"{ft_val:.4f}"
             real_str = f"{real_val:.4f}"
             diff_str = f"{difference:+.4f}"
         
-        print(f"{metric:<20} | {ft_str:<12} | {real_str:<12} | {diff_str:<12} | {pct_change:>9.1f}% | {better:<8}")
-    
-    # Summary analysis
-    print("\n" + "=" * 120)
-    print("🎯 PHÂN TÍCH TỔNG QUAN")
-    print("=" * 120)
-    
-    # Count wins for each model
-    ft_wins = 0
-    real_wins = 0
-    
-    for metric in all_metrics:
-        ft_val = ft_metrics[metric]
-        real_val = real_metrics[metric]
+        print(f"{name:<15} | {ft_str:<12} | {real_str:<12} | {diff_str:<12} | {pct_change:>9.1f}% | {better:<8}")
         
-        if metric == 'loss':
-            if real_val < ft_val:
-                real_wins += 1
-            elif ft_val < real_val:
-                ft_wins += 1
+        # Count wins
+        if better == "Fine-tuned":
+            ft_wins += 1
         else:
-            if real_val > ft_val:
-                real_wins += 1
-            elif ft_val > real_val:
-                ft_wins += 1
+            real_wins += 1
     
+    # Summary
+    print("\n" + "=" * 100)
+    print("🎯 TỔNG KẾT")
+    print("=" * 100)
     print(f"Fine-tuned wins: {ft_wins} metrics")
     print(f"Real Data wins: {real_wins} metrics")
     
     # Key insights
     print(f"\n💡 KEY INSIGHTS:")
+    if real_metrics['top10_acc'] > ft_metrics['top10_acc']:
+        improvement = real_metrics['top10_acc'] - ft_metrics['top10_acc']
+        print(f"  • Real Data có Top-10 Accuracy cao hơn {improvement:.3f}")
+    elif ft_metrics['top10_acc'] > real_metrics['top10_acc']:
+        improvement = ft_metrics['top10_acc'] - real_metrics['top10_acc']
+        print(f"  • Fine-tuned có Top-10 Accuracy cao hơn {improvement:.3f}")
     
-    # Top-10 Accuracy comparison
-    top10_diff = real_metrics['top10_acc'] - ft_metrics['top10_acc']
-    if abs(top10_diff) > 0.01:
-        better_model = "Real Data" if top10_diff > 0 else "Fine-tuned"
-        print(f"  • {better_model} có Top-10 Accuracy cao hơn {abs(top10_diff):.3f}")
-    
-    # F1-Score comparison
-    f1_diff = real_metrics['f1'] - ft_metrics['f1']
-    if abs(f1_diff) > 0.01:
-        better_model = "Real Data" if f1_diff > 0 else "Fine-tuned"
-        print(f"  • {better_model} có F1-Score cao hơn {abs(f1_diff):.3f}")
-    
-    # Loss comparison
-    loss_diff = ft_metrics['loss'] - real_metrics['loss']
-    if abs(loss_diff) > 0.1:
-        better_model = "Real Data" if loss_diff > 0 else "Fine-tuned"
-        print(f"  • {better_model} có Loss thấp hơn {abs(loss_diff):.3f}")
-    
-    # Coverage comparison
-    coverage_diff = real_metrics['coverage'] - ft_metrics['coverage']
-    if abs(coverage_diff) > 0.05:
-        better_model = "Real Data" if coverage_diff > 0 else "Fine-tuned"
-        print(f"  • {better_model} có Coverage tốt hơn {abs(coverage_diff):.1%}")
+    if real_metrics['f1'] > ft_metrics['f1']:
+        improvement = real_metrics['f1'] - ft_metrics['f1']
+        print(f"  • Real Data có F1-Score cao hơn {improvement:.3f}")
+    elif ft_metrics['f1'] > real_metrics['f1']:
+        improvement = ft_metrics['f1'] - real_metrics['f1']
+        print(f"  • Fine-tuned có F1-Score cao hơn {improvement:.3f}")
 
 if __name__ == "__main__":
     compare_finetune_vs_real()
