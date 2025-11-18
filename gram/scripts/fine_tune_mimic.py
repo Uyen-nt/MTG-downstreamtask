@@ -86,19 +86,26 @@ def train_finetune():
     try:
         model.load_state_dict(torch.load(SYNTH_MODEL, map_location=device))
         print("✅ Loaded pretrained (synthetic) model successfully.")
+        
+        # Kiểm tra pretrained model performance
+        print("Evaluating pretrained model on MIMIC validation set...")
+        pretrained_metrics = evaluate_model(model, val_seqs, num_codes, num_classes, device)
+        print(f"Pretrained - Loss: {pretrained_metrics['loss']:.4f}, Top-10 Acc: {pretrained_metrics['top10_acc']:.4f}")
+        
     except Exception as e:
         print(f"❌ Error loading pretrained model: {e}")
         print("⚠️  Training from scratch...")
 
     # 4) FINE-TUNING SETUP
-    opt = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-5)  # Lower LR for fine-tuning
+    opt = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-5)
     loss_fn = nn.CrossEntropyLoss(reduction='none')
     
-    # Early stopping
+    # Improved Early stopping
     best_val_loss = float('inf')
     patience = 7
     patience_counter = 0
     best_epoch = 0
+    min_delta = 0.001
     
     print("\nStarting fine-tuning...")
     print("Epoch | Train Loss | Val Loss | Top-5 Acc | Top-10 Acc | F1-Score")
@@ -145,8 +152,8 @@ def train_finetune():
               f"{val_metrics['top5_acc']:9.4f} | {val_metrics['top10_acc']:10.4f} | "
               f"{val_metrics['f1']:8.4f}")
         
-        # Early stopping
-        if val_metrics['loss'] < best_val_loss:
+        # Improved Early stopping với min_delta
+        if val_metrics['loss'] < best_val_loss - min_delta:
             best_val_loss = val_metrics['loss']
             best_epoch = epoch
             patience_counter = 0
@@ -154,8 +161,11 @@ def train_finetune():
             print(f" → Saved NEW BEST fine-tuned model! (val_loss: {best_val_loss:.4f})")
         else:
             patience_counter += 1
+            print(f" → No improvement for {patience_counter}/{patience} epochs")
+            
             if patience_counter >= patience:
-                print(f"\nEarly stopping at epoch {epoch+1}. Best epoch: {best_epoch+1}")
+                print(f"\n🚨 Early stopping triggered at epoch {epoch+1}")
+                print(f"🏆 Best model was at epoch {best_epoch+1} with val_loss: {best_val_loss:.4f}")
                 break
 
     # 6) FINAL EVALUATION
@@ -164,46 +174,64 @@ def train_finetune():
     print("="*60)
     
     # Load best fine-tuned model
-    model.load_state_dict(torch.load(FT_BEST_OUT))
-    test_metrics = evaluate_model(model, test_seqs, num_codes, num_classes, device)
+    try:
+        model.load_state_dict(torch.load(FT_BEST_OUT))
+        test_metrics = evaluate_model(model, test_seqs, num_codes, num_classes, device)
+        
+        print("MIMIC Test Set Metrics (After Fine-tuning):")
+        print(f"Loss:     {test_metrics['loss']:.4f}")
+        print(f"Top-5 Acc: {test_metrics['top5_acc']:.4f}")
+        print(f"Top-10 Acc: {test_metrics['top10_acc']:.4f}")
+        print(f"Precision: {test_metrics['precision']:.4f}")
+        print(f"Recall:    {test_metrics['recall']:.4f}")
+        print(f"F1-Score:  {test_metrics['f1']:.4f}")
+        print(f"Jaccard:   {test_metrics['jaccard']:.4f}")
+    except Exception as e:
+        print(f"Error in final evaluation: {e}")
+        test_metrics = {'loss': 0, 'top5_acc': 0, 'top10_acc': 0, 'f1': 0}
     
-    print("MIMIC Test Set Metrics (After Fine-tuning):")
-    print(f"Loss:     {test_metrics['loss']:.4f}")
-    print(f"Top-5 Acc: {test_metrics['top5_acc']:.4f}")
-    print(f"Top-10 Acc: {test_metrics['top10_acc']:.4f}")
-    print(f"Precision: {test_metrics['precision']:.4f}")
-    print(f"Recall:    {test_metrics['recall']:.4f}")
-    print(f"F1-Score:  {test_metrics['f1']:.4f}")
-    print(f"Jaccard:   {test_metrics['jaccard']:.4f}")
-    
-    # Compare with pretrained model on same test set
+    # Compare với pretrained model
     print("\n" + "="*60)
     print("COMPARISON: PRETRAINED vs FINE-TUNED")
     print("="*60)
     
-    # Evaluate pretrained model on MIMIC test set
-    pretrained_model = GRAM(
-        input_dim=num_codes,
-        num_classes=num_classes,
-        num_levels=len(tree_leaves),
-        emb_dim=128,
-        att_dim=128,
-        hidden_dim=128,
-        tree_leaves=tree_leaves,
-        tree_ancestors=tree_anc,
-        max_index_in_tree=max_index,
-        device=device
-    ).to(device)
-    
-    pretrained_model.load_state_dict(torch.load(SYNTH_MODEL, map_location=device))
-    pretrained_metrics = evaluate_model(pretrained_model, test_seqs, num_codes, num_classes, device)
-    
-    print(f"{'Metric':<12} | {'Pretrained':<10} | {'Fine-tuned':<10} | {'Improvement':<12}")
-    print("-" * 55)
-    print(f"{'Top-5 Acc':<12} | {pretrained_metrics['top5_acc']:10.4f} | {test_metrics['top5_acc']:10.4f} | {test_metrics['top5_acc'] - pretrained_metrics['top5_acc']:11.4f}")
-    print(f"{'Top-10 Acc':<12} | {pretrained_metrics['top10_acc']:10.4f} | {test_metrics['top10_acc']:10.4f} | {test_metrics['top10_acc'] - pretrained_metrics['top10_acc']:11.4f}")
-    print(f"{'F1-Score':<12} | {pretrained_metrics['f1']:10.4f} | {test_metrics['f1']:10.4f} | {test_metrics['f1'] - pretrained_metrics['f1']:11.4f}")
-    print(f"{'Loss':<12} | {pretrained_metrics['loss']:10.4f} | {test_metrics['loss']:10.4f} | {pretrained_metrics['loss'] - test_metrics['loss']:11.4f}")
+    try:
+        pretrained_model = GRAM(
+            input_dim=num_codes,
+            num_classes=num_classes,
+            num_levels=len(tree_leaves),
+            emb_dim=128,
+            att_dim=128,
+            hidden_dim=128,
+            tree_leaves=tree_leaves,
+            tree_ancestors=tree_anc,
+            max_index_in_tree=max_index,
+            device=device
+        ).to(device)
+        
+        pretrained_model.load_state_dict(torch.load(SYNTH_MODEL, map_location=device))
+        pretrained_metrics = evaluate_model(pretrained_model, test_seqs, num_codes, num_classes, device)
+        
+        print(f"{'Metric':<12} | {'Pretrained':<10} | {'Fine-tuned':<10} | {'Improvement':<12}")
+        print("-" * 55)
+        
+        metrics_list = [
+            ('Top-5 Acc', pretrained_metrics['top5_acc'], test_metrics['top5_acc']),
+            ('Top-10 Acc', pretrained_metrics['top10_acc'], test_metrics['top10_acc']),
+            ('F1-Score', pretrained_metrics['f1'], test_metrics['f1']),
+            ('Loss', pretrained_metrics['loss'], test_metrics['loss']),
+        ]
+        
+        for name, pretrained_val, ft_val in metrics_list:
+            if name == 'Loss':
+                improvement = pretrained_val - ft_val  # Lower loss is better
+            else:
+                improvement = ft_val - pretrained_val  # Higher is better
+            
+            print(f"{name:<12} | {pretrained_val:10.4f} | {ft_val:10.4f} | {improvement:>11.4f}")
+        
+    except Exception as e:
+        print(f"Error in comparison: {e}")
     
     # Save final model
     torch.save(model.state_dict(), FT_LAST_OUT)
