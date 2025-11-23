@@ -4,7 +4,7 @@ import pickle
 from torch.utils.data import Dataset, DataLoader
 from collections import OrderedDict
 
-class SyntheticEHRDatasetWithMapping(Dataset):
+class SyntheticDataset(Dataset):
     def __init__(self, npz_path, code_map_path, max_seq_len=50):
         """
         Load synthetic EHR data với code mapping
