@@ -11,6 +11,7 @@ class Mamba2_PyTorch(nn.Module):
         d_model,
         d_state=64,
         d_conv=4,
+        conv_init=None,
         expand=2,
         headdim=128,
         ngroups=1,
@@ -18,7 +19,13 @@ class Mamba2_PyTorch(nn.Module):
         dt_min=0.001,
         dt_max=0.1,
         dt_init_floor=1e-4,
+        learnable_init_states=False,   # thêm vào
         activation="swish",
+        chunk_size=None,               # thêm vào
+        use_mem_eff_path=None,         # thêm vào
+        layer_idx=None,                # thêm vào
+        device=None,
+        dtype=None,
     ):
         super().__init__()
         self.d_model = d_model
