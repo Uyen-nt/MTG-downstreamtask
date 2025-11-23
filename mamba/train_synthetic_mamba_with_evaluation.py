@@ -5,6 +5,9 @@ from synthetic_data_loader import create_synthetic_data_loader
 from mamba_synthetic import SyntheticEHRMamba, SyntheticMambaTrainer
 from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score
 
+import os
+from datetime import datetime
+
 def evaluate_predictions(predictions, targets, threshold=0.5):
     """
     Evaluate multi-label predictions
@@ -35,7 +38,7 @@ def evaluate_predictions(predictions, targets, threshold=0.5):
     }
 
 def train_synthetic_mamba_with_evaluation():
-    print("🚀 Starting Mamba Training on Synthetic EHR Data with Code Mapping...")
+    print("🚀 Starting Mamba Training on Synthetic EHR Data...")
     
     # Configuration
     config = {
@@ -129,15 +132,27 @@ def train_synthetic_mamba_with_evaluation():
             print(f'✅ Epoch {epoch} completed in {epoch_time:.2f}s. Average Loss: {avg_loss:.4f}')
     
     # Save model với metadata
-    model_save_path = 'synthetic_mamba_model_with_mapping.pth'
+    
+    result_dir = 'result'  # thư mục con trong mamba/
+    os.makedirs(result_dir, exist_ok=True)
+    
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    model_save_path = os.path.join(result_dir, f"synthetic_mamba_{timestamp}.pth")
+    
     torch.save({
         'model_state_dict': model.state_dict(),
         'model_config': model_config,
         'code_num': code_num,
-        'code_map': index_to_code  # Lưu cả mapping
+        'code_map': index_to_code
     }, model_save_path)
     
-    print(f"💾 Model saved to {model_save_path}")
+    print("="*60)
+    print("HOÀN TẤT TRAINING!")
+    print(f"Model đã lưu:")
+    print(f"   → {model_save_path}")
+    print("Vào thư mục mamba/result để xem tất cả các checkpoint!")
+    print("="*60)
+
     return model, train_loader
 
 def demonstrate_predictions(model, train_loader):
