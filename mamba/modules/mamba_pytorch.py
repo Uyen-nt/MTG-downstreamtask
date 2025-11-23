@@ -57,6 +57,12 @@ class Mamba2_PyTorch(nn.Module):
         self.norm = nn.LayerNorm(self.d_inner)
         self.out_proj = nn.Linear(self.d_inner, d_model)
 
+        self.learnable_init_states = learnable_init_states
+        self.chunk_size = chunk_size
+        self.use_mem_eff_path = use_mem_eff_path
+        self.layer_idx = layer_idx
+
+
 
     def SSM_update(self, x, B, C, dt, A):
 
