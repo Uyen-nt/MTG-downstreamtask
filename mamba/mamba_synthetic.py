@@ -74,6 +74,7 @@ class SyntheticMambaTrainer:
         - lens: (batch,) actual sequence lengths
         """
         x, lens = batch_data
+        x = x.to(self.model.input_proj.weight.device)
         
         # Next-visit prediction: predict visit t+1 from visits 0..t
         inputs = x[:, :-1]   # All visits except last (0 to n-2)
@@ -95,6 +96,7 @@ class SyntheticMambaTrainer:
     def evaluate_batch(self, batch_data):
         """Evaluate on a single batch"""
         x, lens = batch_data
+        x = x.to(self.model.input_proj.weight.device)
         inputs = x[:, :-1]
         targets = x[:, 1:]
         
