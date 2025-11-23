@@ -140,6 +140,7 @@ class Mamba2Simple(nn.Module):
         Returns: same shape as u
         """
         print(">>> MAMBA USE_MEM_EFF_PATH =", self.use_mem_eff_path)
+        print("2")
         batch, seqlen, dim = u.shape
 
         zxbcdt = self.in_proj(u)  # (B, L, d_in_proj)
