@@ -80,7 +80,7 @@ class SyntheticDataset(Dataset):
         
         return decoded_visits
 
-def create_synthetic_data_loader_with_mapping(npz_path, code_map_path, batch_size=32, shuffle=True):
-    dataset = SyntheticEHRDatasetWithMapping(npz_path, code_map_path)
+def create_synthetic_data_loader(npz_path, code_map_path, batch_size=32, shuffle=True):
+    dataset = SyntheticDataset(npz_path, code_map_path)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
     return dataloader, dataset.code_num, dataset.index_to_code
