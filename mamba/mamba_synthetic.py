@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from mamba.modules.mamba_pytorch import Mamba2_PyTorch
+from mamba.modules.mamba2_simple import Mamba2Simple
 
 class SyntheticEHRMamba(nn.Module):
     def __init__(self, code_num=2869, d_model=256, n_layer=4, d_state=64, d_conv=4):
@@ -18,15 +18,17 @@ class SyntheticEHRMamba(nn.Module):
         # 1. Multi-hot input projection - QUAN TRỌNG: thay thế embedding
         self.input_proj = nn.Linear(code_num, d_model)
         
-        # 2. Mamba layers
+        # 2. Mamba2Simple layers
         self.mamba_layers = nn.ModuleList([
-                Mamba2_PyTorch(
+                Mamba2Simple(
                     d_model=d_model,
                     d_state=d_state,
                     d_conv=d_conv,
                     expand=2,
                     headdim=64,
-                    learnable_init_states=False,
+                    chunk_size=256, 
+                    use_mem_eff_path=True, 
+                    layer_idx=i,
                 ) for i in range(n_layer)
             ])
 
