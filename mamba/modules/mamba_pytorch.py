@@ -61,6 +61,12 @@ class Mamba2_PyTorch(nn.Module):
         self.chunk_size = chunk_size
         self.use_mem_eff_path = use_mem_eff_path
         self.layer_idx = layer_idx
+        print(">>>> Mamba2_PyTorch initialized with:",
+      "learnable_init_states=", learnable_init_states,
+      "chunk_size=", chunk_size,
+      "use_mem_eff_path=", use_mem_eff_path,
+      "layer_idx=", layer_idx)
+
 
 
 
