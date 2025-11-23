@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from mamba.modules.mamba2_simple import Mamba2Simple
+from mamba.modules.mamba_pytorch import Mamba2_PyTorch
 
 class SyntheticEHRMamba(nn.Module):
     def __init__(self, code_num=2869, d_model=256, n_layer=4, d_state=64, d_conv=4):
