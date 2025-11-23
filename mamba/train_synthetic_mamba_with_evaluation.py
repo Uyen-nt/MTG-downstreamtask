@@ -8,6 +8,8 @@ from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_sco
 import os
 from datetime import datetime
 
+BASE_DIR = '/kaggle/working/MTG-downstreamtask'
+
 def evaluate_predictions(predictions, targets, threshold=0.5):
     """
     Evaluate multi-label predictions
@@ -42,8 +44,8 @@ def train_synthetic_mamba_with_evaluation():
     
     # Configuration
     config = {
-        'data_path': 'data/result/synthetic_mimic3.npz',  
-        'code_map_path': 'data/mimic3/encoded/code_map.pkl',
+        'data_path': f'{BASE_DIR}/data/result/synthetic_mimic3.npz',
+        'code_map_path': f'{BASE_DIR}/data/mimic3/encoded/code_map.pkl',
         'batch_size': 32,
         'learning_rate': 1e-3,
         'epochs': 50,
@@ -133,7 +135,7 @@ def train_synthetic_mamba_with_evaluation():
     
     # Save model với metadata
     
-    result_dir = 'result'  # thư mục con trong mamba/
+    result_dir = f'{BASE_DIR}/mamba/result'
     os.makedirs(result_dir, exist_ok=True)
     
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
