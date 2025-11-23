@@ -2,8 +2,8 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from einops import rearrange, repeat
+
 
 class Mamba2_PyTorch(nn.Module):
     def __init__(
@@ -25,117 +25,109 @@ class Mamba2_PyTorch(nn.Module):
         bias=False,
         conv_bias=True,
         chunk_size=256,
-        use_mem_eff_path=False,
+        use_mem_eff_path=False,    # vì không chạy triton
         layer_idx=None,
         device=None,
         dtype=None,
     ):
         super().__init__()
+        factory_kwargs = {"device": device, "dtype": dtype}
+
         self.d_model = d_model
         self.d_state = d_state
+        self.d_conv = d_conv
         self.expand = expand
-        self.d_inner = expand * d_model   # = 512
-        self.headdim = headdim            # = 128
-        self.ngroups = ngroups            # = 1
-        self.nheads = self.d_inner // self.headdim  # = 4
-
-        # [z, x, B, C, dt]
-        d_in_proj = 2 * self.d_inner + 2 * ngroups * d_state + self.nheads
-        self.in_proj = nn.Linear(d_model, d_in_proj, bias=bias)
-
-        conv_dim = self.d_inner + 2 * ngroups * d_state
-        self.conv1d = nn.Conv1d(conv_dim, conv_dim, kernel_size=d_conv,
-                                groups=conv_dim, bias=conv_bias, padding=d_conv - 1)
-
-        if conv_init is not None:
-            nn.init.uniform_(self.conv1d.weight, -conv_init, conv_init)
+        self.d_inner = self.expand * self.d_model     # EX: 512
+        self.headdim = headdim                        # EX: 128
+        self.ngroups = ngroups
+        self.nheads = self.d_inner // self.headdim    # EX: 512/128=4
 
         self.learnable_init_states = learnable_init_states
-        if learnable_init_states:
-            self.init_states = nn.Parameter(torch.zeros(self.nheads, self.headdim, self.d_state))
+        self.activation = activation
+        self.chunk_size = chunk_size
+        self.use_mem_eff_path = use_mem_eff_path
+        self.dt_limit = dt_limit
+
+        # SAME AS ORIGINAL
+        d_in_proj = 2 * self.d_inner + 2 * self.ngroups * self.d_state + self.nheads
+        self.in_proj = nn.Linear(self.d_model, d_in_proj, bias=bias)
+
+        conv_dim = self.d_inner + 2 * self.ngroups * self.d_state
+        self.conv1d = nn.Conv1d(
+            conv_dim,
+            conv_dim,
+            kernel_size=d_conv,
+            groups=conv_dim,
+            padding=d_conv - 1,
+            bias=conv_bias
+        )
 
         self.act = nn.SiLU()
 
-        # dt init
         dt = torch.exp(
             torch.rand(self.nheads) * (math.log(dt_max) - math.log(dt_min))
             + math.log(dt_min)
         )
         dt = torch.clamp(dt, min=dt_init_floor)
-        self.dt_bias = nn.Parameter(dt + torch.log(-torch.expm1(-dt)))
+        inv_dt = dt + torch.log(-torch.expm1(-dt))
+        self.dt_bias = nn.Parameter(inv_dt)
 
-        # A parameter
+        # ORIGINAL
         A = torch.empty(self.nheads).uniform_(*A_init_range)
         self.A_log = nn.Parameter(torch.log(A))
 
-        # skip param
         self.D = nn.Parameter(torch.ones(self.nheads))
 
+        # RMSNorm substitute (since Triton not available)
         self.norm = nn.LayerNorm(self.d_inner)
-        self.out_proj = nn.Linear(self.d_inner, d_model)
+
+        self.out_proj = nn.Linear(self.d_inner, self.d_model, bias=bias)
 
 
-    def SSM_update(self, x, B, C, dt, A):
-        """
-        x: (B, L, d_inner) -> reshape → (B, L, nheads, headdim)
-        B: (B, L, nheads * d_state)
-        C: (B, L, nheads * d_state)
-        """
+    def forward(self, u, seq_idx=None):
+        B, L, D = u.shape
 
-        B = rearrange(B, "b l (h n) -> b l h n", h=self.nheads)
-        C = rearrange(C, "b l (h n) -> b l h n", h=self.nheads)
-        x = rearrange(x, "b l (h p) -> b l h p", p=self.headdim)
-
-        # initial state
-        h = torch.zeros(x.size(0), self.nheads, self.d_state, device=x.device)
-
-        A = A.unsqueeze(0).unsqueeze(-1)     # (1, nheads, 1)
-        outputs = []
-
-        for t in range(x.size(1)):
-            # B * x  over headdim:
-            # B: (B, nheads, d_state)
-            # x: (B, nheads, headdim)
-            # WRONG: (B,nheads,1)  -> anh từng làm thế!!!
-            # CORRECT: (B,nheads,d_state) each channel learns separately
-
-            inp = torch.matmul(x[:,t], B[:,t].transpose(2,1)) # (B, nheads, nheads)
-            inp = inp[:,torch.arange(self.nheads),torch.arange(self.nheads)] 
-            inp = inp.unsqueeze(-1)
-
-            h = torch.exp(A) * h + inp
-
-            # y_t = C*h
-            y_t = torch.sum(C[:,t] * h, dim=-1)   # (B, nheads)
-            outputs.append(y_t)
-
-        y = torch.stack(outputs, dim=1)  # (B, L, nheads)
-        y = repeat(y, 'b l h -> b l (h p)', p=self.headdim)
-        return y 
-
-
-    def forward(self, u):
-        B, L, D = u.size()
-
+        # input projection
         zxbcdt = self.in_proj(u)
-
-        z, xBC, dt = torch.split(
-            zxbcdt, [self.d_inner,
-                     self.d_inner + 2*self.ngroups*self.d_state,
-                     self.nheads], dim=-1
-        )
-        dt = F.softplus(dt + self.dt_bias)
         A = -torch.exp(self.A_log)
 
-        xBC = self.act(self.conv1d(xBC.transpose(1,2)).transpose(1,2))
-
-        x, Bmat, Cmat = torch.split(
-            xBC, [self.d_inner,
-                  self.ngroups*self.d_state*self.nheads,
-                  self.ngroups*self.d_state*self.nheads], dim=-1
+        z, xBC, dt = torch.split(
+            zxbcdt,
+            [self.d_inner, self.d_inner + 2 * self.ngroups * self.d_state, self.nheads],
+            dim=-1,
         )
 
-        y = self.SSM_update(x, Bmat, Cmat, dt, A)
+        dt = F.softplus(dt + self.dt_bias)
+
+        # conv1d
+        xBC = self.act(self.conv1d(xBC.transpose(1, 2)).transpose(1, 2))
+        xBC = xBC[:, :L, :]
+
+        # ALWAYS 4D — NEVER flatten
+        x, Bmat, Cmat = torch.split(
+            xBC,
+            [self.d_inner, self.ngroups * self.d_state, self.ngroups * self.d_state],
+            dim=-1,
+        )
+        x = rearrange(x, "b l (h p) -> b l h p", p=self.headdim)
+        Bmat = rearrange(Bmat, "b l (h n) -> b l h n", h=self.nheads)
+        Cmat = rearrange(Cmat, "b l (h n) -> b l h n", h=self.nheads)
+
+        # hidden state
+        h = torch.zeros(B, self.nheads, self.d_state, device=u.device)
+        A = A.view(1, self.nheads, 1)
+
+        outs = []
+        for t in range(L):
+            inp = torch.einsum('bhn,bhp->bh', Bmat[:,t], x[:,t])
+            inp = inp.unsqueeze(-1)
+            h = torch.exp(A) * h + inp
+            y_t = torch.einsum('bhn,bhn->bh', Cmat[:,t], h)
+            outs.append(y_t)
+
+        y = torch.stack(outs, dim=1)
+        y = rearrange(y, "b l h -> b l (h)")
 
         y = self.norm(y) * torch.sigmoid(z)
-        return self.out_proj(y)
+        out = self.out_proj(y)
+        return out
