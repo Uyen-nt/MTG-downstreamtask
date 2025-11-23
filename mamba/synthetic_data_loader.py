@@ -46,7 +46,8 @@ class SyntheticDataset(Dataset):
         else:
             sequence = sequence[:self.max_seq_len]
             
-        return torch.FloatTensor(sequence), seq_len
+        #return torch.FloatTensor(sequence), seq_len
+        return torch.tensor(sequence, dtype=torch.float32), seq_len
     
     def get_icd9_codes(self, prediction_probs, threshold=0.5):
         """
