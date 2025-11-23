@@ -93,6 +93,7 @@ def train_synthetic_mamba_with_evaluation():
         start_time = time.time()
         
         for batch_idx, (x, lens) in enumerate(train_loader):
+            x = x.to(device)
             loss = trainer.train_step((x, lens))
             total_loss += loss
             num_batches += 1
