@@ -11,8 +11,6 @@ try:
     from causal_conv1d import causal_conv1d_fn
 except ImportError:
     causal_conv1d_fn = None
-    
-from causal_conv1d.cpp_functions import causal_conv1d_fwd_function
 
 try:
     from mamba.ops.triton.layernorm_gated import RMSNorm as RMSNormGated, LayerNorm
@@ -142,7 +140,7 @@ class Mamba2Simple(nn.Module):
         initial_states=repeat(self.init_states, "... -> b ...", b=batch) if self.learnable_init_states else None
         dt_limit_kwargs = {} if self.dt_limit == (0.0, float("inf")) else dict(dt_limit=self.dt_limit)
 
-        if self.use_mem_eff_path:
+        if self.use_mem_eff_path and causal_conv1d_fwd_function is not None:
             # Fully fused path
             out = mamba_split_conv1d_scan_combined(
                 zxbcdt,
