@@ -12,6 +12,13 @@ try:
 except ImportError:
     causal_conv1d_fn = None
 
+
+try:
+    from causal_conv1d.cpp_functions import causal_conv1d_fwd_function
+except ImportError:
+    causal_conv1d_fwd_function = None
+
+
 try:
     from mamba.ops.triton.layernorm_gated import RMSNorm as RMSNormGated, LayerNorm
 except ImportError:
