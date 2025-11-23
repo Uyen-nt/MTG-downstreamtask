@@ -63,7 +63,7 @@ class Mamba2Simple(nn.Module):
         self.learnable_init_states = learnable_init_states
         self.activation = activation
         self.chunk_size = chunk_size
-        self.use_mem_eff_path = use_mem_eff_path
+        self.use_mem_eff_path = False
         self.layer_idx = layer_idx
 
         # Order: [z, x, B, C, dt]
