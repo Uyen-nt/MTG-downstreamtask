@@ -72,10 +72,13 @@ def train_synthetic_mamba_with_evaluation():
         'd_state': 64,
         'd_conv': 4,
     }
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
     
     # Initialize model
     print("🤖 Initializing Mamba model...")
-    model = SyntheticEHRMamba(**model_config)
+    model = SyntheticEHRMamba(**model_config).to(device)
     trainer = SyntheticMambaTrainer(model, learning_rate=config['learning_rate'])
     
     print(f"📊 Model parameters: {sum(p.numel() for p in model.parameters()):,}")
