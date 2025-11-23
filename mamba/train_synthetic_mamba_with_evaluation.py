@@ -48,7 +48,7 @@ def train_synthetic_mamba_with_evaluation():
         'code_map_path': f'{BASE_DIR}/data/mimic3/encoded/code_map.pkl',
         'batch_size': 32,
         'learning_rate': 1e-3,
-        'epochs': 50,
+        'epochs': 5,
         'max_seq_len': 30,
     }
     
