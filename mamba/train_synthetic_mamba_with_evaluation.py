@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 import time
-from synthetic_data_loader_with_mapping import create_synthetic_data_loader_with_mapping
+from synthetic_data_loader import create_synthetic_data_loader
 from mamba_synthetic import SyntheticEHRMamba, SyntheticMambaTrainer
 from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score
 
@@ -39,8 +39,8 @@ def train_synthetic_mamba_with_evaluation():
     
     # Configuration
     config = {
-        'data_path': '/content/synthetic_mimic3 (1).npz',  # Update your path
-        'code_map_path': '/content/code_map.pkl',  # Your code map path
+        'data_path': 'data/result/synthetic_mimic3.npz',  
+        'code_map_path': 'data/mimic3/encoded/code_map.pkl',
         'batch_size': 32,
         'learning_rate': 1e-3,
         'epochs': 50,
@@ -49,7 +49,7 @@ def train_synthetic_mamba_with_evaluation():
     
     # Load data với code mapping
     print("📥 Loading synthetic data with code mapping...")
-    train_loader, code_num, index_to_code = create_synthetic_data_loader_with_mapping(
+    train_loader, code_num, index_to_code = create_synthetic_data_loader(
         config['data_path'], 
         config['code_map_path'],
         batch_size=config['batch_size']
