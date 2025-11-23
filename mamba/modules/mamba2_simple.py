@@ -64,7 +64,7 @@ class Mamba2Simple(nn.Module):
         self.learnable_init_states = learnable_init_states
         self.activation = activation
         self.chunk_size = chunk_size
-        self.use_mem_eff_path = False
+        self.use_mem_eff_path = use_mem_eff_path
         self.layer_idx = layer_idx
 
         # Order: [z, x, B, C, dt]
@@ -132,6 +132,7 @@ class Mamba2Simple(nn.Module):
         u: (B, L, D)
         Returns: same shape as u
         """
+        print(">>> MAMBA USE_MEM_EFF_PATH =", self.use_mem_eff_path)
         batch, seqlen, dim = u.shape
 
         zxbcdt = self.in_proj(u)  # (B, L, d_in_proj)
