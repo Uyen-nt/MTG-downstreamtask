@@ -147,7 +147,7 @@ class Mamba2Simple(nn.Module):
         initial_states=repeat(self.init_states, "... -> b ...", b=batch) if self.learnable_init_states else None
         dt_limit_kwargs = {} if self.dt_limit == (0.0, float("inf")) else dict(dt_limit=self.dt_limit)
 
-        if self.use_mem_eff_path and causal_conv1d_fwd_function is not None:
+        if False:
             # Fully fused path
             out = mamba_split_conv1d_scan_combined(
                 zxbcdt,
