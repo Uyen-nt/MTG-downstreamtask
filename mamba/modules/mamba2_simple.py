@@ -201,6 +201,7 @@ class Mamba2Simple(nn.Module):
 
             # Multiply "gate" branch and apply extra normalization layer
             #y = self.norm(y, z)
+            
             if RMSNormGated is not None:
                 y = self.norm(y, z)
             else:
