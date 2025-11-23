@@ -116,8 +116,13 @@ class Mamba2Simple(nn.Module):
         self.D._no_weight_decay = True
 
         # Extra normalization layer right before output projection
-        assert RMSNormGated is not None
-        self.norm = RMSNormGated(self.d_inner, eps=1e-5, norm_before_gate=False, **factory_kwargs)
+        # assert RMSNormGated is not None
+        # self.norm = RMSNormGated(self.d_inner, eps=1e-5, norm_before_gate=False, **factory_kwargs)
+        if RMSNormGated is not None:
+            self.norm = RMSNormGated(self.d_inner, eps=1e-5, norm_before_gate=False, **factory_kwargs)
+        else:
+            print("RMSNormGated not available, falling back to standard LayerNorm")
+            self.norm = nn.LayerNorm(self.d_inner, eps=1e-5)
 
         self.out_proj = nn.Linear(self.d_inner, self.d_model, bias=bias, **factory_kwargs)
 
@@ -195,6 +200,10 @@ class Mamba2Simple(nn.Module):
             y = rearrange(y, "b l h p -> b l (h p)")
 
             # Multiply "gate" branch and apply extra normalization layer
-            y = self.norm(y, z)
+            #y = self.norm(y, z)
+            if RMSNormGated is not None:
+                y = self.norm(y, z)
+            else:
+                y = self.norm(y) * F.silu(z)
             out = self.out_proj(y)
         return out
