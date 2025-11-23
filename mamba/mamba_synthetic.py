@@ -26,6 +26,8 @@ class SyntheticEHRMamba(nn.Module):
                 d_conv=d_conv,
                 expand=2,
                 headdim=64,  # Giảm để nhẹ hơn
+                chunk_size=64,              # Thêm dòng này (giảm từ 256 → 64)
+                use_mem_eff_path=False,
                 layer_idx=i,
             ) for i in range(n_layer)
         ])
