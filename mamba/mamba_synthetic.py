@@ -18,19 +18,18 @@ class SyntheticEHRMamba(nn.Module):
         # 1. Multi-hot input projection - QUAN TRỌNG: thay thế embedding
         self.input_proj = nn.Linear(code_num, d_model)
         
-        # 2. Mamba2Simple layers
+        # 2. Mamba layers
         self.mamba_layers = nn.ModuleList([
-            Mamba2Simple(
-                d_model=d_model,
-                d_state=d_state,
-                d_conv=d_conv,
-                expand=2,
-                headdim=64,  # Giảm để nhẹ hơn
-                chunk_size=256,             
-                use_mem_eff_path=True,
-                layer_idx=i,
-            ) for i in range(n_layer)
-        ])
+                Mamba2_PyTorch(
+                    d_model=d_model,
+                    d_state=d_state,
+                    d_conv=d_conv,
+                    expand=2,
+                    headdim=64,
+                    learnable_init_states=False,
+                ) for i in range(n_layer)
+            ])
+
         
         # 3. Layer normalization
         self.norm = nn.LayerNorm(d_model)
