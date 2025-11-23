@@ -73,24 +73,32 @@ class Mamba2_PyTorch(nn.Module):
     def SSM_update(self, x, B, C, dt, A):
 
         # reshape EXACT LIKE ORIGINAL
-        x = rearrange(x, "b l (h p) -> b l h p", p=self.headdim)
-        B = rearrange(B, "b l (g n) -> b l g n", g=self.ngroups)
-        C = rearrange(C, "b l (g n) -> b l g n", g=self.ngroups)
-
-        # THIS IS KEY: h has size (batch, groups, d_state)
-        h = torch.zeros(x.size(0), self.ngroups, self.d_state, device=x.device)
-        
+        x = rearrange(x, "b l (h p) -> b l h p", p=self.headdim)     # (B, L, nheads, headdim)
+        B = rearrange(B, "b l (h n) -> b l h n", h=self.nheads)       # (B, L, nheads, d_state)
+        C = rearrange(C, "b l (h n) -> b l h n", h=self.nheads)       # (B, L, nheads, d_state)
+    
+        # hidden state
+        h = torch.zeros(x.size(0), self.nheads, self.d_state, device=x.device)
+    
+        A = A.view(1, self.nheads, 1)    # (1, nheads, 1)
+    
         outputs = []
-
+    
         for t in range(x.size(1)):
-            # computing B * x must be projection per group
-            inp = (B[:,t] * x[:,t].sum(-1)).sum(-1, keepdim=True)   # [batch, groups, 1]
-            h = torch.exp(A).view(1, -1, 1) * h + inp            
-            y_t = (C[:,t] * h).sum(-1)
+            # B*x for each head over headdim
+            inp = torch.einsum('bhn,bhp->bh', B[:,t], x[:,t])  # (B, nheads)
+            inp = inp.unsqueeze(-1)                             # (B, nheads, 1)
+    
+            h = torch.exp(A) * h + inp
+    
+            y_t = torch.einsum('bhn,bhn->bh', C[:,t], h)        # (B, nheads)
             outputs.append(y_t)
-
-        y = torch.stack(outputs, dim=1)
+    
+        y = torch.stack(outputs, dim=1)      # (batch, seq, nheads)
+    
+        y = rearrange(y, "b l h -> b l (h)")
         return y
+
 
 
     def forward(self, u):
