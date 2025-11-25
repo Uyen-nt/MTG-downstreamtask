@@ -22,7 +22,7 @@ def train_model(model, train_loader, test_loader, n_codes, epochs=20, save_path=
             labels = labels.to(device)
 
             optimizer.zero_grad()
-            logits = model(visits, n_codes)
+            logits = model(visits)
             loss = criterion(logits.unsqueeze(0), labels)
             loss.backward()
             optimizer.step()
