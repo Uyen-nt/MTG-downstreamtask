@@ -5,10 +5,10 @@ from retain_micron.model import RETAIN_Diagnosis
 from retain_micron.dataset import EHRDataset, collate_fn
 from retain_micron.train import train_model
 
-from retain_micron.utils_mimic3 import load_and_preprocess_mimic3_next
+from retain_micron.utils_mimic3 import load_and_preprocess
 
 if __name__ == "__main__":
-    seqs, labels, n_codes = load_and_preprocess_mimic3_next(
+    seqs, labels, n_codes = load_and_preprocess(
         train_path="data/mimic3/standard/real_next/train.npz"
     )
 
