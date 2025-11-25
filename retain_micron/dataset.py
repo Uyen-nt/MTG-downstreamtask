@@ -14,11 +14,11 @@ class EHRDataset(Dataset):
     def __getitem__(self, idx):
         return self.sequences[idx], self.labels[idx]
 
-def collate_fn(batch, n_codes):
+def collate_fn(batch):
     sequences, labels = zip(*batch)
     labels_onehot = []
     for lbl in labels:
-        onehot = torch.zeros(n_codes)
+        onehot = torch.zeros(2869)
         if len(lbl) > 0:
             onehot[list(lbl)] = 1.0
         labels_onehot.append(onehot)
