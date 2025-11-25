@@ -33,8 +33,8 @@ def train_model(model, train_loader, test_loader, n_codes, epochs=20, save_path=
         # Eval mỗi 5 epoch
         if (epoch + 1) % 5 == 0 or epoch == epochs - 1:
             from .evaluate import evaluate_topk_recall
-            recall10 = evaluate_topk_recall(model, test_loader, n_codes, k=10)
-            recall20 = evaluate_topk_recall(model, test_loader, n_codes, k=20)
+            recall10 = evaluate_topk_recall(model, test_loader, k=10)
+            recall20 = evaluate_topk_recall(model, test_loader, k=20)
             print(f"Top-10 Recall: {recall10:.4f} | Top-20 Recall: {recall20:.4f}")
 
             if recall10 > best_recall:
