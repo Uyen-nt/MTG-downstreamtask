@@ -9,7 +9,7 @@ from retain_micron.dataset import EHRDataset, collate_fn
 from retain_micron.train import train_model
 
 # run_retain_synthetic_realnext.py
-from convert_synthetic_to_realnext import convert_synthetic_to_realnext_format
+from retain_micron.convert_synthetic_to_realnext import convert_synthetic_to_realnext_format
 from retain_micron.utils_mimic3 import load_and_preprocess_mimic3_next
 
 def train_retain():
