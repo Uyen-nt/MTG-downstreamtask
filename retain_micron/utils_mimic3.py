@@ -61,7 +61,6 @@ def load_and_preprocess_mimic3_next(train_path="data/mimic3/standard/real_next/t
 
     # return sequences, labels, n_codes
 
-    real_next_path = os.path.join(dataset_path, 'standard', 'real_next')
     
     # Load train data
     train_data = np.load(train_path)
