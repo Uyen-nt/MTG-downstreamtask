@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-class RETAIN_Diagnosis_Only(nn.Module):
+class RETAIN_Diagnosis(nn.Module):
     def __init__(self, n_diag_codes, emb_size=256, dropout=0.5):
         super().__init__()
         self.n_codes = n_diag_codes
