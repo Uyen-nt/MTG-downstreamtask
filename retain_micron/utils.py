@@ -8,23 +8,23 @@ def load_and_preprocess_synthetic(data_path="data/result/synthetic_mimic3.npz"):
     
     n_patients, max_visits, n_codes = x.shape
     print(f"Loaded: {n_patients} patients, {max_visits} max visits, {n_codes} codes")
-
-    valid_seqs = []
-    valid_labels = []
-
+    
+    sequences = []
+    labels = []
+    
     for i in range(n_patients):
         L = lens[i]
-        if L < 2:
-            continue
-        history = []
-        for t in range(L - 1):
-            codes = np.where(x[i, t] > 0.5)[0].tolist()
-            if not codes:
-                codes = [0]
-            history.append(codes)
-        label = np.where(x[i, L-1] > 0.5)[0]
-        valid_seqs.append(history)
-        valid_labels.append(label)
-
-    print(f"Valid patients (≥2 visits): {len(valid_seqs)}")
-    return valid_seqs, valid_labels, n_codes
+        if L < 2: continue
+        for t in range(1, L):  # dự đoán visit t từ 0..t-1
+            history = []
+            for j in range(t):
+                codes = np.where(x[i, j] > 0.5)[0].tolist()
+                if not codes:
+                    codes = [n_codes]  # padding code
+                history.append(codes)
+            label = np.where(x[i, t] > 0.5)[0]
+            sequences.append(history)
+            labels.append(label.tolist())
+    
+    print(f"Total sequences for next-visit prediction: {len(sequences)}")
+    return sequences, labels, n_codes
