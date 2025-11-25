@@ -5,7 +5,7 @@ import torch.nn as nn
 from tqdm import tqdm
 import os
 
-def train_model(model, train_loader, test_loader, epochs=20, save_path="retain_micron/result"):
+def train_model(model, train_loader, test_loader, epochs=15, save_path="retain_micron/result"):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
     optimizer = optim.Adam(model.parameters(), lr=0.001)
