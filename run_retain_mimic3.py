@@ -1,0 +1,33 @@
+# run_retain_mimic3.py
+import torch
+from torch.utils.data import DataLoader
+from retain_micron.model import RETAIN_Diagnosis
+from retain_micron.dataset import EHRDataset, collate_fn
+from retain_micron.train import train_model
+
+# CHỌN 1 TRONG 2 CÁCH DƯỚI ĐÂY:
+
+# CÁCH 1: Dùng real_next/train.npz (KHUYẾN NGHỊ MẠNH NHẤT)
+from retain_micron.utils_mimic3 import load_and_preprocess_mimic3_next
+
+if __name__ == "__main__":
+    # Cách 1 – MIMIC-III chuẩn next-visit
+    seqs, labels, n_codes = load_and_preprocess_mimic3_next(
+        train_path="data/mimic3/standard/real_next/train.npz"
+    )
+
+    # Split train/val (vì real_next thường chỉ có train)
+    from sklearn.model_selection import train_test_split
+    train_seqs, val_seqs, train_labels, val_labels = train_test_split(
+        seqs, labels, test_size=0.1, random_state=42, stratify=None
+    )
+
+    train_dataset = EHRDataset(train_seqs, train_labels)
+    val_dataset   = EHRDataset(val_seqs, val_labels)
+
+    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True,  collate_fn=collate_fn)
+    val_loader   = DataLoader(val_dataset,   batch_size=64, shuffle=False, collate_fn=collate_fn)
+
+    model = RETAIN_Diagnosis(n_codes=n_codes, emb_size=256, dropout=0.5)
+
+    train_model(model, train_loader, val_loader, epochs=30, save_path="retain_micron/result_mimic3")
