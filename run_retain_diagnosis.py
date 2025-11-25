@@ -10,8 +10,7 @@ from retain_micron.train import train_model
 
 if __name__ == "__main__":
     # Load synthetic data với splitting đúng
-    (train_seqs, train_labels), (test_seqs, test_labels), n_codes = \
-        load_and_preprocess_synthetic("data/result/synthetic_mimic3.npz")
+    (train_seqs, train_labels), (test_seqs, test_labels), n_codes = load_and_preprocess_synthetic("data/result/synthetic_mimic3.npz")
     
     train_dataset = EHRDataset(train_seqs, train_labels)
     test_dataset = EHRDataset(test_seqs, test_labels)
