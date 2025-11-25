@@ -4,7 +4,7 @@ from sklearn.model_selection import train_test_split
 
 def convert_synthetic_to_realnext_format(synthetic_path, output_dir, test_size=0.2):
     """
-    Convert synthetic patient sequences → RealNext format cho next-visit prediction
+    Convert synthetic patient sequences → RealNext format với padding
     """
     # Load synthetic data
     data = np.load(synthetic_path)
@@ -13,7 +13,17 @@ def convert_synthetic_to_realnext_format(synthetic_path, output_dir, test_size=0
     
     print(f"Input: {x_synth.shape[0]} patients, max_visits={x_synth.shape[1]}")
     
-    # Collect all samples
+    # Tìm max history length cần thiết
+    max_history_length = 0
+    for patient_idx in range(len(x_synth)):
+        num_visits = lens_synth[patient_idx]
+        if num_visits < 2:
+            continue
+        max_history_length = max(max_history_length, num_visits - 1)
+    
+    print(f"Max history length needed: {max_history_length}")
+    
+    # Collect all samples với padding
     x_list, y_list, lens_list = [], [], []
     
     for patient_idx in range(len(x_synth)):
@@ -25,28 +35,34 @@ def convert_synthetic_to_realnext_format(synthetic_path, output_dir, test_size=0
         # Tạo multiple training samples từ mỗi patient
         for prediction_point in range(1, num_visits):
             # History: visits 0 to (prediction_point-1)
-            history_visits = x_synth[patient_idx, :prediction_point]
+            history_length = prediction_point
+            history_visits = x_synth[patient_idx, :prediction_point]  # (history_length, 2869)
+            
+            # Pad history to max_history_length
+            padded_history = np.zeros((max_history_length, 2869))
+            padded_history[:history_length] = history_visits
             
             # Label: visit at prediction_point
             next_visit = x_synth[patient_idx, prediction_point]
             
-            x_list.append(history_visits)
+            x_list.append(padded_history)
             y_list.append(next_visit)
-            lens_list.append(prediction_point)  # Length of history
+            lens_list.append(history_length)  # Actual history length before padding
     
     # Convert to arrays
-    x_array = np.array(x_list)    # (samples, max_visits, 2869)
+    x_array = np.array(x_list)    # (samples, max_history_length, 2869)
     y_array = np.array(y_list)    # (samples, 2869)
     lens_array = np.array(lens_list)  # (samples,)
     
     print(f"Generated {len(x_array)} next-visit samples")
+    print(f"Output shapes: x={x_array.shape}, y={y_array.shape}, lens={lens_array.shape}")
     
     # Split by patients để tránh data leakage
     patient_indices = np.arange(len(x_synth))
     train_pids, test_pids = train_test_split(patient_indices, test_size=test_size, random_state=42)
     
     def get_samples_from_patients(patient_indices):
-        """Lấy tất cả samples từ danh sách patients"""
+        """Lấy tất cả samples từ danh sách patients với padding"""
         x_samples, y_samples, lens_samples = [], [], []
         
         for pid in patient_indices:
@@ -55,12 +71,18 @@ def convert_synthetic_to_realnext_format(synthetic_path, output_dir, test_size=0
                 continue
                 
             for t in range(1, num_visits):
-                history = x_synth[pid, :t]
-                next_v = x_synth[pid, t]
+                history_length = t
+                history = x_synth[pid, :t]  # (t, 2869)
                 
-                x_samples.append(history)
-                y_samples.append(next_v)
-                lens_samples.append(t)
+                # Pad history
+                padded_history = np.zeros((max_history_length, 2869))
+                padded_history[:history_length] = history
+                
+                next_visit = x_synth[pid, t]
+                
+                x_samples.append(padded_history)
+                y_samples.append(next_visit)
+                lens_samples.append(history_length)
                 
         return np.array(x_samples), np.array(y_samples), np.array(lens_samples)
     
@@ -69,6 +91,7 @@ def convert_synthetic_to_realnext_format(synthetic_path, output_dir, test_size=0
     x_test, y_test, lens_test = get_samples_from_patients(test_pids)
     
     print(f"Final split: Train={len(x_train)}, Test={len(x_test)}")
+    print(f"Train shapes: x={x_train.shape}, y={y_train.shape}, lens={lens_train.shape}")
     
     # Save in RealNext format
     os.makedirs(output_dir, exist_ok=True)
@@ -84,30 +107,36 @@ def convert_synthetic_to_realnext_format(synthetic_path, output_dir, test_size=0
              lens=lens_test.astype(np.int64))
     
     print(f"Saved RealNext format to {output_dir}")
+    
+    # Analyze results
+    analyze_conversion_results(x_train, y_train, lens_train, x_test, y_test, lens_test)
+    
     return x_train, y_train, lens_train, x_test, y_test, lens_test
 
-def analyze_converted_data(original_path, converted_dir):
-    """Phân tích chất lượng converted data"""
-    # Load original synthetic
-    orig_data = np.load(original_path)
-    x_orig, lens_orig = orig_data['x'], orig_data['lens']
+def analyze_conversion_results(x_train, y_train, lens_train, x_test, y_test, lens_test):
+    """Phân tích kết quả conversion"""
+    print("\n=== CONVERSION ANALYSIS ===")
+    print(f"Training set: {len(x_train)} samples")
+    print(f"Test set: {len(x_test)} samples")
+    print(f"Input shape: {x_train.shape}")
+    print(f"Label shape: {y_train.shape}")
     
-    # Load converted
-    train_data = np.load(os.path.join(converted_dir, 'train.npz'))
-    x_train, y_train, lens_train = train_data['x'], train_data['y'], train_data['lens']
+    # Label statistics
+    train_labels_binary = (y_train > 0.5)
+    test_labels_binary = (y_test > 0.5)
     
-    print("=== CONVERSION ANALYSIS ===")
-    print(f"Original: {x_orig.shape[0]} patients, {np.sum(lens_orig)} total visits")
-    print(f"Converted: {x_train.shape[0]} training samples")
-    print(f"Avg history length: {np.mean(lens_train):.2f}")
+    print(f"Train label sparsity: {train_labels_binary.mean():.4f}")
+    print(f"Test label sparsity: {test_labels_binary.mean():.4f}")
+    print(f"Avg codes per label - Train: {train_labels_binary.sum(axis=1).mean():.2f}")
+    print(f"Avg codes per label - Test: {test_labels_binary.sum(axis=1).mean():.2f}")
     
-    # Analyze label sparsity
-    label_sparsity = (y_train > 0.5).mean()
-    print(f"Label sparsity: {label_sparsity:.4f}")
+    # History length distribution
+    print(f"History length - Min: {lens_train.min()}, Max: {lens_train.max()}, Mean: {lens_train.mean():.2f}")
     
-    # Analyze temporal patterns
-    avg_codes_per_visit = [(x_train[i, :lens_train[i]] > 0.5).sum() / lens_train[i] 
-                          for i in range(len(x_train))]
-    print(f"Avg codes per visit: {np.mean(avg_codes_per_visit):.2f}")
+    # Check data validity
+    assert not np.isnan(x_train).any(), "NaN values in training data"
+    assert not np.isnan(y_train).any(), "NaN values in training labels"
+    assert not np.isnan(x_test).any(), "NaN values in test data"
+    assert not np.isnan(y_test).any(), "NaN values in test labels"
     
-    return True
+    print("✓ Data validation passed - no NaN values")
