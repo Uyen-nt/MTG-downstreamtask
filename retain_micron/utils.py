@@ -1,5 +1,6 @@
 # retain_micron/utils.py
 import numpy as np
+from sklearn.model_selection import train_test_split
 
 def load_and_preprocess_synthetic(data_path="data/result/synthetic_mimic3.npz", test_size=0.2):
     """Load synthetic data và split ĐÚNG cách (by patients)"""
