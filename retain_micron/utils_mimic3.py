@@ -62,7 +62,7 @@ import os
     # return sequences, labels, n_codes
 
     # Sửa utils_mimic3.py để handle realnext format đúng cách
-def load_and_preprocess_mimic3_next_corrected(train_path, test_path=None):
+def load_and_preprocess(train_path, test_path=None):
     """
     Load RealNext data với format CHUẨN (multi-predictions per sample)
     """
