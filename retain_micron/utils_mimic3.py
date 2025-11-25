@@ -3,7 +3,7 @@ import numpy as np
 import torch
 import os
 
-def load_and_preprocess_mimic3_next(train_path="data/mimic3/standard/real_next/train.npz",
+def load_and_preprocess_mimic3_next(train_path="data/mimic3/standard/real_data/train.npz",
                                    test_path=None):
     # """
     # Dùng cho file real_next/train.npz (có x, lens, y)
