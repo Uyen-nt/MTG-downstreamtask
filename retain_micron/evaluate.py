@@ -10,7 +10,7 @@ def evaluate_topk_recall(model, loader, n_codes, k=10):
     with torch.no_grad():
         for visits, labels in loader:
             visits = [v for v in visits]
-            logits = model(visits, n_codes)
+            logits = model(visits)
             pred_codes = torch.topk(logits, k=k)[1].cpu().numpy().tolist()
             true_codes = torch.where(labels > 0.5)[1].cpu().numpy().tolist()
             
