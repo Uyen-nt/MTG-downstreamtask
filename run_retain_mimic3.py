@@ -9,7 +9,7 @@ from retain_micron.utils_mimic3 import load_and_preprocess_mimic3_next
 
 if __name__ == "__main__":
     seqs, labels, n_codes = load_and_preprocess_mimic3_next(
-        train_path="data/mimic3/standard/real_next/train.npz"
+        train_path="data/mimic3/standard/real_data/train.npz"
     )
 
     # Split train/val (vì real_next thường chỉ có train)
