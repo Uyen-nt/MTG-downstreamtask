@@ -8,17 +8,17 @@ from retain_micron.model import RETAIN_Diagnosis
 from retain_micron.dataset import EHRDataset, collate_fn
 from retain_micron.train import train_model
 
-from retain_micron.convert_synthetic_to_realnext import convert_synthetic_to_realnext_format
-from retain_micron.utils_mimic3 import load_and_preprocess_mimic3_next
+from retain_micron.convert_synthetic_to_realnext import convert_synthetic_to_realnext
+from retain_micron.utils_mimic3 import load_and_preprocess
 import os
 
 def train_retain():
     synthetic_path = "data/result/synthetic_mimic3.npz"
     output_dir = "/kaggle/working/MTG-downstreamtask/data/synthetic_realnext"
     
-    convert_synthetic_to_realnext_format(synthetic_path, output_dir)
+    convert_synthetic_to_realnext(synthetic_path, output_dir)
 
-    seqs, labels, n_codes = load_and_preprocess_mimic3_next(
+    seqs, labels, n_codes = load_and_preprocess(
         train_path=os.path.join(output_dir, "train.npz"),
         test_path=os.path.join(output_dir, "test.npz")
     )
