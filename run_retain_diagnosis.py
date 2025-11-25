@@ -14,7 +14,7 @@ from retain_micron.utils_mimic3 import load_and_preprocess_mimic3_next
 
 def train_retain():
     synthetic_path = "data/result/synthetic_mimic3.npz"
-    output_dir = "data/synthetic_realnext"
+    output_dir = "/kaggle/working/MTG-downstreamtask/data/synthetic_realnext"
     
     convert_synthetic_to_realnext_format(synthetic_path, output_dir)
 
