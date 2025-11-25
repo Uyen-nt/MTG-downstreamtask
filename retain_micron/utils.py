@@ -21,7 +21,7 @@ def load_and_preprocess_synthetic(data_path="data/result/synthetic_mimic3.npz"):
         for t in range(1, L):  # Dự đoán visit t từ visits 0..t-1
             history = []
             for j in range(t):  # Lịch sử từ visit 0 đến t-1
-                # QUAN TRỌNG: Synthetic data có thể là probability, cần threshold
+                # Synthetic data có thể là probability, cần threshold
                 visit_codes = x[i, j]  # Vector n_codes
                 
                 # Chuyển từ probability → binary codes
@@ -30,8 +30,9 @@ def load_and_preprocess_synthetic(data_path="data/result/synthetic_mimic3.npz"):
                 else:
                     codes = np.where(visit_codes > 0)[0].tolist()
                     
+                codes = [c for c in codes if c < n_codes]    
                 if not codes:
-                    codes = [n_codes]  # padding code
+                    codes = [n_codes - 1] # Dùng code cuối cùng thay vì padding index
                 history.append(codes)
             
             # Label: visit tiếp theo (t)
@@ -41,8 +42,9 @@ def load_and_preprocess_synthetic(data_path="data/result/synthetic_mimic3.npz"):
             else:
                 label = np.where(next_visit > 0)[0].tolist()
                 
+            label = [l for l in label if l < n_codes]    
             if not label:
-                label = [n_codes]
+                label = [n_codes - 1]
                 
             sequences.append(history)
             labels.append(label)
