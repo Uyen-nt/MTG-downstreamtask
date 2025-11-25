@@ -3,7 +3,7 @@ import numpy as np
 import torch
 import os
 
-def load_and_preprocess_mimic3_next(train_path="data/mimic3/standard/real_next/train.npz",
+#def load_and_preprocess_mimic3_next(train_path="data/mimic3/standard/real_next/train.npz",
                                    test_path=None):
     # """
     # Dùng cho file real_next/train.npz (có x, lens, y)
@@ -61,32 +61,70 @@ def load_and_preprocess_mimic3_next(train_path="data/mimic3/standard/real_next/t
 
     # return sequences, labels, n_codes
 
-    
-    # Load train data
+    # Sửa utils_mimic3.py để handle realnext format đúng cách
+def load_and_preprocess_mimic3_next_corrected(train_path, test_path=None):
+    """
+    Load RealNext data với format CHUẨN (multi-predictions per sample)
+    """
+    print("Loading MIMIC-III real_next data (corrected format)...")
     train_data = np.load(train_path)
-    x_train, y_train, lens_train = train_data['x'], train_data['y'], train_data['lens']
+    x_train = train_data['x']      # (patients, max_visits, n_codes)
+    y_train = train_data['y']      # (patients, max_visits, n_codes) - next visits
+    lens_train = train_data['lens'] # (patients,) - actual history lengths
+    
+    n_patients, max_visits, n_codes = x_train.shape
+    print(f"MIMIC-III train: {n_patients} patients, {max_visits} max visits, {n_codes} codes")
+    print(f"Total next-visit predictions: {np.sum(lens_train)}")
     
     sequences = []
     labels = []
     
-    for i in range(len(x_train)):
-        L = int(lens_train[i])  # Số visits trong history
-        if L < 1:
+    # Convert từ realnext format sang format RETAIN cần
+    for i in range(n_patients):
+        actual_len = int(lens_train[i])
+        if actual_len < 1:
             continue
             
-        # History: x_train[i, 0:L] 
-        history = []
-        for j in range(L):
-            codes = np.where(x_train[i, j] > 0.5)[0].tolist()
-            codes = [c for c in codes if c < 2869]  # Filter valid codes
-            history.append(codes)
-        
-        # Label: y_train[i] (next visit)
-        label = np.where(y_train[i] > 0.5)[0].tolist()
-        label = [l for l in label if l < 2869]
-        
-        sequences.append(history)
-        labels.append(label)
+        # Với mỗi patient, tạo multiple samples
+        for t in range(actual_len):
+            # History: visits 0..t
+            history = []
+            for j in range(t + 1):  # Bao gồm cả visit hiện tại
+                codes = np.where(x_train[i, j] > 0.5)[0].tolist()
+                codes = [c for c in codes if c < n_codes]
+                if not codes:
+                    codes = [n_codes - 1]
+                history.append(codes)
+            
+            # Label: next visit (t+1)
+            if t < actual_len:  # Đảm bảo có next visit
+                label = np.where(y_train[i, t] > 0.5)[0].tolist()
+                label = [l for l in label if l < n_codes]
+                if not label:
+                    label = [n_codes - 1]
+            else:
+                label = [n_codes - 1]
+                
+            sequences.append(history)
+            labels.append(label)
     
-    print(f"Loaded {len(sequences)} next-visit samples from MIMIC-III")
-    return sequences, labels, 2869
+    print(f"Converted to {len(sequences)} next-visit samples")
+    
+    if test_path:
+        test_data = np.load(test_path)
+        tx, ty, tlens = test_data['x'], test_data['y'], test_data['lens']
+        test_sequences, test_labels = [], []
+        
+        for i in range(len(tx)):
+            actual_len = int(tlens[i])
+            if actual_len < 1:
+                continue
+            for t in range(actual_len):
+                hist = [np.where(tx[i,j]>0.5)[0].tolist() or [n_codes-1] for j in range(t+1)]
+                lab = np.where(ty[i,t]>0.5)[0].tolist() or [n_codes-1]
+                test_sequences.append(hist)
+                test_labels.append(lab)
+                
+        return sequences, labels, test_sequences, test_labels, n_codes
+    
+    return sequences, labels, n_codes
