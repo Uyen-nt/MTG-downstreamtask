@@ -29,13 +29,14 @@ class RETAIN_Diagnosis(nn.Module):
         all_contexts = []
         for visits in visits_batch:  # Duyệt từng bệnh nhân trong batch
             if not visits:
-                visits = [[self.n_codes]]
+                # Nếu không có visits, dùng code cuối cùng
+                visits = [[self.n_codes - 1]]
                 
             # Step 1: Tạo visit embedding
             visit_embs = []
             for visit in visits:
                 if not visit:
-                    visit = [self.n_codes]
+                    visit = [self.n_codes - 1]
                 codes = torch.LongTensor(visit).to(device)
                 emb = self.dropout(self.emb(codes))        # (n_codes_in_visit, D)
                 v_emb = emb.sum(dim=0)                     # (D,)
