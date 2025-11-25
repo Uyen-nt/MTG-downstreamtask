@@ -2,24 +2,22 @@
 import torch
 import numpy as np
 
-def evaluate_topk_recall(model, loader, n_codes, k=10):
+def evaluate_topk_recall(model, loader, k=10):
     model.eval()
-    all_preds = []
-    all_trues = []
+    all_hits = 0
+    all_total = 0
 
     with torch.no_grad():
         for visits, labels in loader:
             visits = [v for v in visits]
-            logits = model(visits)
-            pred_codes = torch.topk(logits, k=k)[1].cpu().numpy().tolist()
-            true_codes = torch.where(labels > 0.5)[1].cpu().numpy().tolist()
-            
-            all_preds.append(pred_codes)
-            all_trues.append(true_codes)
+            logits = model(visits)                               # (n_codes,)
+            pred_codes = torch.topk(logits, k)[1].cpu().numpy()
 
-    recalls = []
-    for p, t in zip(all_preds, all_trues):
-        hits = len(set(p) & set(t))
-        recalls.append(hits / max(1, len(t)))
+            # Duyệt từng bệnh nhân trong batch
+            for i in range(labels.size(0)):
+                true_codes = torch.where(labels[i] > 0.5)[0].cpu().numpy()
+                hits = len(set(pred_codes) & set(true_codes))
+                all_hits += hits
+                all_total += max(1, len(true_codes))
 
-    return np.mean(recalls)
+    return all_hits / all_total
