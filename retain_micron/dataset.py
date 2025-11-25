@@ -3,10 +3,10 @@ from torch.utils.data import Dataset
 import torch
 
 class EHRDataset(Dataset):
-    def __init__(self, sequences, labels, n_codes):
+    def __init__(self, sequences, labels):
         self.sequences = sequences
         self.labels = labels
-        self.n_codes = n_codes
+        #self.n_codes = n_codes
 
     def __len__(self):
         return len(self.sequences)
