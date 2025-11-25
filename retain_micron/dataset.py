@@ -18,8 +18,12 @@ def collate_fn(batch):
     sequences, labels = zip(*batch)
     labels_onehot = []
     for lbl in labels:
-        onehot = torch.zeros(2869)
-        if len(lbl) > 0:
-            onehot[list(lbl)] = 1.0
+        onehot = torch.zeros(2869)  # n_codes = 2869, indices từ 0-2868
+        
+        # Lọc các index hợp lệ (0-2868)
+        valid_indices = [idx for idx in lbl if idx < 2869]
+        if valid_indices:
+            onehot[valid_indices] = 1.0
         labels_onehot.append(onehot)
+    
     return list(sequences), torch.stack(labels_onehot)
