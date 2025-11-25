@@ -3,8 +3,7 @@ import numpy as np
 import torch
 import os
 
-#def load_and_preprocess_mimic3_next(train_path="data/mimic3/standard/real_next/train.npz",
-                                   test_path=None):
+#def load_and_preprocess_mimic3_next(train_path="data/mimic3/standard/real_next/train.npz", test_path=None):
     # """
     # Dùng cho file real_next/train.npz (có x, lens, y)
     # Đây là chuẩn next-visit prediction – đúng 100% với RETAIN gốc
