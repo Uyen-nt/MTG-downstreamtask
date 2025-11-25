@@ -9,15 +9,20 @@ def evaluate_topk_recall(model, loader, k=10):
 
     with torch.no_grad():
         for visits, labels in loader:
-            visits = [v for v in visits]           # list of patients
-            logits = model(visits)                 # (n_codes,)
-            pred_codes = torch.topk(logits, k)[1].cpu().numpy().tolist()
+            logits = model(visits)                              # (B, n_codes) hoặc (n_codes,)
+            if logits.dim() == 1:
+                logits = logits.unsqueeze(0)                    # đảm bảo (B, n_codes)
 
-            # Duyệt từng bệnh nhân trong batch
+            # Lấy top-k cho TỪNG bệnh nhân trong batch
+            topk_indices = torch.topk(logits, k=k, dim=1)[1]    # (B, k)
+            pred_codes_batch = topk_indices.cpu().tolist()      # → list of list int
+
             for i in range(labels.size(0)):
-                true_codes = torch.where(labels[i] > 0.5)[0].cpu().numpy().tolist()
+                pred_codes = pred_codes_batch[i]                # list int
+                true_codes = torch.where(labels[i] > 0.5)[0].cpu().tolist()  # list int
+                
                 hits = len(set(pred_codes) & set(true_codes))
                 total_hits += hits
-                total_codes += max(1, len(true_codes))
+                total_codes += len(true_codes) if len(true_codes) > 0 else 1
 
-    return total_hits / total_codes if total_codes > 0 else 0
+    return total_hits / total_codes
