@@ -1,6 +1,7 @@
 # retain_micron/utils_mimic3.py
 import numpy as np
 import torch
+import os
 
 def load_and_preprocess_mimic3_next(train_path="data/mimic3/standard/real_next/train.npz",
                                    test_path=None):
@@ -63,7 +64,7 @@ def load_and_preprocess_mimic3_next(train_path="data/mimic3/standard/real_next/t
     real_next_path = os.path.join(dataset_path, 'standard', 'real_next')
     
     # Load train data
-    train_data = np.load(os.path.join(real_next_path, 'train.npz'))
+    train_data = np.load(train_path)
     x_train, y_train, lens_train = train_data['x'], train_data['y'], train_data['lens']
     
     sequences = []
