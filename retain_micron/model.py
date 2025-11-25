@@ -3,50 +3,51 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-class RETAIN_Diagnosis(nn.Module):
-    def __init__(self, n_codes, emb_size=256, dropout=0.5):
+class RETAIN_Diagnosis_Only(nn.Module):
+    def __init__(self, n_diag_codes, emb_size=256, dropout=0.5):
         super().__init__()
-        self.n_codes = n_codes
-        self.emb_size = emb_size
-        self.emb = nn.Embedding(n_codes + 1, emb_size, padding_idx=n_codes)
+        self.n_codes = n_diag_codes
+        self.emb = nn.Embedding(n_diag_codes + 1, emb_size, padding_idx=n_diag_codes)
         self.dropout = nn.Dropout(dropout)
+        
         self.alpha_gru = nn.GRU(emb_size, emb_size, batch_first=True)
-        self.beta_gru = nn.GRU(emb_size, emb_size, batch_first=True)
+        self.beta_gru  = nn.GRU(emb_size, emb_size, batch_first=True)
         self.alpha_lin = nn.Linear(emb_size, 1)
-        self.beta_lin = nn.Linear(emb_size, emb_size)
-        self.output = nn.Linear(emb_size, n_codes)
+        self.beta_lin  = nn.Linear(emb_size, emb_size)
+        self.output    = nn.Linear(emb_size, n_diag_codes)
 
-    def forward(self, batch_visits):
-        # batch_visits: List[patient] → patient là List[visit] → visit là List[code]
+    def forward(self, visits):
+        # visits: List[List[List[int]]] → mỗi patient có nhiều visit, mỗi visit là list codes
         device = next(self.parameters()).device
-        B = len(batch_visits)
-        max_visits = max(len(p) for p in batch_visits)
+        batch_size = len(visits)
+        max_visits = max(len(p) for p in visits)
 
-        visit_embeddings = []
-        for patient in batch_visits:
-            patient_embs = []
+        # Tạo visit embedding
+        visit_embs = []
+        for patient in visits:
+            p_embs = []
             for visit in patient:
-                if len(visit) == 0:
+                if not visit:
                     visit = [self.n_codes]
                 codes = torch.LongTensor(visit).to(device)
-                emb = self.dropout(self.emb(codes)).sum(0)  # (emb_size,)
-                patient_embs.append(emb)
-            # Pad số visit
-            while len(patient_embs) < max_visits:
-                patient_embs.append(torch.zeros(self.emb_size, device=device))
-            visit_embeddings.append(torch.stack(patient_embs))
+                emb = self.dropout(self.emb(codes))
+                v_emb = emb.sum(0)
+                p_embs.append(v_emb)
+            # Pad visit
+            while len(p_embs) < max_visits:
+                p_embs.append(torch.zeros(self.emb.embedding_dim, device=device))
+            visit_embs.append(torch.stack(p_embs))
+        
+        x = torch.stack(visit_embs)  # (B, T, D)
 
-        x = torch.stack(visit_embeddings)  # (B, max_visits, emb_size)
-
-        # RETAIN core
-        _, h_alpha = self.alpha_gru(x)      # (1, B, emb_size)
-        _, h_beta = self.beta_gru(x)
-
-        alpha = self.alpha_lin(h_alpha.squeeze(0))   # (B, 1)
-        beta = torch.tanh(self.beta_lin(h_beta.squeeze(0)))  # (B, emb_size)
-
-        attn = F.softmax(alpha, dim=0)       # attention theo batch (B,1)
-        context = (attn * beta * x.mean(dim=1)).sum(dim=0)  # (emb_size,)
-
-        logits = self.output(context)        # (n_codes,)
-        return logits
+        # RETAIN attention
+        _, h_alpha = self.alpha_gru(x)
+        _, h_beta  = self.beta_gru(x)
+        
+        alpha = self.alpha_lin(h_alpha.squeeze(0))           # (B, 1)
+        beta  = torch.tanh(self.beta_lin(h_beta.squeeze(0))) # (B, D)
+        
+        attn = F.softmax(alpha, dim=0)
+        context = (attn * beta * x.mean(dim=1)).sum(0)
+        
+        return self.output(context)
