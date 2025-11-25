@@ -21,6 +21,6 @@ if __name__ == "__main__":
     train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True, collate_fn=collate_fn)
     test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False, collate_fn=collate_fn)
 
-    model = RETAIN_Diagnosis(n_diag_codes=n_codes, emb_size=256, dropout=0.5)
+    model = RETAIN_Diagnosis(n_codes=n_codes, emb_size=256, dropout=0.5)
 
     train_model(model, train_loader, test_loader, epochs=25)
