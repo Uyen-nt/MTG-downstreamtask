@@ -23,7 +23,7 @@ def train_model(model, train_loader, test_loader, epochs=20, save_path="retain_m
 
             optimizer.zero_grad()
             logits = model(visits)
-            loss = criterion(logits.expand(labels.size(0), -1), labels).mean()
+            loss = criterion(logits, labels).mean()
             loss.backward()
             optimizer.step()
             total_loss += loss.item()
