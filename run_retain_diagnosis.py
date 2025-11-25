@@ -23,4 +23,4 @@ if __name__ == "__main__":
 
     model = RETAIN_Diagnosis(n_codes=n_codes, emb_size=256, dropout=0.5)
 
-    train_model(model, train_loader, test_loader, epochs=25)
+    train_model(model, train_loader, test_loader, n_codes=n_codes, epochs=25)
