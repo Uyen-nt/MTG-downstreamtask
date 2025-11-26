@@ -10,7 +10,7 @@ from retain_micron.train import train_model
 
 if __name__ == "__main__":
     seqs, labels, n_codes = load_and_preprocess_synthetic(
-        train_path="data/result/synthetic_mimic3.npz"
+        data_path="data/result/synthetic_mimic3.npz"
     )
 
     # Split train/val (vì real_next thường chỉ có train)
