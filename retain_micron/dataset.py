@@ -1,6 +1,7 @@
 # retain_micron/dataset.py
 from torch.utils.data import Dataset
 import torch
+import numpy as np
 
 class EHRDataset(Dataset):
     def __init__(self, sequences, labels):
