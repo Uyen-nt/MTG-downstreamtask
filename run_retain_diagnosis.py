@@ -50,8 +50,8 @@ if __name__ == "__main__":
 
     collate = lambda batch: collate_fn(batch, n_codes=n_codes)
 
-    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, collate_fn=collate)
-    val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False, collate_fn=collate)
+    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True, collate_fn=collate)
+    val_loader = DataLoader(val_dataset, batch_size=64, shuffle=False, collate_fn=collate)
 
     model = RETAIN_Diagnosis(n_codes=n_codes, emb_size=256, dropout=0.5)
 
