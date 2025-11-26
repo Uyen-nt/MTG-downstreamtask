@@ -56,7 +56,7 @@ class RETAIN_Diagnosis(nn.Module):
             context = torch.sum(alpha * beta * visit_tensor, dim=0)  # (D,)
             all_contexts.append(context)
         
-    #     # Step 3: Gom toàn batch
-    #     context_batch = torch.stack(all_contexts)          # (B, D)
-    #     logits = self.output(context_batch)                # (B, n_codes)
-    #     return logits.squeeze(0) if batch_size == 1 else logits
+        # Step 3: Gom toàn batch
+        context_batch = torch.stack(all_contexts)          # (B, D)
+        logits = self.output(context_batch)                # (B, n_codes)
+        return logits.squeeze(0) if batch_size == 1 else logits
