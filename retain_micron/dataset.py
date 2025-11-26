@@ -19,19 +19,19 @@ def collate_fn(batch, n_codes=2869):
     sequences, labels = zip(*batch)
     batch_size = len(labels)
     
-    print(f"\n=== COLLATE - BATCH SIZE: {batch_size} ===")
+    # print(f"\n=== COLLATE - BATCH SIZE: {batch_size} ===")
     
     # KIỂM TRA CẤU TRÚC CHẶT CHẼ
     for i, (seq, lbl) in enumerate(zip(sequences[:2], labels[:2])):
-        print(f"Sample {i}:")
-        print(f"  - History: {len(seq)} visits")
+        # print(f"Sample {i}:")
+        # print(f"  - History: {len(seq)} visits")
         
-        # Kiểm tra từng visit trong history
-        for j, visit in enumerate(seq[:2]):  # 2 visits đầu
-            if isinstance(visit, list) and visit and isinstance(visit[0], list):
-                print(f"  ❌ ERROR: Visit {j} is nested list: {visit[:1]}")
-            else:
-                print(f"  ✅ Visit {j}: {len(visit)} codes - {visit[:3]}...")
+        # # Kiểm tra từng visit trong history
+        # for j, visit in enumerate(seq[:2]):  # 2 visits đầu
+        #     if isinstance(visit, list) and visit and isinstance(visit[0], list):
+        #         print(f"  ❌ ERROR: Visit {j} is nested list: {visit[:1]}")
+        #     else:
+        #         print(f"  ✅ Visit {j}: {len(visit)} codes - {visit[:3]}...")
         
         # Kiểm tra label
         if isinstance(lbl, list) and lbl and isinstance(lbl[0], list):
@@ -59,8 +59,8 @@ def collate_fn(batch, n_codes=2869):
             else:
                 print(f"ERROR: Invalid code {code} (type: {type(code)})")
     
-    print(f"Valid codes in batch: {valid_codes}")
-    print(f"Labels onehot sum: {labels_onehot.sum().item()}")
+    # print(f"Valid codes in batch: {valid_codes}")
+    # print(f"Labels onehot sum: {labels_onehot.sum().item()}")
     
     return list(sequences), labels_onehot
 
