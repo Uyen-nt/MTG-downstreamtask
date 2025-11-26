@@ -4,7 +4,7 @@ from sklearn.model_selection import train_test_split
 import os
 
 from retain_micron.convert_synthetic_to_realnext import convert_synthetic_to_realnext
-from retain_micron.utils_mimic3 import load_and_preprocess
+from retain_micron.utils import load_and_preprocess_synthetic
 from retain_micron.model import RETAIN_Diagnosis
 from retain_micron.dataset import EHRDataset, collate_fn
 from retain_micron.train import train_model
