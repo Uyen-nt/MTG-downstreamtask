@@ -80,3 +80,5 @@ def main():
     results = evaluate_comprehensive(model, val_loader)
     print_evaluation_results(results)
 
+if __name__ == "__main__":
+    main()
