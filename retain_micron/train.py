@@ -31,6 +31,7 @@ class FocalLoss(nn.Module):
 def train_model(model, train_loader, val_loader, epochs, save_path):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
+    n_codes = model.n_codes
     
     # Tính class weights từ training data
     class_weights = calculate_class_weights(train_loader, n_codes)
