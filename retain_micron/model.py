@@ -5,39 +5,52 @@ import torch.nn.functional as F
 import numpy as np
 
 class RETAIN_Diagnosis(nn.Module):
-    def __init__(self, n_codes, emb_size=256, dropout=0.5):
+    def __init__(self, n_codes, emb_size=256, dropout=0.3):
         super().__init__()
         self.n_codes = n_codes
         self.padding_idx = n_codes
 
+        # Larger embedding với better initialization
         self.emb = nn.Embedding(n_codes + 1, emb_size, padding_idx=self.padding_idx)
+        
+        # Thêm batch normalization
+        self.emb_bn = nn.BatchNorm1d(emb_size)
         self.dropout = nn.Dropout(dropout)
 
-        self.alpha_gru = nn.GRU(emb_size, emb_size, batch_first=True)
-        self.beta_gru  = nn.GRU(emb_size, emb_size, batch_first=True)
+        # GRU với bidirectional
+        self.alpha_gru = nn.GRU(emb_size, emb_size//2, batch_first=True, bidirectional=True)
+        self.beta_gru = nn.GRU(emb_size, emb_size//2, batch_first=True, bidirectional=True)
 
+        # Larger linear layers
         self.alpha_lin = nn.Linear(emb_size, 1)
-        self.beta_lin  = nn.Linear(emb_size, emb_size)
-        self.output    = nn.Linear(emb_size, n_codes)
-        self._init_weights()
+        self.beta_lin = nn.Linear(emb_size, emb_size)
+        
+        # Thêm hidden layer cho output
+        self.output_hidden = nn.Linear(emb_size, emb_size//2)
+        self.output = nn.Linear(emb_size//2, n_codes)
+        
+        self._init_weights_improved()
 
-    def _init_weights(self):
+    def _init_weights_improved(self):
+        """Better initialization để tránh collapse"""
         for name, param in self.named_parameters():
             if 'weight' in name:
-                if 'lin' in name or 'output' in name:
+                if 'emb' in name:
+                    nn.init.normal_(param, mean=0, std=0.01)  # Smaller std cho embedding
+                elif 'gru' in name:
+                    for name_param in param:
+                        if len(name_param.shape) >= 2:
+                            nn.init.orthogonal_(name_param)
+                else:
                     nn.init.xavier_uniform_(param)
-                elif 'emb' in name:
-                    nn.init.normal_(param, mean=0, std=0.1)
             elif 'bias' in name:
-                nn.init.constant_(param, 0.1)
-
+                nn.init.constant_(param, 0.0)
 
     def forward(self, visits_batch):
         device = next(self.parameters()).device
-        batch_size = len(visits_batch)
         all_contexts = []
         
-        for i, visits in enumerate(visits_batch):           
+        for visits in visits_batch:           
             if not visits:
                 visits = [[self.padding_idx]]
 
@@ -46,178 +59,141 @@ class RETAIN_Diagnosis(nn.Module):
                 clean_visit = self._flatten_visit(visit)
                 codes = torch.LongTensor(clean_visit).to(device)
                 emb = self.emb(codes)
+                emb = self.emb_bn(emb.sum(dim=0))  # Batch normalization
                 emb = self.dropout(emb)
-                v_emb = emb.sum(dim=0)
-                visit_embs.append(v_emb)
+                visit_embs.append(emb)
 
             if not visit_embs:
                 visit_embs = [self.emb(torch.LongTensor([self.padding_idx]).to(device)).squeeze()]
                 
-            visit_tensor = torch.stack(visit_embs)  # (T, D)
+            visit_tensor = torch.stack(visit_embs)
 
-            # RETAIN attention với batch dimension đúng
-            g, _ = self.alpha_gru(visit_tensor.unsqueeze(0))  # (1, T, D)
-            h, _ = self.beta_gru(visit_tensor.unsqueeze(0))   # (1, T, D)
+            # RETAIN attention với residual connections
+            g, _ = self.alpha_gru(visit_tensor.unsqueeze(0))
+            h, _ = self.beta_gru(visit_tensor.unsqueeze(0))
 
-            alpha = F.softmax(self.alpha_lin(g.squeeze(0)), dim=0)  # (T, 1)
-            beta = torch.tanh(self.beta_lin(h.squeeze(0)))          # (T, D)
-            context = torch.sum(alpha * beta * visit_tensor, dim=0)  # (D,)
+            # Concatenate bidirectional outputs
+            g = g.view(g.shape[0], g.shape[1], -1)
+            h = h.view(h.shape[0], h.shape[1], -1)
+
+            alpha = F.softmax(self.alpha_lin(g.squeeze(0)), dim=0)
+            beta = torch.tanh(self.beta_lin(h.squeeze(0)))
+            context = torch.sum(alpha * beta * visit_tensor, dim=0)
             all_contexts.append(context)
 
-        context_batch = torch.stack(all_contexts)  # (B, D)
-        output = self.output(context_batch)        # (B, n_codes)
+        context_batch = torch.stack(all_contexts)
+        
+        # Thêm non-linearity trước output
+        hidden = F.relu(self.output_hidden(context_batch))
+        hidden = self.dropout(hidden)
+        output = self.output(hidden)
         
         return output
 
     def _flatten_visit(self, visit):
-        """Sửa lỗi xử lý list lồng nhau"""
+        """Giữ nguyên"""
         if not visit:
             return [self.padding_idx]
         
-        # DEBUG: Kiểm tra cấu trúc visit
         if isinstance(visit[0], (list, np.ndarray)):
-            # print(f"WARNING: Nested list detected in visit! Flattening...")
-            # print(f"Original: {visit[:2]}...")
-            # Flatten nested list
             flat = []
             for sublist in visit:
                 if isinstance(sublist, (list, np.ndarray)):
                     flat.extend([int(x) for x in sublist if isinstance(x, (int, np.integer))])
                 elif isinstance(sublist, (int, np.integer)):
                     flat.append(int(sublist))
-            # print(f"Flattened: {flat[:5]}...")
             return flat if flat else [self.padding_idx]
         else:
-            # Đã là list trực tiếp
             flat = [int(x) for x in visit if isinstance(x, (int, np.integer))]
             return flat if flat else [self.padding_idx]
 
 
 
-
-    # def _flatten_visit(self, visit):
-    #     """Đảm bảo visit là list[int] phẳng, không lồng, không array"""
-    #     if not visit:
-    #         return [self.padding_idx]
-    #     flat = []
-    #     for item in visit:
-    #         if isinstance(item, (list, tuple, np.ndarray)):
-    #             flat.extend([int(x) for x in item if isinstance(x, (int, np.integer, float))])
-    #         elif isinstance(item, (int, np.integer, float)):
-    #             flat.append(int(item))
-    #     return flat if flat else [self.padding_idx]
-
-    # def forward(self, visits_batch):
-    #     device = next(self.parameters()).device
-    #     all_contexts = []
-        
-    #     # print(f"\n=== MODEL DEBUG ===")
-    #     # print(f"Batch size: {len(visits_batch)}")
-    #     # for i, visits in enumerate(visits_batch[:2]):  # Chỉ debug 2 samples đầu
-    #     #     print(f"Sample {i}: {len(visits)} visits")
-    #     #     for j, visit in enumerate(visits):
-    #     #         print(f"  Visit {j}: {len(visit)} codes - First 3: {visit[:3]}")
-
-    #     for visits in visits_batch:
-    #         if not visits:
-    #             visits = [[self.padding_idx]]
-
-    #         visit_embs = []
-    #         for visit in visits:
-    #             # FIX CHÍNH TẠI ĐÂY: làm phẳng + chuyển int
-    #             clean_visit = self._flatten_visit(visit)
-    #             codes = torch.LongTensor(clean_visit).to(device)  # giờ 100% là 1D tensor int
-    #             emb = self.emb(codes)
-    #             emb = self.dropout(emb)
-    #             v_emb = emb.sum(dim=0)  # (D,)
-    #             visit_embs.append(v_emb)
-
-    #         visit_tensor = torch.stack(visit_embs)  # (T, D) – an toàn tuyệt đối
-    #         # DEBUG: Kiểm tra embeddings
-    #         # print(f"Visit tensor shape: {visit_tensor.shape}")
-    #         # print(f"Visit tensor norm: {visit_tensor.norm():.4f}")
-
-    #         # RETAIN attention
-    #         g, _ = self.alpha_gru(visit_tensor.unsqueeze(0))
-    #         h, _ = self.beta_gru(visit_tensor.unsqueeze(0))
-
-    #         alpha = F.softmax(self.alpha_lin(g.squeeze(0)), dim=0)  # (T, 1)
-    #         beta = torch.tanh(self.beta_lin(h.squeeze(0)))          # (T, D)
-    #         context = torch.sum(alpha * beta * visit_tensor, dim=0)
-    #         all_contexts.append(context)
-
-    #     context_batch = torch.stack(all_contexts)
-    #     output = self.output(context_batch)
-    
-    #     # DEBUG: Kiểm tra output
-    #     # print(f"Output shape: {output.shape}")
-    #     # print(f"Output range: [{output.min().item():.4f}, {output.max().item():.4f}]")
-    #     # print(f"Output mean: {output.mean().item():.4f}")
-    #     # print("==================\n")
-        
-    #     return output
-
-
-
-# # retain_micron/model.py
-# import torch
-# import torch.nn as nn
-# import torch.nn.functional as F
-# import numpy as np
-
 # class RETAIN_Diagnosis(nn.Module):
 #     def __init__(self, n_codes, emb_size=256, dropout=0.5):
 #         super().__init__()
 #         self.n_codes = n_codes
-#         self.emb_size = emb_size
-        
-#         self.emb = nn.Embedding(n_codes + 1, emb_size, padding_idx=n_codes)
+#         self.padding_idx = n_codes
+
+#         self.emb = nn.Embedding(n_codes + 1, emb_size, padding_idx=self.padding_idx)
 #         self.dropout = nn.Dropout(dropout)
-        
+
 #         self.alpha_gru = nn.GRU(emb_size, emb_size, batch_first=True)
 #         self.beta_gru  = nn.GRU(emb_size, emb_size, batch_first=True)
-        
+
 #         self.alpha_lin = nn.Linear(emb_size, 1)
 #         self.beta_lin  = nn.Linear(emb_size, emb_size)
 #         self.output    = nn.Linear(emb_size, n_codes)
+#         self._init_weights()
+
+#     def _init_weights(self):
+#         for name, param in self.named_parameters():
+#             if 'weight' in name:
+#                 if 'lin' in name or 'output' in name:
+#                     nn.init.xavier_uniform_(param)
+#                 elif 'emb' in name:
+#                     nn.init.normal_(param, mean=0, std=0.1)
+#             elif 'bias' in name:
+#                 nn.init.constant_(param, 0.1)
 
 
 #     def forward(self, visits_batch):
-#         """
-#         visits_batch: List[ List[List[int]] ] – batch bệnh nhân, mỗi bệnh nhân có nhiều visit
-#         """
 #         device = next(self.parameters()).device
 #         batch_size = len(visits_batch)
-        
 #         all_contexts = []
-#         for visits in visits_batch:  # Duyệt từng bệnh nhân trong batch
+        
+#         for i, visits in enumerate(visits_batch):           
 #             if not visits:
-#                 # Nếu không có visits, dùng code cuối cùng
-#                 visits = [[self.n_codes - 1]]
-                
-#             # Step 1: Tạo visit embedding
+#                 visits = [[self.padding_idx]]
+
 #             visit_embs = []
 #             for visit in visits:
-#                 if not visit:
-#                     visit = [self.n_codes - 1]
-#                 codes = torch.LongTensor(visit).to(device)
-#                 emb = self.dropout(self.emb(codes))        # (n_codes_in_visit, D)
-#                 v_emb = emb.sum(dim=0)                     # (D,)
+#                 clean_visit = self._flatten_visit(visit)
+#                 codes = torch.LongTensor(clean_visit).to(device)
+#                 emb = self.emb(codes)
+#                 emb = self.dropout(emb)
+#                 v_emb = emb.sum(dim=0)
 #                 visit_embs.append(v_emb)
-            
-#             visit_tensor = torch.stack(visit_embs)             # (T, D)
-            
-#             # Step 2: RETAIN attention – CHUẨN GỐC PAPER
-#             g, _ = self.alpha_gru(visit_tensor.unsqueeze(0))   # (1, T, D)
-#             h, _ = self.beta_gru(visit_tensor.unsqueeze(0))
-            
-#             alpha = F.softmax(self.alpha_lin(g.squeeze(0)), dim=0)  # (T, 1) ← softmax theo visit
-#             beta  = torch.tanh(self.beta_lin(h.squeeze(0)))         # (T, D)
-            
+
+#             if not visit_embs:
+#                 visit_embs = [self.emb(torch.LongTensor([self.padding_idx]).to(device)).squeeze()]
+                
+#             visit_tensor = torch.stack(visit_embs)  # (T, D)
+
+#             # RETAIN attention với batch dimension đúng
+#             g, _ = self.alpha_gru(visit_tensor.unsqueeze(0))  # (1, T, D)
+#             h, _ = self.beta_gru(visit_tensor.unsqueeze(0))   # (1, T, D)
+
+#             alpha = F.softmax(self.alpha_lin(g.squeeze(0)), dim=0)  # (T, 1)
+#             beta = torch.tanh(self.beta_lin(h.squeeze(0)))          # (T, D)
 #             context = torch.sum(alpha * beta * visit_tensor, dim=0)  # (D,)
 #             all_contexts.append(context)
+
+#         context_batch = torch.stack(all_contexts)  # (B, D)
+#         output = self.output(context_batch)        # (B, n_codes)
         
-#         # Step 3: Gom toàn batch
-#         context_batch = torch.stack(all_contexts)          # (B, D)
-#         logits = self.output(context_batch)                # (B, n_codes)
-#         return logits.squeeze(0) if batch_size == 1 else logits
+#         return output
+
+#     def _flatten_visit(self, visit):
+#         """Sửa lỗi xử lý list lồng nhau"""
+#         if not visit:
+#             return [self.padding_idx]
+        
+#         # DEBUG: Kiểm tra cấu trúc visit
+#         if isinstance(visit[0], (list, np.ndarray)):
+#             # print(f"WARNING: Nested list detected in visit! Flattening...")
+#             # print(f"Original: {visit[:2]}...")
+#             # Flatten nested list
+#             flat = []
+#             for sublist in visit:
+#                 if isinstance(sublist, (list, np.ndarray)):
+#                     flat.extend([int(x) for x in sublist if isinstance(x, (int, np.integer))])
+#                 elif isinstance(sublist, (int, np.integer)):
+#                     flat.append(int(sublist))
+#             # print(f"Flattened: {flat[:5]}...")
+#             return flat if flat else [self.padding_idx]
+#         else:
+#             # Đã là list trực tiếp
+#             flat = [int(x) for x in visit if isinstance(x, (int, np.integer))]
+#             return flat if flat else [self.padding_idx]
+
