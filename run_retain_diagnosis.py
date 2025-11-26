@@ -9,6 +9,7 @@ from retain_micron.model import RETAIN_Diagnosis
 from retain_micron.dataset import EHRDataset, collate_fn
 from retain_micron.train import train_model
 from retain_micron.evaluate import evaluate_comprehensive, print_evaluation_results
+from retain_micron.evaluate import run_complete_evaluation
 
 def debug_data_structure(data_path):
     data = np.load(data_path)
@@ -44,9 +45,6 @@ def main():
 
     print(f"Training samples: {len(train_seqs)}")
     print(f"Test samples: {len(test_seqs)}")
-
-    # 🔴 VẤN ĐỀ: Bạn đang split lại train_seqs thành train/val, làm giảm số lượng samples!
-    # Thay vào đó, dùng test_seqs làm validation
     
     train_dataset = EHRDataset(train_seqs, train_labels)
     val_dataset = EHRDataset(test_seqs, test_labels)  # Dùng test set làm validation
@@ -73,12 +71,16 @@ def main():
         model.load_state_dict(torch.load(model_path))
 
     # Đánh giá toàn diện
-    print("\n" + "="*60)
-    print("🧪 COMPREHENSIVE EVALUATION")
-    print("="*60)
+    print("\n" + "="*70)
+    print("🧪 COMPLETE MODEL EVALUATION")
+    print("="*70)
     
-    results = evaluate_comprehensive(model, val_loader)
-    print_evaluation_results(results)
+    evaluation_results = run_complete_evaluation(
+        model=model,
+        train_loader=train_loader, 
+        val_loader=val_loader,
+        n_codes=n_codes
+    )
 
 if __name__ == "__main__":
     main()
