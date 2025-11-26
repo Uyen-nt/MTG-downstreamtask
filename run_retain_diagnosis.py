@@ -2,6 +2,7 @@ import torch
 from torch.utils.data import DataLoader
 from sklearn.model_selection import train_test_split
 import os
+import numpy as np
 
 from retain_micron.utils import load_and_preprocess_synthetic
 from retain_micron.model import RETAIN_Diagnosis
