@@ -28,24 +28,35 @@ def load_and_preprocess_synthetic(data_path="data/result/synthetic_mimic3.npz", 
             L = int(lens[pid])
             if L < 2:  # cần ít nhất 2 visit để có "next"
                 continue
-
-            # History: tất cả visit từ 0 đến L-2
-            history = []
-            for j in range(L-1):  # chỉ lấy đến visit áp chót
-                codes = np.where(x[pid, j] > 0)[0].tolist()
+    
+            # === LẤY TẤT CẢ CÁC VISIT CỦA BỆNH NHÂN ===
+            patient_visits = []
+            for j in range(L):
+                codes = np.where(x[pid, j] > 0.5)[0]        # dùng >0.5 cho chắc (synthetic thường 0/1)
                 codes = [int(c) for c in codes]
                 if not codes:
-                    codes = [n_codes]  # padding code (hoặc dùng 0 và để emb học)
-                history.append(codes)
-
-            # Label: visit cuối cùng (L-1)
-            label = np.where(x[pid, L-1] > 0)[0].tolist()
-            if not label:
-                label = [n_codes]
-
+                    codes = [n_codes]                       # padding code
+                patient_visits.append(codes)
+    
+            # === ĐẢO NGƯỢC THỨ TỰ ĐỂ ĐÚNG THỜI GIAN THỰC TẾ ===
+            # Trong synthetic_mimic3.npz: index 0 = visit cuối cùng (nặng nhất)
+            # Sau khi reverse → index 0 = visit đầu tiên (nhẹ nhất)
+            patient_visits = patient_visits[::-1]   # ← DÒNG QUAN TRỌNG NHẤT!
+    
+            # Bây giờ:
+            # patient_visits[0]      → visit đầu tiên (quá khứ xa)
+            # patient_visits[-1]     → visit cuối cùng (mới nhất, nặng nhất) → label
+            # patient_visits[:-1]    → toàn bộ lịch sử để dự đoán visit tiếp theo
+    
+            history = patient_visits[:-1]      # tất cả visit trừ visit cuối
+            label   = patient_visits[-1]       # visit cuối cùng = next visit cần dự đoán
+    
+            if len(history) == 0:              # trường hợp cực hiếm
+                continue
+    
             sequences.append(history)
             labels.append(label)
-
+    
         return sequences, labels
 
     train_seqs, train_labels = patients_to_samples(train_ids)
