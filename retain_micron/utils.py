@@ -33,6 +33,7 @@ def load_and_preprocess_synthetic(data_path="data/result/synthetic_mimic3.npz", 
             history = []
             for j in range(L-1):  # chỉ lấy đến visit áp chót
                 codes = np.where(x[pid, j] > 0)[0].tolist()
+                codes = [int(c) for c in codes]
                 if not codes:
                     codes = [n_codes]  # padding code (hoặc dùng 0 và để emb học)
                 history.append(codes)
