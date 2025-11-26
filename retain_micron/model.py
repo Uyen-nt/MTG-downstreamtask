@@ -37,14 +37,7 @@ class RETAIN_Diagnosis(nn.Module):
         batch_size = len(visits_batch)
         all_contexts = []
         
-        print(f"DEBUG - Processing batch with {batch_size} patients")
-        
-        for i, visits in enumerate(visits_batch):
-            if i < 2:  # Debug 2 patients đầu
-                print(f"Patient {i}: {len(visits)} visits")
-                for j, visit in enumerate(visits[:3]):  # 3 visits đầu
-                    print(f"  Visit {j}: {len(visit)} codes - {visit[:3]}...")
-            
+        for i, visits in enumerate(visits_batch):           
             if not visits:
                 visits = [[self.padding_idx]]
 
@@ -74,7 +67,6 @@ class RETAIN_Diagnosis(nn.Module):
         context_batch = torch.stack(all_contexts)  # (B, D)
         output = self.output(context_batch)        # (B, n_codes)
         
-        print(f"DEBUG - Output shape: {output.shape}")
         return output
 
     def _flatten_visit(self, visit):
@@ -84,8 +76,8 @@ class RETAIN_Diagnosis(nn.Module):
         
         # DEBUG: Kiểm tra cấu trúc visit
         if isinstance(visit[0], (list, np.ndarray)):
-            print(f"WARNING: Nested list detected in visit! Flattening...")
-            print(f"Original: {visit[:2]}...")
+            # print(f"WARNING: Nested list detected in visit! Flattening...")
+            # print(f"Original: {visit[:2]}...")
             # Flatten nested list
             flat = []
             for sublist in visit:
@@ -93,7 +85,7 @@ class RETAIN_Diagnosis(nn.Module):
                     flat.extend([int(x) for x in sublist if isinstance(x, (int, np.integer))])
                 elif isinstance(sublist, (int, np.integer)):
                     flat.append(int(sublist))
-            print(f"Flattened: {flat[:5]}...")
+            # print(f"Flattened: {flat[:5]}...")
             return flat if flat else [self.padding_idx]
         else:
             # Đã là list trực tiếp
