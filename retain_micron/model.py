@@ -20,41 +20,80 @@ class RETAIN_Diagnosis(nn.Module):
         self.output    = nn.Linear(emb_size, n_codes)
 
     def forward(self, visits_batch):
-        """
-        visits_batch: List[ List[List[int]] ] – batch bệnh nhân, mỗi bệnh nhân có nhiều visit
-        """
         device = next(self.parameters()).device
         batch_size = len(visits_batch)
-        
+
         all_contexts = []
-        for visits in visits_batch:  # Duyệt từng bệnh nhân trong batch
+        for visits in visits_batch:  # visits: list của các visit (mỗi visit là list code)
             if not visits:
-                # Nếu không có visits, dùng code cuối cùng
-                visits = [[self.n_codes - 1]]
-                
-            # Step 1: Tạo visit embedding
-            visit_embs = []
+                visits = [[self.n_codes]]  # padding visit
+
+            # === Padding tất cả visit về cùng độ dài trong patient này ===
+            max_visit_len = max(len(visit) for visit in visits)
+            visit_tensors = []
             for visit in visits:
                 if not visit:
-                    visit = [self.n_codes - 1]
-                codes = torch.LongTensor(visit).to(device)
-                emb = self.dropout(self.emb(codes))        # (n_codes_in_visit, D)
-                v_emb = emb.sum(dim=0)                     # (D,)
-                visit_embs.append(v_emb)
-            
-            visit_tensor = torch.stack(visit_embs)             # (T, D)
-            
-            # Step 2: RETAIN attention – CHUẨN GỐC PAPER
-            g, _ = self.alpha_gru(visit_tensor.unsqueeze(0))   # (1, T, D)
-            h, _ = self.beta_gru(visit_tensor.unsqueeze(0))
-            
-            alpha = F.softmax(self.alpha_lin(g.squeeze(0)), dim=0)  # (T, 1) ← softmax theo visit
-            beta  = torch.tanh(self.beta_lin(h.squeeze(0)))         # (T, D)
-            
-            context = torch.sum(alpha * beta * visit_tensor, dim=0)  # (D,)
+                    visit = [self.n_codes]
+                padded = visit + [self.n_codes] * (max_visit_len - len(visit))
+                visit_tensors.append(torch.LongTensor(padded).to(device))
+
+            visit_tensor = torch.stack(visit_tensors)  # (T, max_visit_len)
+
+            # === Embedding + sum trong visit ===
+            emb = self.emb(visit_tensor)              # (T, max_len, D)
+            emb = self.dropout(emb)
+            visit_emb = emb.sum(dim=1)                 # (T, D) → sum các code trong visit
+
+            # === RETAIN attention ===
+            g, _ = self.alpha_gru(visit_emb.unsqueeze(0))  # (1, T, D)
+            h, _ = self.beta_gru(visit_emb.unsqueeze(0))
+
+            alpha = F.softmax(self.alpha_lin(g.squeeze(0)), dim=0)   # (T, 1)
+            beta  = torch.tanh(self.beta_lin(h.squeeze(0)))          # (T, D)
+
+            context = torch.sum(alpha * beta * visit_emb, dim=0)     # (D,)
             all_contexts.append(context)
+
+        context_batch = torch.stack(all_contexts)  # (B, D)
+        logits = self.output(context_batch)        # (B, n_codes)
+        return logits
+
+    # def forward(self, visits_batch):
+    #     """
+    #     visits_batch: List[ List[List[int]] ] – batch bệnh nhân, mỗi bệnh nhân có nhiều visit
+    #     """
+    #     device = next(self.parameters()).device
+    #     batch_size = len(visits_batch)
         
-        # Step 3: Gom toàn batch
-        context_batch = torch.stack(all_contexts)          # (B, D)
-        logits = self.output(context_batch)                # (B, n_codes)
-        return logits.squeeze(0) if batch_size == 1 else logits
+    #     all_contexts = []
+    #     for visits in visits_batch:  # Duyệt từng bệnh nhân trong batch
+    #         if not visits:
+    #             # Nếu không có visits, dùng code cuối cùng
+    #             visits = [[self.n_codes - 1]]
+                
+    #         # Step 1: Tạo visit embedding
+    #         visit_embs = []
+    #         for visit in visits:
+    #             if not visit:
+    #                 visit = [self.n_codes - 1]
+    #             codes = torch.LongTensor(visit).to(device)
+    #             emb = self.dropout(self.emb(codes))        # (n_codes_in_visit, D)
+    #             v_emb = emb.sum(dim=0)                     # (D,)
+    #             visit_embs.append(v_emb)
+            
+    #         visit_tensor = torch.stack(visit_embs)             # (T, D)
+            
+    #         # Step 2: RETAIN attention – CHUẨN GỐC PAPER
+    #         g, _ = self.alpha_gru(visit_tensor.unsqueeze(0))   # (1, T, D)
+    #         h, _ = self.beta_gru(visit_tensor.unsqueeze(0))
+            
+    #         alpha = F.softmax(self.alpha_lin(g.squeeze(0)), dim=0)  # (T, 1) ← softmax theo visit
+    #         beta  = torch.tanh(self.beta_lin(h.squeeze(0)))         # (T, D)
+            
+    #         context = torch.sum(alpha * beta * visit_tensor, dim=0)  # (D,)
+    #         all_contexts.append(context)
+        
+    #     # Step 3: Gom toàn batch
+    #     context_batch = torch.stack(all_contexts)          # (B, D)
+    #     logits = self.output(context_batch)                # (B, n_codes)
+    #     return logits.squeeze(0) if batch_size == 1 else logits
