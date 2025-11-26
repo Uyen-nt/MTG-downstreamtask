@@ -33,7 +33,7 @@ def load_and_preprocess_synthetic(data_path, test_size=0.2):
                 codes = np.where(x[pid, j] == 1)[0].tolist()
                 # 🔴 QUAN TRỌNG: Đảm bảo codes là list trực tiếp, không bọc thêm list
                 if isinstance(codes, list) and len(codes) > 0 and isinstance(codes[0], list):
-                    print(f"ERROR: Nested list in patient {pid}, visit {j}")
+                    # print(f"ERROR: Nested list in patient {pid}, visit {j}")
                     codes = [item for sublist in codes for item in sublist]  # Flatten
                 
                 if not codes:
@@ -58,17 +58,14 @@ def load_and_preprocess_synthetic(data_path, test_size=0.2):
             sequences.append(history)
             labels.append(label)
         
-        print(f"Errors skipped: {error_count}")
+        # print(f"Errors skipped: {error_count}")
         return sequences, labels
     
     # Split patients
     patient_ids = np.arange(n_patients)
     train_ids, test_ids = train_test_split(patient_ids, test_size=test_size, random_state=42)
     
-    print(f"\n=== CREATING TRAINING SAMPLES ===")
     train_seqs, train_labels = create_correct_samples(train_ids)
-    
-    print(f"\n=== CREATING TEST SAMPLES ===")
     test_seqs, test_labels = create_correct_samples(test_ids)
     
     # KIỂM TRA CẤU TRÚC CUỐI CÙNG
