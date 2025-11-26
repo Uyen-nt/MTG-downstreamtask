@@ -12,6 +12,12 @@ if __name__ == "__main__":
     seqs, labels, n_codes = load_and_preprocess_synthetic(
         data_path="data/result/synthetic_mimic3.npz"
     )
+
+    train_seqs, val_seqs, train_labels, val_labels = train_test_split(
+        seqs, labels, test_size=0.1, random_state=42, stratify=None
+    )
+
+    
     # CHỈ dùng 10 samples đầu để debug
     debug_seqs = train_seqs[:10]
     debug_labels = train_labels[:10]
