@@ -11,8 +11,15 @@ def load_and_preprocess_synthetic(data_path="data/result/synthetic_mimic3.npz", 
     n_patients = len(x)
 
     # Split by patient (rất quan trọng!)
+    def bin_length(l):
+        if l <= 3:   return 0
+        if l <= 5:   return 1
+        if l <= 9:   return 2
+        return 3  # 10+
+
+    stratify_bins = np.array([bin_length(l) for l in lens])
     patient_ids = np.arange(n_patients)
-    train_ids, test_ids = train_test_split(patient_ids, test_size=test_size, random_state=42, stratify=lens//2)
+    train_ids, test_ids = train_test_split(patient_ids, test_size=test_size, random_state=42, stratify=stratify_bins)
 
     def patients_to_samples(ids):
         sequences = []
