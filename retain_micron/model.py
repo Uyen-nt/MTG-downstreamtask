@@ -78,16 +78,27 @@ class RETAIN_Diagnosis(nn.Module):
         return output
 
     def _flatten_visit(self, visit):
-        """Giữ nguyên"""
+        """Sửa lỗi xử lý list lồng nhau"""
         if not visit:
             return [self.padding_idx]
-        flat = []
-        for item in visit:
-            if isinstance(item, (list, tuple, np.ndarray)):
-                flat.extend([int(x) for x in item if isinstance(x, (int, np.integer))])
-            elif isinstance(item, (int, np.integer)):
-                flat.append(int(item))
-        return flat if flat else [self.padding_idx]
+        
+        # DEBUG: Kiểm tra cấu trúc visit
+        if isinstance(visit[0], (list, np.ndarray)):
+            print(f"WARNING: Nested list detected in visit! Flattening...")
+            print(f"Original: {visit[:2]}...")
+            # Flatten nested list
+            flat = []
+            for sublist in visit:
+                if isinstance(sublist, (list, np.ndarray)):
+                    flat.extend([int(x) for x in sublist if isinstance(x, (int, np.integer))])
+                elif isinstance(sublist, (int, np.integer)):
+                    flat.append(int(sublist))
+            print(f"Flattened: {flat[:5]}...")
+            return flat if flat else [self.padding_idx]
+        else:
+            # Đã là list trực tiếp
+            flat = [int(x) for x in visit if isinstance(x, (int, np.integer))]
+            return flat if flat else [self.padding_idx]
 
 
 
