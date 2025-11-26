@@ -2,6 +2,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import numpy as np
 
 class RETAIN_Diagnosis(nn.Module):
     def __init__(self, n_codes, emb_size=256, dropout=0.5):
