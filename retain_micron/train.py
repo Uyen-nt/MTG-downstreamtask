@@ -4,43 +4,95 @@ import torch.optim as optim
 import torch.nn as nn
 from tqdm import tqdm
 import os
+from retain_micron.evaluate import calculate_class_weights, evaluate_topk_recall, debug_predictions_distribution
 
-def train_model(model, train_loader, test_loader, epochs=15, save_path="retain_micron/result"):
+class FocalLoss(nn.Module):
+    """Focal Loss để xử lý class imbalance"""
+    def __init__(self, alpha=1, gamma=2, reduction='mean'):
+        super().__init__()
+        self.alpha = alpha
+        self.gamma = gamma
+        self.reduction = reduction
+
+    def forward(self, inputs, targets):
+        BCE_loss = nn.functional.binary_cross_entropy_with_logits(
+            inputs, targets, reduction='none'
+        )
+        pt = torch.exp(-BCE_loss)
+        F_loss = self.alpha * (1-pt)**self.gamma * BCE_loss
+        
+        if self.reduction == 'mean':
+            return F_loss.mean()
+        elif self.reduction == 'sum':
+            return F_loss.sum()
+        else:
+            return F_loss
+            
+def train_model(model, train_loader, val_loader, epochs, save_path):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
-    criterion = nn.BCEWithLogitsLoss()
+    
+    # Tính class weights từ training data
+    class_weights = calculate_class_weights(train_loader, n_codes)
+    class_weights = class_weights.to(device)
+    
+    # Sử dụng Focal Loss hoặc Weighted BCE Loss
+    criterion = FocalLoss(alpha=0.75, gamma=2.0)
+    # Hoặc: criterion = nn.BCEWithLogitsLoss(weight=class_weights)
+    
+    optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-4)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=5, factor=0.5)
 
     os.makedirs(save_path, exist_ok=True)
 
     best_recall = 0.0
+    train_losses = []
+
     for epoch in range(epochs):
         model.train()
         total_loss = 0
-        for visits, labels in tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs}"):
+        
+        progress_bar = tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs}")
+        for visits, labels in progress_bar:
             visits = [v for v in visits]
             labels = labels.to(device)
 
             optimizer.zero_grad()
             logits = model(visits)
-            loss = criterion(logits, labels).mean()
+            loss = criterion(logits, labels)
             loss.backward()
+            
+            # Gradient clipping
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             optimizer.step()
+
             total_loss += loss.item()
+            progress_bar.set_postfix({'loss': f'{loss.item():.4f}'})
 
-        print(f"Epoch {epoch+1} - Loss: {total_loss/len(train_loader):.4f}")
+        avg_loss = total_loss / len(train_loader)
+        train_losses.append(avg_loss)
+        
+        # Evaluation
+        if (epoch + 1) % 5 == 0:
+            
+            model.eval()
+            recall30 = evaluate_topk_recall(model, val_loader, k=30)
+            
+            # Phân tích phân phối predictions
+            dist_analysis = debug_predictions_distribution(model, val_loader, n_codes)
+            unique_predicted = dist_analysis['unique_codes_predicted']
+            
+            print(f"Epoch {epoch+1} - Loss: {avg_loss:.4f}")
+            print(f"  Recall@30: {recall30:.4f}, Unique codes: {unique_predicted}/{n_codes}")
+            
+            # Tiêu chí lựa chọn model tốt hơn
+            score = recall30 * (unique_predicted / n_codes)  # Balance recall và diversity
+            
+            if score > best_recall:
+                best_recall = score
+                torch.save(model.state_dict(), f"{save_path}/retain.pth")
+                print(f"🔥 New best model! Score: {score:.4f}")
+            
+            scheduler.step(avg_loss)
 
-        # Eval mỗi 5 epoch
-        if (epoch + 1) % 5 == 0 or epoch == epochs - 1:
-            from .evaluate import evaluate_topk_recall
-            recall10 = evaluate_topk_recall(model, test_loader, k=10)
-            recall20 = evaluate_topk_recall(model, test_loader, k=20)
-            print(f"Top-10 Recall: {recall10:.4f} | Top-20 Recall: {recall20:.4f}")
-
-            if recall10 > best_recall:
-                best_recall = recall10
-                torch.save(model.state_dict(), f"{save_path}/retain_best.pth")
-                print(f"New best model saved! Top-10: {recall10:.4f}")
-
-    torch.save(model.state_dict(), f"{save_path}/retain_final.pth")
-    print("Training completed!")
+    print(f"✅ Training completed! Best score: {best_recall:.4f}")
