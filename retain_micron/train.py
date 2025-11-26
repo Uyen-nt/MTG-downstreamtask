@@ -90,7 +90,7 @@ def train_model(model, train_loader, val_loader, epochs, save_path):
             
             if score > best_recall:
                 best_recall = score
-                torch.save(model.state_dict(), f"{save_path}/retain.pth")
+                torch.save(model.state_dict(), f"{save_path}/retain_best.pth")
                 print(f"🔥 New best model! Score: {score:.4f}")
             
             scheduler.step(avg_loss)
