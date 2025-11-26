@@ -8,6 +8,7 @@ from retain_micron.utils import load_and_preprocess_synthetic
 from retain_micron.model import RETAIN_Diagnosis
 from retain_micron.dataset import EHRDataset, collate_fn
 from retain_micron.train import train_model
+from retain_micron.evaluate import evaluate_comprehensive, print_evaluation_results
 
 def debug_data_structure(data_path):
     data = np.load(data_path)
@@ -35,7 +36,7 @@ def debug_data_structure(data_path):
     
     return x, lens
 
-if __name__ == "__main__":
+def main():
     # Load data
     (train_seqs, train_labels), (test_seqs, test_labels), n_codes = load_and_preprocess_synthetic(
         data_path="data/result/synthetic_mimic3.npz"
@@ -61,4 +62,21 @@ if __name__ == "__main__":
 
     model = RETAIN_Diagnosis(n_codes=n_codes, emb_size=256, dropout=0.5)
 
-    train_model(model, train_loader, val_loader, epochs=50, save_path="retain_micron/result")
+     # Train hoặc load model đã train
+    model_path = "retain_micron/result/retain_best.pth"
+    if os.path.exists(model_path):
+        print("🚀 Loading pre-trained model...")
+        model.load_state_dict(torch.load(model_path))
+    else:
+        print("🎯 Training new model...")
+        train_model(model, train_loader, val_loader, epochs=50, save_path="retain_micron/result")
+        model.load_state_dict(torch.load(model_path))
+
+    # Đánh giá toàn diện
+    print("\n" + "="*60)
+    print("🧪 COMPREHENSIVE EVALUATION")
+    print("="*60)
+    
+    results = evaluate_comprehensive(model, val_loader)
+    print_evaluation_results(results)
+
