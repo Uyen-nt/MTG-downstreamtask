@@ -28,4 +28,4 @@ if __name__ == "__main__":
 
     model = RETAIN_Diagnosis(n_codes=n_codes, emb_size=256, dropout=0.5)
 
-    train_model(model, train_loader, val_loader, epochs=20, save_path="retain_micron/result_mimic3")
+    train_model(model, train_loader, val_loader, epochs=20, save_path="retain_micron/result")
