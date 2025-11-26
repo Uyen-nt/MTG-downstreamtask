@@ -22,8 +22,10 @@ if __name__ == "__main__":
     train_dataset = EHRDataset(train_seqs, train_labels)
     val_dataset   = EHRDataset(val_seqs, val_labels)
 
-    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True,  collate_fn=lambda x: collate_fn(x, n_codes=n_codes))
-    val_loader   = DataLoader(val_dataset,   batch_size=64, shuffle=False, collate_fn=collate_fn)
+    collate = lambda batch: collate_fn(batch, n_codes=n_codes)
+
+    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True,  collate_fn=collate)
+    val_loader   = DataLoader(val_dataset,   batch_size=64, shuffle=False, collate_fn=colatte)
 
     model = RETAIN_Diagnosis(n_codes=n_codes, emb_size=256, dropout=0.5)
 
