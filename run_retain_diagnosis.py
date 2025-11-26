@@ -36,23 +36,29 @@ def debug_data_structure(data_path):
     return x, lens
 
 if __name__ == "__main__":
-    seqs, labels, n_codes = load_and_preprocess_synthetic(
+    # Load data
+    (train_seqs, train_labels), (test_seqs, test_labels), n_codes = load_and_preprocess_synthetic(
         data_path="data/result/synthetic_mimic3.npz"
     )
 
-    
-    train_seqs, val_seqs, train_labels, val_labels = train_test_split(
-        seqs, labels, test_size=0.1, random_state=42, stratify=None
-    )
+    print(f"Training samples: {len(train_seqs)}")
+    print(f"Test samples: {len(test_seqs)}")
 
+    # 🔴 VẤN ĐỀ: Bạn đang split lại train_seqs thành train/val, làm giảm số lượng samples!
+    # Thay vào đó, dùng test_seqs làm validation
+    
     train_dataset = EHRDataset(train_seqs, train_labels)
-    val_dataset   = EHRDataset(val_seqs, val_labels)
+    val_dataset = EHRDataset(test_seqs, test_labels)  # Dùng test set làm validation
 
     collate = lambda batch: collate_fn(batch, n_codes=n_codes)
 
-    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True, collate_fn=collate)
-    val_loader = DataLoader(val_dataset, batch_size=64, shuffle=False, collate_fn=collate)
+    # Tăng batch_size hoặc giữ nguyên, nhưng số batch sẽ tăng
+    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, collate_fn=collate)
+    val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False, collate_fn=collate)
+
+    print(f"Train batches: {len(train_loader)}")
+    print(f"Val batches: {len(val_loader)}")
 
     model = RETAIN_Diagnosis(n_codes=n_codes, emb_size=256, dropout=0.5)
 
-    train_model(model, train_loader, val_loader, epochs=20, save_path="retain_micron/result")
+    train_model(model, train_loader, val_loader, epochs=50, save_path="retain_micron/result")
