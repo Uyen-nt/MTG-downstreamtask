@@ -19,8 +19,7 @@ def evaluate_topk_recall(model, loader, k=10):
 
             for i in range(labels.size(0)):
                 pred_codes = pred_codes_batch[i]                # list int
-                true_codes = torch.where(labels[i] > 0.5)[0]
-                true_codes = true_codes[true_codes < n_codes].cpu().tolist()
+                true_codes = torch.where(labels[i] > 0.5)[0].cpu().tolist()
                 
                 hits = len(set(pred_codes) & set(true_codes))
                 total_hits += hits
