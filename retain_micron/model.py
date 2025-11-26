@@ -35,6 +35,13 @@ class RETAIN_Diagnosis(nn.Module):
     def forward(self, visits_batch):
         device = next(self.parameters()).device
         all_contexts = []
+        
+        print(f"\n=== MODEL DEBUG ===")
+        print(f"Batch size: {len(visits_batch)}")
+        for i, visits in enumerate(visits_batch[:2]):  # Chỉ debug 2 samples đầu
+            print(f"Sample {i}: {len(visits)} visits")
+            for j, visit in enumerate(visits):
+                print(f"  Visit {j}: {len(visit)} codes - First 3: {visit[:3]}")
 
         for visits in visits_batch:
             if not visits:
@@ -51,6 +58,9 @@ class RETAIN_Diagnosis(nn.Module):
                 visit_embs.append(v_emb)
 
             visit_tensor = torch.stack(visit_embs)  # (T, D) – an toàn tuyệt đối
+            # DEBUG: Kiểm tra embeddings
+            print(f"Visit tensor shape: {visit_tensor.shape}")
+            print(f"Visit tensor norm: {visit_tensor.norm():.4f}")
 
             # RETAIN attention
             g, _ = self.alpha_gru(visit_tensor.unsqueeze(0))
@@ -62,7 +72,15 @@ class RETAIN_Diagnosis(nn.Module):
             all_contexts.append(context)
 
         context_batch = torch.stack(all_contexts)
-        return self.output(context_batch)
+        output = self.output(context_batch)
+    
+        # DEBUG: Kiểm tra output
+        print(f"Output shape: {output.shape}")
+        print(f"Output range: [{output.min().item():.4f}, {output.max().item():.4f}]")
+        print(f"Output mean: {output.mean().item():.4f}")
+        print("==================\n")
+        
+        return output
 
 
 
