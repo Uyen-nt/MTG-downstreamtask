@@ -10,11 +10,11 @@ def load_and_preprocess_synthetic(data_path, test_size=0.2):
     n_codes = x.shape[-1]
     n_patients = len(x)
     
-    print(f"=== ORIGINAL DATA ===")
-    print(f"Total patients: {n_patients}")
-    print(f"Max visits per patient: {x.shape[1]}")
-    print(f"Total codes: {n_codes}")
-    print(f"Sample lens: {lens[:10]}...")
+    # print(f"=== ORIGINAL DATA ===")
+    # print(f"Total patients: {n_patients}")
+    # print(f"Max visits per patient: {x.shape[1]}")
+    # print(f"Total codes: {n_codes}")
+    # print(f"Sample lens: {lens[:10]}...")
     
     def create_correct_samples(patient_ids):
         sequences = []
@@ -41,19 +41,19 @@ def load_and_preprocess_synthetic(data_path, test_size=0.2):
                 patient_visits.append(codes)
             
             # KIỂM TRA CẤU TRÚC
-            if pid < 3:
-                print(f"Patient {pid} - {L} visits:")
-                for j, visit in enumerate(patient_visits):
-                    print(f"  Visit {j}: {len(visit)} codes - {visit[:3]}...")
+            # if pid < 3:
+            #     print(f"Patient {pid} - {L} visits:")
+            #     for j, visit in enumerate(patient_visits):
+            #         print(f"  Visit {j}: {len(visit)} codes - {visit[:3]}...")
             
             # TẠO HISTORY VÀ LABEL ĐÚNG
             history = patient_visits[:-1]  # visits 0 → L-2
             label = patient_visits[-1]     # visit L-1
             
             # 🔴 KIỂM TRA LABEL KHÔNG PHẢI LÀ LIST OF LISTS
-            if isinstance(label, list) and len(label) > 0 and isinstance(label[0], list):
-                print(f"ERROR: Label is list of lists for patient {pid}")
-                label = [item for sublist in label for item in sublist]  # Flatten
+            # if isinstance(label, list) and len(label) > 0 and isinstance(label[0], list):
+            #     print(f"ERROR: Label is list of lists for patient {pid}")
+            #     label = [item for sublist in label for item in sublist]  # Flatten
             
             sequences.append(history)
             labels.append(label)
@@ -72,16 +72,16 @@ def load_and_preprocess_synthetic(data_path, test_size=0.2):
     test_seqs, test_labels = create_correct_samples(test_ids)
     
     # KIỂM TRA CẤU TRÚC CUỐI CÙNG
-    print(f"\n=== FINAL STRUCTURE CHECK ===")
-    print(f"Training: {len(train_seqs)} samples")
-    print(f"Test: {len(test_seqs)} samples")
+    # print(f"\n=== FINAL STRUCTURE CHECK ===")
+    # print(f"Training: {len(train_seqs)} samples")
+    # print(f"Test: {len(test_seqs)} samples")
     
-    if train_seqs:
-        print(f"First training sample:")
-        print(f"  - {len(train_seqs[0])} visits in history")
-        for j, visit in enumerate(train_seqs[0][:3]):  # 3 visits đầu
-            print(f"  - Visit {j}: {len(visit)} codes - {visit[:3]}...")
-        print(f"  - Label: {len(train_labels[0])} codes - {train_labels[0][:5]}...")
-        print(f"  - Label type: {type(train_labels[0][0]) if train_labels[0] else 'empty'}")
+    # if train_seqs:
+    #     print(f"First training sample:")
+    #     print(f"  - {len(train_seqs[0])} visits in history")
+    #     for j, visit in enumerate(train_seqs[0][:3]):  # 3 visits đầu
+    #         print(f"  - Visit {j}: {len(visit)} codes - {visit[:3]}...")
+    #     print(f"  - Label: {len(train_labels[0])} codes - {train_labels[0][:5]}...")
+    #     print(f"  - Label type: {type(train_labels[0][0]) if train_labels[0] else 'empty'}")
     
     return (train_seqs, train_labels), (test_seqs, test_labels), n_codes
