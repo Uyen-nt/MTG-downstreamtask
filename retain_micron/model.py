@@ -19,6 +19,17 @@ class RETAIN_Diagnosis(nn.Module):
         self.alpha_lin = nn.Linear(emb_size, 1)
         self.beta_lin  = nn.Linear(emb_size, emb_size)
         self.output    = nn.Linear(emb_size, n_codes)
+        self._init_weights()
+
+    def _init_weights(self):
+        for name, param in self.named_parameters():
+            if 'weight' in name:
+                if 'lin' in name or 'output' in name:
+                    nn.init.xavier_uniform_(param)
+                elif 'emb' in name:
+                    nn.init.normal_(param, mean=0, std=0.1)
+            elif 'bias' in name:
+                nn.init.constant_(param, 0.1)
 
 
     def forward(self, visits_batch):
