@@ -67,7 +67,7 @@ def main():
         model.load_state_dict(torch.load(model_path))
     else:
         print("🎯 Training new model...")
-        train_model(model, train_loader, val_loader, epochs=50, save_path="retain_micron/result")
+        train_model(model, train_loader, val_loader, epochs=10, save_path="retain_micron/result")
         model.load_state_dict(torch.load(model_path))
 
     # Đánh giá toàn diện
