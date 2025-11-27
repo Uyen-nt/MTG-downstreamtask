@@ -20,7 +20,8 @@ class FocalLoss(nn.Module):
 
 def micron_loss(logits, labels, dcm, lambda_reg=0.02):
     # BCE
-    bce = F.binary_cross_entropy_with_logits(logits, labels)
+    smooth_labels = 0.9*labels + 0.1*(1-labels)
+    bce = F.binary_cross_entropy_with_logits(logits, smooth_labels)
 
     # probability
     prob = torch.sigmoid(logits)
