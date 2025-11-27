@@ -22,14 +22,18 @@ class MICRON_DX(nn.Module):
             nn.Linear(emb_dim*2, vocab_size)
         )
 
-        # diagnosis co-occurrence regularizer
         self.dcm = torch.tensor(dcm, dtype=torch.float32).to(device)
 
         self.init_weights()
 
-    def forward(self, input):
-        # input: list of visits — each is list of indices
+    def init_weights(self):
+        nn.init.xavier_uniform_(self.embedding.weight)
+        for m in self.predictor:
+            if isinstance(m, nn.Linear):
+                nn.init.xavier_uniform_(m.weight)
+                nn.init.constant_(m.bias, 0.0)
 
+    def forward(self, input):
         all_h = []
 
         for visit in input:
@@ -43,12 +47,10 @@ class MICRON_DX(nn.Module):
         if len(all_h) == 0:
             raise ValueError("Patient has no valid visits")
 
-        # health state now:
         h_last = all_h[-1]
         h_prev = torch.stack(all_h[:-1]).mean(dim=0)
 
-        # residual
         h_res = h_last - h_prev
-
         logits = self.predictor(h_res)
+
         return logits
