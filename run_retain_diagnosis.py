@@ -36,11 +36,66 @@ def debug_data_structure(data_path):
     
     return x, lens
 
+def debug_data_statistics(seqs, labels, n_codes):
+    print("\n===================================================")
+    print("🔍 DEBUG DATA: CHECKING INPUT DATA STRUCTURE & LABELS")
+    print("===================================================")
+
+    print(f"👉 Samples: {len(seqs)}")
+    
+    # 1. Kiểm tra 3 sample đầu
+    for i in range(3):
+        print(f"\n--- Patient {i} ---")
+        print(f"Số visit trong history: {len(seqs[i])}")
+        for j, v in enumerate(seqs[i][:3]):
+            print(f" Visit {j}: {len(v)} codes — {v[:5]}...")
+        print(f"Label cuối: {len(labels[i])} codes — {labels[i][:10]}...")
+
+    # 2. Thống kê số lượng mã bệnh xuất hiện trong label
+    flat_label_counts = np.zeros(n_codes)
+    empty_labels = 0
+
+    for lb in labels:
+        if len(lb) == 0:
+            empty_labels += 1
+            continue
+        for code in lb:
+            if code < n_codes:
+                flat_label_counts[code] += 1
+
+    print(f"\n💡 Label rỗng (len=0): {empty_labels} sample")
+    print(f"💡 Mã bệnh chưa từng xuất hiện trong label: {(flat_label_counts==0).sum()} / {n_codes}")
+    print(f"💡 Mã bệnh xuất hiện ít nhất 1 lần: {(flat_label_counts>0).sum()} / {n_codes}")
+
+    print(f"\n🔝 Top 10 label phổ biến nhất:")
+    top_codes = flat_label_counts.argsort()[-10:][::-1]
+    for c in top_codes:
+        print(f" Code {c} — {flat_label_counts[c]} lần")
+
+    # 3. Trung bình số code/visit
+    visit_code_counts = []
+    for s in seqs:
+        for v in s:
+            visit_code_counts.append(len(v))
+
+    print(f"\n📊 Số code trung bình / visit: {np.mean(visit_code_counts):.3f}")
+    print(f"📊 Min–max code/visit: {np.min(visit_code_counts)} – {np.max(visit_code_counts)}")
+
+    # 4. Trung bình số code trong label
+    label_sizes = [len(lb) for lb in labels]
+    print(f"\n📊 Trung bình số code trong label (ground truth final visit): {np.mean(label_sizes):.2f}")
+    print(f"📊 Min–max code/label: {np.min(label_sizes)} – {np.max(label_sizes)}")
+
+    print("===================================================")
+
+
 def main():
     # Load data
     (train_seqs, train_labels), (test_seqs, test_labels), n_codes = load_and_preprocess_synthetic(
         data_path="data/result/synthetic_mimic3.npz"
     )
+    debug_data_statistics(train_seqs, train_labels, n_codes)
+    debug_data_statistics(test_seqs, test_labels, n_codes)
 
     print(f"Training samples: {len(train_seqs)}")
     print(f"Test samples: {len(test_seqs)}")
@@ -82,7 +137,7 @@ def main():
     #         model.load_state_dict(torch.load(last_path))
     #         model.eval()
 
-    train_model(model, train_loader, val_loader, epochs=20, save_path="retain_micron/result")
+    train_model(model, train_loader, val_loader, epochs=10, save_path="retain_micron/result")
     # Sau khi train xong, load lại model đã lưu
     if os.path.exists(model_path):
         model.load_state_dict(torch.load(model_path))
