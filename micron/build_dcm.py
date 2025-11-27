@@ -20,6 +20,8 @@ def build_dcm(x):
                         dcm[i,j] += 1
 
     # normalize
+    dcm = dcm + 1e-5       # tránh zero
+    dcm = np.log1p(dcm)
     dcm = dcm / dcm.max()
 
     print(f"✔ DCM built: {n_codes} x {n_codes}")
