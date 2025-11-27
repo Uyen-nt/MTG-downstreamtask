@@ -23,6 +23,7 @@ class MICRON_DX(nn.Module):
         )
 
         self.dcm = torch.tensor(dcm, dtype=torch.float32).to(device)
+        self.bias = nn.Parameter(torch.zeros(vocab_size))
 
         self.init_weights()
 
@@ -56,6 +57,6 @@ class MICRON_DX(nn.Module):
             h_prev = torch.stack(all_h[:-1]).mean(dim=0)
 
         h_res = h_last - h_prev
-        logits = self.predictor(h_res)
+        logits = self.predictor(h_res) + self.bias
 
         return logits
