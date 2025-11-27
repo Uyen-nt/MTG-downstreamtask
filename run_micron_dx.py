@@ -14,12 +14,13 @@ import os
 def main():
 
     print("Loading synthetic data...")
-    x, labels, n_codes = load_synthetic_npz("data/result/synthetic_mimic3.npz")
+    x_raw, sequences, labels, n_codes = load_synthetic_npz("data/result/synthetic_mimic3.npz")
 
-    print("Building DCM...")
-    dcm = build_dcm(x)
+    print("Building DCM from raw x...")
+    dcm = build_dcm(x_raw)
 
-    train_x, train_l, val_x, val_l = split_patients(x, labels)
+    print("Splitting patients...")
+    train_x, train_l, val_x, val_l = split_patients(sequences, labels)
 
     train_ds = MicronDataset(train_x, train_l, n_codes)
     val_ds = MicronDataset(val_x, val_l, n_codes)
@@ -28,7 +29,6 @@ def main():
     val_loader   = DataLoader(val_ds,   batch_size=1, shuffle=False, collate_fn=micron_collate)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
     model = MICRON_DX(vocab_size=n_codes, dcm=dcm, emb_dim=256, device=device).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
@@ -63,6 +63,7 @@ def main():
             print(f"🔥 NEW BEST MICRO-F1 = {best_f1:.4f}")
 
     print("Training finished!")
+    print(f"Best F1 = {best_f1:.4f}")
 
 if __name__ == "__main__":
     main()
