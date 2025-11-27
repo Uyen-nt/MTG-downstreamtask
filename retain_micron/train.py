@@ -89,10 +89,14 @@ def train_model(model, train_loader, val_loader, epochs, save_path):
             # Tiêu chí lựa chọn model tốt hơn
             score = recall30 * (unique_predicted / n_codes)  # Balance recall và diversity
             
-            if score > best_recall:
-                best_recall = score
-                torch.save(model.state_dict(), f"{save_path}/retain_best.pth")
-                print(f"🔥 New best model! Score: {score:.4f}")
+            if best_recall == 0.0:
+                print("No improvement found based on score, saving last epoch model...")
+                torch.save(model.state_dict(), f"{save_path}/retain_last.pth")
+                model_path = f"{save_path}/retain_last.pth"
+            else:
+                model_path = f"{save_path}/retain_best.pth"
+            
+            print(f"Training completed! Best score: {best_recall:.4f}")
             
             scheduler.step(avg_loss)
 
