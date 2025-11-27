@@ -50,17 +50,22 @@ def main():
 
         print(f"Epoch {epoch+1}, Loss = {total_loss/len(train_loader):.4f}")
 
-        #recall = eval_recall_k(model, val_loader, k=30)
+        # evaluate after each epoch
+        metrics = evaluate_all_metrics(model, val_loader, n_codes)
+        print_metrics(metrics)
 
-        if recall > best_recall:
+        f1 = metrics["f1_micro"]   # dùng micro-F1 làm thước đo chính
+
+        if f1 > best_f1:
             print("🔥 New best model!")
-            best_recall = recall
-            torch.save(model.state_dict(), "micron/result/micron_dx_best.pth")
+            best_f1 = f1
+            torch.save(model.state_dict(), "micron/result/micron_best.pth")
 
     print("Training completed.")
-    #print(f"Best Recall@30 = {best_recall:.4f}")
-    metrics = evaluate_all_metrics(model, val_loader, n_codes)
-    print_metrics(metrics)
+    print(f"Best micro-F1 = {best_f1:.4f}")
+
+    final_metrics = evaluate_all_metrics(model, val_loader, n_codes)
+    print_metrics(final_metrics)
     
 
 if __name__ == "__main__":
