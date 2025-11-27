@@ -24,6 +24,7 @@ class MICRON_DX(nn.Module):
 
         self.dcm = torch.tensor(dcm, dtype=torch.float32).to(device)
         self.bias = nn.Parameter(torch.zeros(vocab_size))
+        self.dcm_force = 1.0
 
         self.init_weights()
 
