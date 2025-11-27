@@ -11,7 +11,7 @@ class RETAIN_Diagnosis(nn.Module):
         self.padding_idx = n_codes
 
         self.emb = nn.Embedding(n_codes + 1, emb_size, padding_idx=self.padding_idx)
-        self.visit_norm = nn.LayerNorm(emb_size)
+        #self.visit_norm = nn.LayerNorm(emb_size)
         self.dropout = nn.Dropout(dropout)
 
         self.alpha_gru = nn.GRU(emb_size, emb_size, batch_first=True)
@@ -33,7 +33,7 @@ class RETAIN_Diagnosis(nn.Module):
                     nn.init.normal_(param, mean=0, std=0.1)
             elif 'bias' in name:
                 if 'output' in name:
-                    nn.init.constant_(param, 0.0)  
+                    nn.init.constant_(param, 0.5)  
                 else:
                     nn.init.constant_(param, 0.0)
 
@@ -51,7 +51,7 @@ class RETAIN_Diagnosis(nn.Module):
                 codes = torch.LongTensor(clean_visit).to(device)
                 emb = self.emb(codes)
                 emb = self.dropout(emb)
-                emb = self.visit_norm(emb)
+                #emb = self.visit_norm(emb)
                 
                 if len(clean_visit) > 0:
                     v_emb = emb.sum(dim=0) / len(clean_visit)
