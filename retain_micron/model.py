@@ -33,7 +33,7 @@ class RETAIN_Diagnosis(nn.Module):
                     nn.init.normal_(param, mean=0, std=0.1)
             elif 'bias' in name:
                 if 'output' in name:
-                    nn.init.constant_(param, 0.0)  
+                    nn.init.constant_(param, 0.2)  
                 else:
                     nn.init.constant_(param, 0.0)
 
