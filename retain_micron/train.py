@@ -49,14 +49,14 @@ def train_model(model, train_loader, val_loader, epochs, save_path):
 
     os.makedirs(save_path, exist_ok=True)
 
-    best_recall = 0.0
-    train_losses = []
+    best_score = 0.0 
+    best_epoch = 0
 
     for epoch in range(epochs):
         model.train()
         total_loss = 0
-        
         progress_bar = tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs}")
+
         for visits, labels in progress_bar:
             visits = [v for v in visits]
             labels = labels.to(device)
@@ -65,8 +65,6 @@ def train_model(model, train_loader, val_loader, epochs, save_path):
             logits = model(visits)
             loss = criterion(logits, labels)
             loss.backward()
-            
-            # Gradient clipping
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             optimizer.step()
 
@@ -74,33 +72,29 @@ def train_model(model, train_loader, val_loader, epochs, save_path):
             progress_bar.set_postfix({'loss': f'{loss.item():.4f}'})
 
         avg_loss = total_loss / len(train_loader)
-        train_losses.append(avg_loss)
-        
-        # Evaluation
-        if (epoch + 1) % 5 == 0:
-            
+
+        # === EVALUATE MỖI 2 EPOCH (hoặc mỗi epoch nếu muốn) ===
+        if (epoch + 1) % 2 == 0 or epoch == epochs - 1:
             model.eval()
-            recall30 = evaluate_topk_recall(model, val_loader, k=30)
-            
-            # Phân tích phân phối predictions
-            dist_analysis = debug_predictions_distribution(model, val_loader, n_codes)
-            unique_predicted = dist_analysis['unique_codes_predicted']
-            
-            print(f"Epoch {epoch+1} - Loss: {avg_loss:.4f}")
-            print(f"  Recall@30: {recall30:.4f}, Unique codes: {unique_predicted}/{n_codes}")
-            
-            # Tiêu chí lựa chọn model tốt hơn
-            score = recall30 * (unique_predicted / n_codes)  # Balance recall và diversity
-            
-            if best_recall == 0.0:
-                print("No improvement found based on score, saving last epoch model...")
-                torch.save(model.state_dict(), f"{save_path}/retain_last.pth")
-                model_path = f"{save_path}/retain_last.pth"
+            with torch.no_grad():
+                recall30 = evaluate_topk_recall(model, val_loader, k=30)
+                dist = debug_predictions_distribution(model, val_loader, n_codes)
+                unique_predicted = dist['unique_codes_predicted']
+
+            score = recall30 * (unique_predicted / n_codes)  # ← CÔNG THỨC CHUẨN
+
+            print(f"\nEpoch {epoch+1} - Loss: {avg_loss:.4f}")
+            print(f"  Recall@30: {recall30:.4f} | Unique codes: {unique_predicted}/{n_codes} | Score: {score:.4f}")
+
+            if score > best_score:
+                best_score = score
+                best_epoch = epoch + 1
+                torch.save(model.state_dict(), f"{save_path}/retain_best.pth")
+                print(f" NEW BEST MODEL! Score: {score:.4f} (Epoch {best_epoch})")
             else:
-                model_path = f"{save_path}/retain_best.pth"
-            
-            print(f"Training completed! Best score: {best_recall:.4f}")
-            
+                torch.save(model.state_dict(), f"{save_path}/retain_last.pth")
+
             scheduler.step(avg_loss)
 
-    print(f"✅ Training completed! Best score: {best_recall:.4f}")
+    print(f"\nTraining completed! Best score: {best_score:.4f} at epoch {best_epoch}")
+    return best_score
