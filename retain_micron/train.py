@@ -38,7 +38,7 @@ def train_model(model, train_loader, val_loader, epochs, save_path):
     class_weights = class_weights.to(device)
     
     # Sử dụng Focal Loss hoặc Weighted BCE Loss
-    criterion = FocalLoss(alpha=0.75, gamma=2.0)
+    criterion = FocalLoss(alpha=0.75, gamma=0.5)
     # Hoặc: criterion = nn.BCEWithLogitsLoss(weight=class_weights)
     
     optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-4)
