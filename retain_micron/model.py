@@ -33,7 +33,7 @@ class RETAIN_Diagnosis(nn.Module):
                     nn.init.normal_(param, mean=0, std=0.1)
             elif 'bias' in name:
                 if 'output' in name:
-                    nn.init.constant_(param, 0.5)  
+                    nn.init.constant_(param, 0.0)  
                 else:
                     nn.init.constant_(param, 0.0)
 
@@ -52,11 +52,6 @@ class RETAIN_Diagnosis(nn.Module):
                 emb = self.emb(codes)
                 emb = self.dropout(emb)
                 #emb = self.visit_norm(emb)
-                
-                # if len(clean_visit) > 0:
-                #     v_emb = emb.sum(dim=0) / len(clean_visit)
-                # else:
-                #     v_emb = self.emb(torch.tensor([self.padding_idx]).to(device)).squeeze(0)
                 
                 v_emb = emb.mean(dim=0)             
                 visit_embs.append(v_emb)
