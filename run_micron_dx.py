@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader
 from micron.model import MICRON_DX
 from micron.dataset import MicronDataset, micron_collate
 from micron.utils import load_synthetic_npz, split_patients
-from micron.evaluate import eval_recall_k
+from micron.evaluate import evaluate_all_metrics
 
 import os
 
