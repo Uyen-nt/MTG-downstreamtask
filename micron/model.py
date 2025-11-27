@@ -1,15 +1,15 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 class MICRON_DX(nn.Module):
-    def __init__(self, vocab_size, emb_dim=256, device=torch.device('cpu')):
-        super(MICRON_DX, self).__init__()
-
+    def __init__(self, vocab_size, dcm, emb_dim=256, device=torch.device('cpu')):
+        super().__init__()
         self.device = device
+        self.vocab_size = vocab_size
 
-        # Embedding cho diagnosis codes
         self.embedding = nn.Embedding(vocab_size, emb_dim)
-        self.dropout = nn.Dropout(p=0.3)
+        self.dropout = nn.Dropout(0.4)
 
         self.health_net = nn.Sequential(
             nn.Linear(emb_dim, emb_dim),
@@ -17,43 +17,38 @@ class MICRON_DX(nn.Module):
         )
 
         self.predictor = nn.Sequential(
-            nn.Linear(emb_dim, emb_dim * 2),
+            nn.Linear(emb_dim, emb_dim*2),
             nn.ReLU(),
-            nn.Linear(emb_dim * 2, vocab_size)
+            nn.Linear(emb_dim*2, vocab_size)
         )
+
+        # diagnosis co-occurrence regularizer
+        self.dcm = torch.tensor(dcm, dtype=torch.float32).to(device)
 
         self.init_weights()
 
-    def forward(self, visits):
-        """
-        visits: list[ list[int] ]
-        history: visits[:-1]
-        label: visits[-1]
-        """
+    def forward(self, input):
+        # input: list of visits — each is list of indices
 
-        # visit hiện tại (t)
-        diag_emb_t = self.embedding(torch.LongTensor(visits[-1]).to(self.device))  
-        diag_emb_t = diag_emb_t.mean(dim=0, keepdim=True)   
+        all_h = []
 
-        # visit trước đó (t-1)
-        if len(visits) < 2:
-            diag_emb_prev = torch.zeros_like(diag_emb_t)
-        else:
-            diag_emb_prev = self.embedding(torch.LongTensor(visits[-2]).to(self.device))
-            diag_emb_prev = diag_emb_prev.mean(dim=0, keepdim=True)
+        for visit in input:
+            if len(visit) == 0:
+                continue
+            emb = self.embedding(torch.LongTensor(visit).to(self.device))
+            emb = emb.mean(dim=0, keepdim=True)
+            h = self.health_net(emb)
+            all_h.append(h)
 
-        h_t = self.health_net(diag_emb_t)       
-        h_prev = self.health_net(diag_emb_prev) 
+        if len(all_h) == 0:
+            raise ValueError("Patient has no valid visits")
 
-        # residual learning
-        h_res = h_t - h_prev
+        # health state now:
+        h_last = all_h[-1]
+        h_prev = torch.stack(all_h[:-1]).mean(dim=0)
 
-        logits = self.predictor(h_res)  
+        # residual
+        h_res = h_last - h_prev
+
+        logits = self.predictor(h_res)
         return logits
-
-    def init_weights(self):
-        nn.init.xavier_uniform_(self.embedding.weight)
-        for m in self.predictor:
-            if isinstance(m, nn.Linear):
-                nn.init.xavier_uniform_(m.weight)
-                nn.init.constant_(m.bias, 0.0)
