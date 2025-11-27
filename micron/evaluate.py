@@ -50,12 +50,18 @@ def evaluate_all_metrics(model, loader, n_codes, threshold=0.2, topk=8):
     metrics["hamming_loss"] = hamming_loss(all_labels, preds)
 
     # ROC-AUC
-    try:
-        metrics["auc_micro"] = roc_auc_score(all_labels, probs, average='micro')
-        metrics["auc_macro"] = roc_auc_score(all_labels, probs, average='macro')
-    except:
-        metrics["auc_micro"] = 0
-        metrics["auc_macro"] = 0
+    valid = (all_labels.sum(axis=0) > 0)
+    if valid.sum() > 1: 
+        try:
+            metrics["auc_micro"] = roc_auc_score(all_labels[:,valid], probs[:,valid], average='micro')
+            metrics["auc_macro"] = roc_auc_score(all_labels[:,valid], probs[:,valid], average='macro')
+        except:
+            metrics["auc_micro"] = float("nan")
+            metrics["auc_macro"] = float("nan")
+    else:
+        metrics["auc_micro"] = float("nan")
+        metrics["auc_macro"] = float("nan")
+
 
     # Ranking metrics
     metrics["coverage_error"] = coverage_error(all_labels, probs)
