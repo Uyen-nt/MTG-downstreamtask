@@ -2,7 +2,7 @@ import torch
 import numpy as np
 from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score, hamming_loss, jaccard_score, coverage_error, label_ranking_loss
 
-def evaluate_all_metrics(model, loader, n_codes, threshold=0.2):
+def evaluate_all_metrics(model, loader, n_codes, threshold=0.2, topk=8):
     model.eval()
     all_logits = []
     all_labels = []
@@ -17,14 +17,20 @@ def evaluate_all_metrics(model, loader, n_codes, threshold=0.2):
     all_labels = np.array(all_labels)   # (num_samples, n_codes)
 
     # Sigmoid
-    probs = torch.sigmoid(torch.tensor(all_logits)).numpy()
+    probs = torch.sigmoid(torch.tensor(all_logits))   # torch.tensor (correct)
 
-    # Apply threshold
-    #preds = (probs > threshold).astype(int)
-    topk = 8
+    # =========================
+    # 🔥 TOP-K MULTI-LABEL
+    # =========================
     preds = torch.zeros_like(probs)
-    top_indices = torch.topk(probs, k=topk).indices
-    preds[top_indices] = 1
+
+    top_vals, top_idx = torch.topk(probs, k=topk, dim=1)
+    for i in range(len(preds)):
+        preds[i, top_idx[i]] = 1
+
+    # Convert back to numpy
+    preds = preds.cpu().numpy()
+    probs = probs.cpu().numpy()
 
     metrics = {}
 
