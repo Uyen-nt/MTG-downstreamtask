@@ -2,7 +2,7 @@ import torch
 import numpy as np
 from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score, hamming_loss, jaccard_score, coverage_error, label_ranking_loss
 
-def evaluate_all_metrics(model, loader, n_codes, threshold=0.5):
+def evaluate_all_metrics(model, loader, n_codes, threshold=0.2):
     model.eval()
     all_logits = []
     all_labels = []
