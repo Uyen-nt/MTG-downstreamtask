@@ -52,7 +52,7 @@ def main():
 
         # evaluate after each epoch
         metrics = evaluate_all_metrics(model, val_loader, n_codes)
-        print_metrics(metrics)
+        print(metrics)
 
         f1 = metrics["f1_micro"]   # dùng micro-F1 làm thước đo chính
 
