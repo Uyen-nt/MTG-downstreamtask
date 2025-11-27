@@ -15,6 +15,11 @@ def main():
 
     print("Loading synthetic data...")
     x_raw, sequences, labels, n_codes = load_synthetic_npz("data/result/synthetic_mimic3.npz")
+    print("====== DEBUG LABEL FORMAT ======")
+    print(labels[0])
+    print(type(labels[0]))
+    print("===============================")
+
 
     print("Building DCM from raw x...")
     dcm = build_dcm(x_raw)
