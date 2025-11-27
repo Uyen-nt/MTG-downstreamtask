@@ -38,9 +38,9 @@ def train_model(model, train_loader, val_loader, epochs, save_path):
     class_weights = class_weights.to(device)
     
     # Sử dụng Focal Loss hoặc Weighted BCE Loss
-    #criterion = FocalLoss(alpha=0.75, gamma=0.5)
-    pos_weight = (class_weights < 10).float() * 50 + (class_weights >= 10).float() * 5
-    criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+    criterion = FocalLoss(alpha=0.75, gamma=1.0)
+    # pos_weight = (class_weights < 10).float() * 50 + (class_weights >= 10).float() * 5
+    # criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
     
     optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-4)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=5, factor=0.5)
