@@ -18,20 +18,17 @@ class FocalLoss(nn.Module):
         return focal.mean()
 
 
-def micron_loss(logits, labels, dcm, lambda_reg=0.01):
-    # BCE loss
+def micron_loss(logits, labels, dcm, dcm_force=1.0, lambda_reg=0.002):
+
     bce = F.binary_cross_entropy_with_logits(logits, labels)
 
-    prob = torch.sigmoid(logits)   # (codes,)
+    prob = torch.sigmoid(logits)
+    prob_pair = torch.outer(prob, prob)
 
-    # flatten to pairwise
-    prob_pair = torch.outer(prob, prob)   # shape (C,C)
-
-    # mask chỉ apply regularization
-    # với các cặp có co-occurrence thật
+    # chỉ apply regularizer lên những cặp có co-occurrence thật
     mask = (dcm > 0).float()
 
     struct_loss = torch.sum(((prob_pair - dcm)**2) * mask) / (mask.sum() + 1e-8)
 
-    return bce + lambda_reg * struct_loss
+    return bce + dcm_force * lambda_reg * struct_loss
 
