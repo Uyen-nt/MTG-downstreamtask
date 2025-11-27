@@ -20,7 +20,11 @@ def evaluate_all_metrics(model, loader, n_codes, threshold=0.2):
     probs = torch.sigmoid(torch.tensor(all_logits)).numpy()
 
     # Apply threshold
-    preds = (probs > threshold).astype(int)
+    #preds = (probs > threshold).astype(int)
+    topk = 8
+    preds = torch.zeros_like(probs)
+    top_indices = torch.topk(probs, k=topk).indices
+    preds[top_indices] = 1
 
     metrics = {}
 
