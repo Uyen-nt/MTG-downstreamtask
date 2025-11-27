@@ -62,14 +62,23 @@ def main():
 
      # Train hoặc load model đã train
     model_path = "retain_micron/result/retain_best.pth"
+    last_path = "retain_micron/result/retain_last.pth"
+    
     if os.path.exists(model_path):
-        print("🚀 Loading pre-trained model...")
+        print("Loading best model...")
         model.load_state_dict(torch.load(model_path))
+    elif os.path.exists(last_path):
+        print("Best model not found, loading last epoch model...")
+        model.load_state_dict(torch.load(last_path))
     else:
-        print("🎯 Training new model...")
-        train_model(model, train_loader, val_loader, epochs=10, save_path="retain_micron/result")
-        model.load_state_dict(torch.load(model_path))
-
+        print("Training new model...")
+        train_model(...)
+        # Sau khi train xong, load lại model đã lưu
+        if os.path.exists(model_path):
+            model.load_state_dict(torch.load(model_path))
+        elif os.path.exists(last_path):
+            model.load_state_dict(torch.load(last_path))
+            
     # Đánh giá toàn diện
     print("\n" + "="*70)
     print("🧪 COMPLETE MODEL EVALUATION")
