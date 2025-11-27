@@ -35,7 +35,7 @@ def main():
     best_f1 = 0
     os.makedirs("micron/result", exist_ok=True)
 
-    for epoch in range(30):
+    for epoch in range(20):
         model.train()
         total_loss = 0
 
@@ -46,14 +46,36 @@ def main():
             optimizer.zero_grad()
             logits = model(visits).squeeze(0)
 
-            loss = micron_loss(logits, label, model.dcm)
+            # 🟢 ANTI-COLLAPSE WARMUP:
+            if epoch < 10:
+                loss = torch.nn.functional.binary_cross_entropy_with_logits(logits, label)
+            else:
+                loss = micron_loss(logits, label, model.dcm)
+
             loss.backward()
             optimizer.step()
-
             total_loss += loss.item()
+
+        # ============================
+        # Debug output và top-10 codes
+        # ============================
+        with torch.no_grad():
+            example_logits = model(val_x[0]).squeeze(0)
+            example_probs = torch.sigmoid(example_logits)
+            topk = torch.topk(example_probs, k=10)
+
+            print(f"\nEpoch {epoch} — DEBUG")
+            print("Max prob =", example_probs.max().item())
+            print("Min prob =", example_probs.min().item())
+            print("Mean prob=", example_probs.mean().item())
+            print("Top-10 probs:", topk.values.cpu().tolist())
+            print("Top-10 idx:", topk.indices.cpu().tolist())
 
         metrics = evaluate_all_metrics(model, val_loader, n_codes)
         print_metrics(metrics)
+
+        # In thêm:
+        print(f"👉 avg_predicted_codes = {metrics['avg_predicted_codes']:.4f}")
 
         f1 = metrics["f1_micro"]
 
