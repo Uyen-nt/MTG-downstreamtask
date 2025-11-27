@@ -65,7 +65,7 @@ def main():
     print(f"Best micro-F1 = {best_f1:.4f}")
 
     final_metrics = evaluate_all_metrics(model, val_loader, n_codes)
-    print_metrics(final_metrics)
+    print(final_metrics)
     
 
 if __name__ == "__main__":
