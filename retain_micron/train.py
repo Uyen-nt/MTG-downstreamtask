@@ -38,11 +38,11 @@ def train_model(model, train_loader, val_loader, epochs, save_path):
     class_weights = class_weights.to(device)
     
     # Sử dụng Focal Loss hoặc Weighted BCE Loss
-    #criterion = FocalLoss(alpha=0.75, gamma=1.0)
-    pos_weight = 1.0 / class_weights.clamp(min=1e-3)  # đảo ngược
-    pos_weight = pos_weight / pos_weight.mean() * 10   # scale hợp lý
-    pos_weight = pos_weight.to(device)
-    criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+    criterion = FocalLoss(alpha=0.75, gamma=2.0)
+    # pos_weight = 1.0 / class_weights.clamp(min=1e-3)  # đảo ngược
+    # pos_weight = pos_weight / pos_weight.mean() * 10   # scale hợp lý
+    # pos_weight = pos_weight.to(device)
+    # criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
     
     optimizer = optim.Adam(model.parameters(), lr=0.0015, weight_decay=1e-4)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=5, factor=0.5)
@@ -81,7 +81,8 @@ def train_model(model, train_loader, val_loader, epochs, save_path):
                 dist = debug_predictions_distribution(model, val_loader, n_codes)
                 unique_predicted = dist['unique_codes_predicted']
 
-            score = recall30 * (unique_predicted / n_codes)  # ← CÔNG THỨC CHUẨN
+            #score = recall30 * (unique_predicted / n_codes)  # ← CÔNG THỨC CHUẨN
+            score = recall30
 
             print(f"\nEpoch {epoch+1} - Loss: {avg_loss:.4f}")
             print(f"  Recall@30: {recall30:.4f} | Unique codes: {unique_predicted}/{n_codes} | Score: {score:.4f}")
