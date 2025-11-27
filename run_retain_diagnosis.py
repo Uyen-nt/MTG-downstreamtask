@@ -8,8 +8,7 @@ from retain_micron.utils import load_and_preprocess_synthetic
 from retain_micron.model import RETAIN_Diagnosis
 from retain_micron.dataset import EHRDataset, collate_fn
 from retain_micron.train import train_model
-from retain_micron.evaluate import evaluate_comprehensive, print_evaluation_results
-from retain_micron.evaluate import run_complete_evaluation
+from retain_micron.evaluate import print_final_evaluation
 
 def debug_data_structure(data_path):
     data = np.load(data_path)
@@ -84,12 +83,7 @@ def main():
     print("🧪 COMPLETE MODEL EVALUATION")
     print("="*70)
     
-    evaluation_results = run_complete_evaluation(
-        model=model,
-        train_loader=train_loader, 
-        val_loader=val_loader,
-        n_codes=n_codes
-    )
+    evaluation_results = print_final_evaluation(model, val_loader, n_codes)
 
 if __name__ == "__main__":
     main()
