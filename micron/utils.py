@@ -20,10 +20,10 @@ def load_synthetic_npz(path):
             codes = np.where(x[pid, j] == 1)[0].tolist()
             visits.append(codes)
 
-        sequences.append(visits[:-1])
-        labels.append(visits[-1])
+        sequences.append(visits[:-1])   # input
+        labels.append(visits[-1])      # label
 
-    return sequences, labels, n_codes
+    return x, sequences, labels, n_codes
 
 
 def split_patients(seqs, labels, test_size=0.2):
