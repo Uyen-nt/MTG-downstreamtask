@@ -15,11 +15,30 @@ def main():
 
     print("Loading synthetic data...")
     x_raw, sequences, labels, n_codes = load_synthetic_npz("data/result/synthetic_mimic3.npz")
-    print("====== DEBUG LABEL FORMAT ======")
-    print(labels[0])
-    print(type(labels[0]))
-    print("===============================")
+    
+    # ===============================
+    # BUILD LABEL FREQUENCY
+    # ===============================
+    code_freq = np.zeros(n_codes)
+    
+    for patient in labels:
+        for code in patient:
+            code_freq[code] += 1
+    
+    print("Top 20 most common ICD codes:")
+    print(np.argsort(-code_freq)[:20])
+    print(code_freq[np.argsort(-code_freq)[:20]])
 
+    class_weights = 1 / (code_freq + 1)       # inverse frequency
+    class_weights = class_weights / class_weights.max()   # normalize
+    class_weights = torch.tensor(class_weights, dtype=torch.float32).to(device)
+    
+    print("\n====== CLASS WEIGHTS DEBUG ======")
+    print("Max weight:", class_weights.max().item())
+    print("Min weight:", class_weights.min().item())
+    print("Example weights (top-10 rare):")
+    rare = np.argsort(code_freq)[:10]
+    print(class_weights[rare])
 
     print("Building DCM from raw x...")
     dcm = build_dcm(x_raw)
@@ -55,9 +74,9 @@ def main():
 
             # 🟢 ANTI-COLLAPSE WARMUP
             if epoch < 5:
-                loss = torch.nn.functional.binary_cross_entropy_with_logits(logits, label)
+                loss = torch.nn.functional.binary_cross_entropy_with_logits(logits, label, weight=class_weights)
             else:
-                loss = micron_loss(logits, label, model.dcm, model.dcm_force)
+                loss = micron_loss(logits, label, model.dcm, model.dcm_force, class_weights)
 
             loss.backward()
             optimizer.step()
