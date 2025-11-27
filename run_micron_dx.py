@@ -15,7 +15,8 @@ def main():
 
     print("Loading synthetic data...")
     x_raw, sequences, labels, n_codes = load_synthetic_npz("data/result/synthetic_mimic3.npz")
-    
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # ===============================
     # BUILD LABEL FREQUENCY
     # ===============================
