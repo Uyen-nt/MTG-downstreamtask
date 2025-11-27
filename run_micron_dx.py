@@ -35,6 +35,8 @@ def main():
     best_f1 = 0
     os.makedirs("micron/result", exist_ok=True)
 
+    print(f"🔥 Initial DCM FORCE = {model.dcm_force}")
+
     for epoch in range(20):
         model.train()
         total_loss = 0
@@ -46,11 +48,11 @@ def main():
             optimizer.zero_grad()
             logits = model(visits).squeeze(0)
 
-            # 🟢 ANTI-COLLAPSE WARMUP:
-            if epoch < 10:
+            # 🟢 ANTI-COLLAPSE WARMUP
+            if epoch < 5:
                 loss = torch.nn.functional.binary_cross_entropy_with_logits(logits, label)
             else:
-                loss = micron_loss(logits, label, model.dcm)
+                loss = micron_loss(logits, label, model.dcm, model.dcm_force)
 
             loss.backward()
             optimizer.step()
@@ -73,12 +75,21 @@ def main():
 
         metrics = evaluate_all_metrics(model, val_loader, n_codes)
         print_metrics(metrics)
+        avg_pred = metrics["avg_predicted_codes"]
+        print(f"👉 avg_predicted_codes = {avg_pred:.4f}")
 
-        # In thêm:
-        print(f"👉 avg_predicted_codes = {metrics['avg_predicted_codes']:.4f}")
+        # =============================
+        # 🔥 BƯỚC 4 — ANTI-COLLAPSE HERE
+        # =============================
+        if epoch >= 5:
+            if avg_pred < 1.0:
+                print("⚠️ Model is collapsing → reducing DCM FORCE")
+                model.dcm_force *= 0.5
+                print(f"   New dcm_force = {model.dcm_force}\n")
+
+        # =============================
 
         f1 = metrics["f1_micro"]
-
         if f1 > best_f1:
             best_f1 = f1
             torch.save(model.state_dict(), "micron/result/micron_best.pth")
@@ -86,6 +97,7 @@ def main():
 
     print("Training finished!")
     print(f"Best F1 = {best_f1:.4f}")
+
 
 if __name__ == "__main__":
     main()
