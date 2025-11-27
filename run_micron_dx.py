@@ -62,7 +62,7 @@ def main():
 
     print(f"🔥 Initial DCM FORCE = {model.dcm_force}")
 
-    for epoch in range(10):
+    for epoch in range(50):
         model.train()
         total_loss = 0
 
