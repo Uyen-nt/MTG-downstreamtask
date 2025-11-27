@@ -29,5 +29,5 @@ def micron_loss(logits, labels, dcm, lambda_reg=0.02):
     # alignment loss
     struct_loss = torch.mean((prob_pair - dcm)**2)
 
-    return bce + lambda_reg * struct_loss
+    return bce + lambda_reg * struct_loss * 0.02
 
