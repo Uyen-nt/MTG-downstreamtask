@@ -63,25 +63,34 @@ def main():
     model_path = "retain_micron/result/retain_best.pth"
     last_path = "retain_micron/result/retain_last.pth"
     
+    # if os.path.exists(model_path):
+    #     print("Loading best model...")
+    #     model.load_state_dict(torch.load(model_path))
+    #     model.eval()
+    # elif os.path.exists(last_path):
+    #     print("Best model not found, loading last epoch model...")
+    #     model.load_state_dict(torch.load(last_path))
+    #     model.eval()
+    # else:
+    #     print("Training new model...")
+    #     train_model(model, train_loader, val_loader, epochs=20, save_path="retain_micron/result")
+    #     # Sau khi train xong, load lại model đã lưu
+    #     if os.path.exists(model_path):
+    #         model.load_state_dict(torch.load(model_path))
+    #         model.eval()
+    #     elif os.path.exists(last_path):
+    #         model.load_state_dict(torch.load(last_path))
+    #         model.eval()
+
+    train_model(model, train_loader, val_loader, epochs=20, save_path="retain_micron/result")
+    # Sau khi train xong, load lại model đã lưu
     if os.path.exists(model_path):
-        print("Loading best model...")
         model.load_state_dict(torch.load(model_path))
         model.eval()
     elif os.path.exists(last_path):
-        print("Best model not found, loading last epoch model...")
         model.load_state_dict(torch.load(last_path))
         model.eval()
-    else:
-        print("Training new model...")
-        train_model(model, train_loader, val_loader, epochs=20, save_path="retain_micron/result")
-        # Sau khi train xong, load lại model đã lưu
-        if os.path.exists(model_path):
-            model.load_state_dict(torch.load(model_path))
-            model.eval()
-        elif os.path.exists(last_path):
-            model.load_state_dict(torch.load(last_path))
-            model.eval()
-            
+    
     # Đánh giá toàn diện
     print("\n" + "="*70)
     print("🧪 COMPLETE MODEL EVALUATION")
