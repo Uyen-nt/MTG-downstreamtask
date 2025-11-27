@@ -73,7 +73,7 @@ def main():
         model.eval()
     else:
         print("Training new model...")
-        train_model(model, train_loader, val_loader, epochs=10, save_path="retain_micron/result")
+        train_model(model, train_loader, val_loader, epochs=20, save_path="retain_micron/result")
         # Sau khi train xong, load lại model đã lưu
         if os.path.exists(model_path):
             model.load_state_dict(torch.load(model_path))
