@@ -5,12 +5,13 @@ import torch.nn.functional as F
 import numpy as np
 
 class RETAIN_Diagnosis(nn.Module):
-    def __init__(self, n_codes, emb_size=256, dropout=0.5):
+    def __init__(self, n_codes, emb_size=256, dropout=0.3):
         super().__init__()
         self.n_codes = n_codes
         self.padding_idx = n_codes
 
         self.emb = nn.Embedding(n_codes + 1, emb_size, padding_idx=self.padding_idx)
+        self.visit_norm = nn.LayerNorm(emb_size)
         self.dropout = nn.Dropout(dropout)
 
         self.alpha_gru = nn.GRU(emb_size, emb_size, batch_first=True)
@@ -32,7 +33,7 @@ class RETAIN_Diagnosis(nn.Module):
                     nn.init.normal_(param, mean=0, std=0.1)
             elif 'bias' in name:
                 if 'output' in name:
-                    nn.init.constant_(param, 0.1)  
+                    nn.init.constant_(param, 0.2)  
                 else:
                     nn.init.constant_(param, 0.0)
 
@@ -50,7 +51,13 @@ class RETAIN_Diagnosis(nn.Module):
                 codes = torch.LongTensor(clean_visit).to(device)
                 emb = self.emb(codes)
                 emb = self.dropout(emb)
-                v_emb = emb.sum(dim=0)  # (D,) - không dùng BatchNorm
+                emb = self.visit_norm(emb)
+                
+                if len(clean_visit) > 0:
+                    v_emb = emb.sum(dim=0) / len(clean_visit)
+                else:
+                    v_emb = self.emb(torch.tensor([self.padding_idx]).to(device)).squeeze(0)
+             
                 visit_embs.append(v_emb)
 
             if not visit_embs:
