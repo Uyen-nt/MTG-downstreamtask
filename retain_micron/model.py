@@ -1,5 +1,4 @@
 # retain_micron/model.py
-# retain_micron/model.py
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -32,7 +31,10 @@ class RETAIN_Diagnosis(nn.Module):
                 elif 'emb' in name:
                     nn.init.normal_(param, mean=0, std=0.1)
             elif 'bias' in name:
-                nn.init.constant_(param, 0.1)
+                if 'output' in name:
+                    nn.init.constant_(param, 0.1)  
+                else:
+                    nn.init.constant_(param, 0.0)
 
     def forward(self, visits_batch):
         device = next(self.parameters()).device
