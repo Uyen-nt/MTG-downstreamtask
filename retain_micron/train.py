@@ -38,7 +38,7 @@ def train_model(model, train_loader, val_loader, epochs, save_path):
     class_weights = class_weights.to(device)
     
     # Sử dụng Focal Loss hoặc Weighted BCE Loss
-    criterion = FocalLoss(alpha=0.25, gamma=2.0)
+    criterion = FocalLoss(alpha=0.75, gamma=2.0)
     # pos_weight = 1.0 / class_weights.clamp(min=1e-3)  # đảo ngược
     # pos_weight = pos_weight / pos_weight.mean() * 10   # scale hợp lý
     # pos_weight = pos_weight.to(device)
