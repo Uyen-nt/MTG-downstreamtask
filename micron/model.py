@@ -48,7 +48,12 @@ class MICRON_DX(nn.Module):
             raise ValueError("Patient has no valid visits")
 
         h_last = all_h[-1]
-        h_prev = torch.stack(all_h[:-1]).mean(dim=0)
+
+        # nếu chỉ có 1 visit → dùng zero baseline
+        if len(all_h) == 1:
+            h_prev = torch.zeros_like(h_last)
+        else:
+            h_prev = torch.stack(all_h[:-1]).mean(dim=0)
 
         h_res = h_last - h_prev
         logits = self.predictor(h_res)
