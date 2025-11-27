@@ -2,25 +2,13 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-class FocalLoss(nn.Module):
-    def __init__(self, alpha=0.25, gamma=2.0, reduction='mean'):
-        super().__init__()
-        self.alpha = alpha
-        self.gamma = gamma
-        self.reduction = reduction
-
-    def forward(self, logits, targets):
+def micron_loss(logits, labels, dcm, dcm_force=1.0, class_weights=None, lambda_reg=0.002):
+    if class_weights is not None:
         bce = F.binary_cross_entropy_with_logits(
-            logits, targets, reduction='none'
-        )
-        pt = torch.exp(-bce)
-        focal = self.alpha * (1-pt)**self.gamma * bce
-        return focal.mean()
-
-
-def micron_loss(logits, labels, dcm, dcm_force=1.0, lambda_reg=0.002):
-
-    bce = F.binary_cross_entropy_with_logits(logits, labels)
+            logits, labels, weight=class_weights, reduction='none')
+        bce = bce.mean()
+    else:
+        bce = F.binary_cross_entropy_with_logits(logits, labels)
 
     prob = torch.sigmoid(logits)
     prob_pair = torch.outer(prob, prob)
