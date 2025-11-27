@@ -53,11 +53,12 @@ class RETAIN_Diagnosis(nn.Module):
                 emb = self.dropout(emb)
                 #emb = self.visit_norm(emb)
                 
-                if len(clean_visit) > 0:
-                    v_emb = emb.sum(dim=0) / len(clean_visit)
-                else:
-                    v_emb = self.emb(torch.tensor([self.padding_idx]).to(device)).squeeze(0)
-             
+                # if len(clean_visit) > 0:
+                #     v_emb = emb.sum(dim=0) / len(clean_visit)
+                # else:
+                #     v_emb = self.emb(torch.tensor([self.padding_idx]).to(device)).squeeze(0)
+                
+                v_emb = emb.mean(dim=0)             
                 visit_embs.append(v_emb)
 
             if not visit_embs:
