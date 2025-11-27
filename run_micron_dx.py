@@ -5,7 +5,7 @@ from micron.model import MICRON_DX
 from micron.dataset import MicronDataset, micron_collate
 from micron.utils import load_synthetic_npz, split_patients
 from micron.evaluate import evaluate_all_metrics, print_metrics
-from micron.losses import FocalLoss
+from micron.loss import FocalLoss
 
 import os
 
