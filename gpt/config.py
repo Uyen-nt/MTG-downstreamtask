@@ -10,7 +10,7 @@ class GPTConfig:
         n_head=12,
         layer_norm_epsilon=1e-5,
         batch_size=16,              # nhỏ hơn vì sequence dài
-        epoch=100,
+        epoch=10, # giảm 100 xuống 10 để test
         lr=3e-4,
         warmup_steps=1000,
         pad_token_id=9999,
