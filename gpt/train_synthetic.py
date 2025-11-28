@@ -14,6 +14,11 @@ train_data = data['train']
 val_data = data['val']
 config = data['config']
 pad_token = data['pad_token']
+eos_token = data['eos_token'] 
+# ép giá trị vào model config (bắt buộc)
+config.pad_token_id = pad_token
+config.eos_token_id = eos_token
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 print(f"Train patients: {len(train_data)}, Val patients: {len(val_data)}")
@@ -25,14 +30,23 @@ def prepare_sequences(records, max_len=1024):
     for seq in records:
         if len(seq) > max_len:
             seq = seq[:max_len]
-        # Pad đúng thành max_len + 1 (vì label là shift 1)
-        padded = seq + [pad_token] * (max_len + 1 - len(seq))
+        #padded = seq + [pad_token] * (max_len + 1 - len(seq))
+        padded = seq + [pad_token] * (max_len - len(seq))
+
         seqs.append(padded)
     return torch.tensor(seqs, dtype=torch.long)
 
 # Chuẩn bị tensor một lần duy nhất (không cần tạo lại mỗi epoch)
 train_tensor = prepare_sequences(train_data, max_len=1024).to(device)
 val_tensor = prepare_sequences(val_data, max_len=1024).to(device)
+
+assert torch.max(train_tensor) < config.total_vocab_size, \
+    f"ERROR: có token={torch.max(train_tensor)} >= total_vocab_size={config.total_vocab_size}"
+
+assert torch.max(val_tensor) < config.total_vocab_size, \
+    f"ERROR: có token={torch.max(val_tensor)} >= total_vocab_size={config.total_vocab_size}"
+
+print("Vocab check ok!")
 
 model = GPTModel(config).to(device)
 optimizer = torch.optim.AdamW(model.parameters(), lr=config.lr, weight_decay=0.01)
