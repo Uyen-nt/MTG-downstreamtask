@@ -18,10 +18,11 @@ print(f"Active codes: {len(active_codes)}")
 
 code_to_index = {code: idx for idx, code in enumerate(active_codes)}
 index_to_code = {idx: code for code, idx in code_to_index.items()}
+
 vocab_size = len(active_codes)
-eos_token = vocab_size  # End-of-Visit token
-pad_token = vocab_size
-total_vocab_size = vocab_size + 1
+eos_token = vocab_size
+pad_token = vocab_size + 1
+total_vocab_size = vocab_size + 2
 
 print(f"Vocab size: {vocab_size}, EOS: {eos_token}, PAD: {pad_token}")
 
