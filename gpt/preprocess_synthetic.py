@@ -2,7 +2,7 @@ import numpy as np
 import pickle
 from tqdm import tqdm
 
-data = np.load("synthetic_mimic3.npz")
+data = np.load("data/result/synthetic_mimic3.npz")
 x = data['x']          # (1500, 34, 2869)
 lens = data['lens']    # (1500,)
 
