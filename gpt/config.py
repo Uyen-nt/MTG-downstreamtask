@@ -2,7 +2,7 @@
 class GPTConfig:
     def __init__(
         self,
-        total_vocab_size=5000,      # sẽ được override sau khi biết vocab thực
+        total_vocab_size=total_vocab_size,      # sẽ được override sau khi biết vocab thực
         n_positions=1024,
         n_ctx=1024,
         n_embd=768,
