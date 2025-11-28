@@ -6,10 +6,10 @@ class GPTConfig:
         n_positions=1024,
         n_ctx=1024,
         n_embd=768,
-        n_layer=12,
+        n_layer=8, # giảm 12 xuống 8
         n_head=12,
         layer_norm_epsilon=1e-5,
-        batch_size=16,              # nhỏ hơn vì sequence dài
+        batch_size=12,              # giảm 16 xuống 12
         epoch=10, # giảm 100 xuống 10 để test
         lr=3e-4,
         warmup_steps=1000,
