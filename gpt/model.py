@@ -1,9 +1,4 @@
-'''
-    code by Brandon Theodorou
-    Original GPT-2 Paper and repository here: https://github.com/openai/gpt-2
-    Original GPT-2 Pytorch Model: https://github.com/huggingface/pytorch-pretrained-BERT
-    GPT-2 Pytorch Model Derived From: https://github.com/graykode/gpt-2-Pytorch
-'''
+
 import copy
 import math
 import torch
@@ -194,7 +189,7 @@ class GPTModel(nn.Module):
         if ehr_labels is not None:    
             code_logits = code_logits[:, :-1, :].contiguous()
             ehr_labels = ehr_labels[:, 1:].contiguous()
-            ce = nn.CrossEntropyLoss(ignore_index=self.config.total_vocab_size - 1)
+            ce = nn.CrossEntropyLoss(ignore_index=self.config.pad_token_id)
             loss = ce(code_logits.view(-1, code_logits.size(-1)), ehr_labels.view(-1))
             return loss, code_logits, ehr_labels
         
