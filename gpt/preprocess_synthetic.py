@@ -21,7 +21,7 @@ index_to_code = {idx: code for code, idx in code_to_index.items()}
 vocab_size = len(active_codes)
 eos_token = vocab_size  # End-of-Visit token
 pad_token = vocab_size
-total_vocab_size = vocab_size + 2
+total_vocab_size = vocab_size + 1
 
 print(f"Vocab size: {vocab_size}, EOS: {eos_token}, PAD: {pad_token}")
 
