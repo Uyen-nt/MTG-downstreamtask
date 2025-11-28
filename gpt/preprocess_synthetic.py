@@ -60,7 +60,7 @@ config = GPTConfig(
     n_positions=1024,
     n_ctx=1024,
     batch_size=12,
-    epoch=120,
+    epoch=10,
     lr=3e-4
 )
 
