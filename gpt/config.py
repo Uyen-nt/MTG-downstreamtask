@@ -27,5 +27,5 @@ class GPTConfig:
         self.epoch = epoch
         self.lr = lr
         self.warmup_steps = warmup_steps
-        self.pad_token_id = pad_token_id
-        self.eos_token_id = eos_token_id
+        self.pad_token_id = total_vocab_size - 1
+        self.eos_token_id = total_vocab_size - 2
