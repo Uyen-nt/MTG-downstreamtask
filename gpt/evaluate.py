@@ -8,6 +8,9 @@ from tqdm import tqdm
 import itertools
 from scipy.stats import entropy
 from sklearn.metrics import r2_score
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent)) 
 
 base_dir = "gpt/result"
 os.makedirs(f"{base_dir}/gpt_jsd_evaluation", exist_ok=True)
