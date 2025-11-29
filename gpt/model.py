@@ -1,4 +1,9 @@
-
+'''
+    code by Brandon Theodorou
+    Original GPT-2 Paper and repository here: https://github.com/openai/gpt-2
+    Original GPT-2 Pytorch Model: https://github.com/huggingface/pytorch-pretrained-BERT
+    GPT-2 Pytorch Model Derived From: https://github.com/graykode/gpt-2-Pytorch
+'''
 import copy
 import math
 import torch
@@ -36,64 +41,56 @@ class Conv1D(nn.Module):
         x = x.view(*size_out)
         return x
 
-# === THAY TOÀN BỘ CLASS Attention BẰNG CÁI NÀY ===
 class Attention(nn.Module):
     def __init__(self, nx, n_ctx, config, scale=False):
-        super().__init__()
-        n_state = nx
+        super(Attention, self).__init__()
+        n_state = nx  # in Attention: n_state=768 (nx=n_embd)
         assert n_state % config.n_head == 0
-
+        self.register_buffer("bias", torch.tril(torch.ones(n_ctx, n_ctx)).view(1, 1, n_ctx, n_ctx))
         self.n_head = config.n_head
+        self.split_size = n_state
         self.scale = scale
-        self.c_attn = Conv1D(n_state * 3, nx)   # q, k, v
+        self.c_attn = Conv1D(n_state * 3, nx)
         self.c_proj = Conv1D(n_state, nx)
 
-        # Không tạo bias tĩnh 1024x1024 nữa → tiết kiệm >4GB VRAM
-        #self.register_buffer("bias", torch.tril(torch.ones(n_ctx, n_ctx)).view(1, 1, n_ctx, n_ctx), persistent=False)
-        # Có thể bỏ luôn dòng trên nếu dùng is_causal=True
+    def _attn(self, q, k, v):
+        w = torch.matmul(q, k)
+        if self.scale:
+            w = w / math.sqrt(v.size(-1))
+        nd, ns = w.size(-2), w.size(-1)
+        b = self.bias[:, :, ns-nd:ns, :ns]
+        w = w * b - 1e10 * (1 - b)
+        w = nn.Softmax(dim=-1)(w)
+        return torch.matmul(w, v)
+
+    def merge_heads(self, x):
+        x = x.permute(0, 2, 1, 3).contiguous()
+        new_x_shape = x.size()[:-2] + (x.size(-2) * x.size(-1),)
+        return x.view(*new_x_shape)
+
+    def split_heads(self, x, k=False):
+        new_x_shape = x.size()[:-1] + (self.n_head, x.size(-1) // self.n_head)
+        x = x.view(*new_x_shape)
+        if k:
+            return x.permute(0, 2, 3, 1)  # (batch, head, head_features, seq_length)
+        else:
+            return x.permute(0, 2, 1, 3)  # (batch, head, seq_length, head_features)
 
     def forward(self, x, layer_past=None):
-        B, T, C = x.size()
-
-        # Q, K, V
-        qkv = self.c_attn(x)                              # (B, T, 3*C)
-        q, k, v = qkv.split(self.c_attn.nf // 3, dim=2)   # mỗi cái (B, T, C)
-
-        # Multi-head
-        q = q.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)  # (B, H, T, hs)
-        k = k.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
-        v = v.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
-
-        # Nếu có past (autoregressive generation)
+        x = self.c_attn(x)
+        query, key, value = x.split(self.split_size, dim=2)
+        query = self.split_heads(query)
+        key = self.split_heads(key, k=True)
+        value = self.split_heads(value)
         if layer_past is not None:
-            past_k, past_v = layer_past
-            k = torch.cat((past_k, k), dim=-2)
-            v = torch.cat((past_v, v), dim=-2)
-
-        present = torch.stack((k, v))
-
-        # === DÙNG FLASH ATTENTION / SDPA → SIÊU NHANH + SIÊU TIẾT KIỆM VRAM ===
-        if hasattr(torch.nn.functional, "scaled_dot_product_attention"):
-            # Cách hiện đại nhất (PyTorch 2.0+)
-            att = torch.nn.functional.scaled_dot_product_attention(
-                q, k, v,
-                attn_mask=None,
-                dropout_p=0.0,
-                is_causal=True          # ← tự động tạo causal mask, không cần bias tĩnh!
-            )
-        else:
-            # Fallback cũ (vẫn ổn nhưng chậm hơn)
-            w = torch.matmul(q, k.transpose(-2, -1))
-            if self.scale:
-                w = w / math.sqrt(v.size(-1))
-            w = w.masked_fill(self.bias[:, :, :T, :k.size(-2)] == 0, float('-inf'))
-            w = torch.softmax(w, dim=-1)
-            att = torch.matmul(w, v)
-
-        # Merge heads
-        att = att.transpose(1, 2).contiguous().view(B, T, C)
-        att = self.c_proj(att)
-        return att, present
+            past_key, past_value = layer_past[0].transpose(-2, -1), layer_past[1]  # transpose back cf below
+            key = torch.cat((past_key, key), dim=-1)
+            value = torch.cat((past_value, value), dim=-2)
+        present = torch.stack((key.transpose(-2, -1), value))  # transpose to have same shapes for stacking
+        a = self._attn(query, key, value)
+        a = self.merge_heads(a)
+        a = self.c_proj(a)
+        return a, present
 
 class MLP(nn.Module):
     def __init__(self, n_state, config):  # in MLP: n_state=3072 (4 * n_embd)
@@ -189,7 +186,7 @@ class GPTModel(nn.Module):
         if ehr_labels is not None:    
             code_logits = code_logits[:, :-1, :].contiguous()
             ehr_labels = ehr_labels[:, 1:].contiguous()
-            ce = nn.CrossEntropyLoss(ignore_index=self.config.pad_token_id)
+            ce = nn.CrossEntropyLoss(ignore_index=self.config.total_vocab_size - 1)
             loss = ce(code_logits.view(-1, code_logits.size(-1)), ehr_labels.view(-1))
             return loss, code_logits, ehr_labels
         
