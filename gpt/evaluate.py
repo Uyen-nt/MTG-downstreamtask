@@ -9,8 +9,7 @@ import itertools
 from scipy.stats import entropy
 from sklearn.metrics import r2_score
 
-# ================= ĐƯỜNG DẪN KAGGLE =================
-base_dir = "/kaggle/working/gpt/result"
+base_dir = "gpt/result"
 os.makedirs(f"{base_dir}/gpt_jsd_evaluation", exist_ok=True)
 os.makedirs(f"{base_dir}/gpt_jsd_evaluation/plots", exist_ok=True)
 
