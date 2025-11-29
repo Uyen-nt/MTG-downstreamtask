@@ -9,6 +9,9 @@ from sklearn import metrics
 from gpt.model import GPTModel
 from gpt.config import GPTConfig
 import torch.nn.functional as F
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent)) 
 
 data_dir = "gpt/result"
 save_dir = "gpt/result"
