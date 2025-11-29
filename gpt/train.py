@@ -8,9 +8,8 @@ from tqdm import tqdm
 from gpt.model import GPTModel  # chú ý: import đúng đường dẫn model.py
 from gpt.config import GPTConfig
 
-# ================= ĐƯỜNG DẪN CHO KAGGLE =================
-data_dir = "/kaggle/working/gpt/result"
-save_dir = "/kaggle/working/gpt/result"
+data_dir = "gpt/result"
+save_dir = "gpt/result"
 os.makedirs(save_dir, exist_ok=True)
 
 # ================= SEED & DEVICE =================
