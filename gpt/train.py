@@ -5,8 +5,11 @@ import numpy as np
 import random
 import pickle
 from tqdm import tqdm
-from gpt.model import GPTModel  # chú ý: import đúng đường dẫn model.py
+from gpt.model import GPTModel 
 from gpt.config import GPTConfig
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent)) 
 
 data_dir = "gpt/result"
 save_dir = "gpt/result"
