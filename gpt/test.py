@@ -10,9 +10,8 @@ from gpt.model import GPTModel
 from gpt.config import GPTConfig
 import torch.nn.functional as F
 
-# THÊM 3 DÒNG NÀY VÀO ĐẦU - BẮT BUỘC!
-data_dir = "/kaggle/working/gpt/result"
-save_dir = "/kaggle/working/gpt/result"
+data_dir = "gpt/result"
+save_dir = "gpt/result"
 os.makedirs(save_dir, exist_ok=True)
 
 SEED = 4
