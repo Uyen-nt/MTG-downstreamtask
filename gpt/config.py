@@ -11,15 +11,15 @@ class GPTConfig(object):
             code_vocab_size=6841,
             label_vocab_size=25,
             special_vocab_size=5, # start, start visits, end visit, end record, pad
-            n_positions=750,
-            n_ctx=700,
+            n_positions=512, # giảm từ 750 xuống
+            n_ctx=512, # giảm từ 700 xuống
             n_embd=384,
-            n_layer=3,
-            n_head=4,
+            n_layer=6, # tăng từ 3 lên
+            n_head=6,  # tăng từ 4 lên
             layer_norm_epsilon=1e-5,
             initializer_range=0.02,
-            batch_size=48,
-            epoch=50,
+            batch_size=16,  # giảm từ 48 xuống
+            epoch=10,   # giảm từ 50 xuống
             lr=1e-4,
     ):
         self.total_vocab_size = total_vocab_size
