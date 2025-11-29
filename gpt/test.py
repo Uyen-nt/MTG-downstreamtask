@@ -10,6 +10,8 @@ from gpt.model import GPTModel
 from gpt.config import GPTConfig
 import torch.nn.functional as F
 import sys
+import sys, os
+sys.path.append(os.getcwd())
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent)) 
 
