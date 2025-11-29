@@ -7,10 +7,8 @@ from tqdm import tqdm
 from sklearn.model_selection import train_test_split
 import os
 
-# ================= ĐIỀU CHỈNH ĐƯỜNG DẪN CHO KAGGLE =================
-base_dir = "/kaggle/working"
-data_dir = "/kaggle/working/data/mimic3/raw"
-output_dir = "/kaggle/working/gpt/result"
+data_dir = "data/mimic3/raw"
+output_dir = "gpt/result"
 
 os.makedirs(output_dir, exist_ok=True)
 
