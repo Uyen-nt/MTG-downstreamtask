@@ -9,6 +9,8 @@ import itertools
 from scipy.stats import entropy
 from sklearn.metrics import r2_score
 import sys
+import sys, os
+sys.path.append(os.getcwd())
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent)) 
 
