@@ -35,7 +35,7 @@ model = BertForMultiLabelPrediction(model_config, num_labels=config['vocab_size'
 optimizer = adam(model.named_parameters())
 
 model.train()
-for epoch in range(10):
+for epoch in range(50):
 
     total_loss = 0
     for step, batch in enumerate(loader):
