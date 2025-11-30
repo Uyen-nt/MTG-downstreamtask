@@ -19,7 +19,7 @@ class GPTConfig(object):
             layer_norm_epsilon=1e-5,
             initializer_range=0.02,
             batch_size=16,  # giảm từ 48 xuống
-            epoch=10,   # giảm từ 50 xuống
+            epoch=70,   # giảm từ 50 xuống
             lr=1e-4,
     ):
         self.total_vocab_size = total_vocab_size
