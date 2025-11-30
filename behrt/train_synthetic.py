@@ -34,10 +34,7 @@ optimizer = adam(model.named_parameters())
 
 model.train()
 for e in range(10):
-    for visits, age_ids, seg_ids, pos_ids, attention_mask in loader:
-        
-        labels = ...
-        
+    for visits, age_ids, seg_ids, pos_ids, attention_mask, labels in loader:                
         loss, logits = model(visits, age_ids, seg_ids, pos_ids, attention_mask, labels)
         optimizer.zero_grad()
         loss.backward()
