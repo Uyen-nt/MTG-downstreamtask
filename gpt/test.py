@@ -45,7 +45,23 @@ label_names = [
     "Chronic Condition: Ischemic Heart Disease",
     "Chronic Condition: Osteoporosis",
     "Chronic Condition: rheumatoid arthritis and osteoarthritis (RA/OA)",
-    "Chronic Condition: Stroke/transient Ischemic Attack"
+    "Chronic Condition: Stroke/transient Ischemic Attack",
+    #thêm
+    "Anemia",
+    "Asthma",
+    "Hyperlipidemia",
+    "Hypertension",
+    "Schizophrenia and other psychotic disorders",
+    "Alcohol abuse",
+    "Opioid abuse",
+    "Other substance abuse",
+    "Acquired hypothyroidism",
+    "Benign prostatic hyperplasia",
+    "Bipolar disorder",
+    "HIV/AIDS",
+    "Obesity",
+    "Liver disease"
+    
 ]
 for i, name in enumerate(label_names):
     index_to_code[config.code_vocab_size + i] = name
