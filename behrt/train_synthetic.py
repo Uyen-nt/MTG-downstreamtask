@@ -1,6 +1,7 @@
 import torch
 from torch.utils.data import DataLoader
 from model import BertForMultiLabelPrediction
+from model import BertConfig
 from data_synth_loader import SyntheticBEHRTDataset
 from optimizer import adam
 
@@ -29,7 +30,8 @@ feature_dict = {
     'position': True
 }
 
-model = BertForMultiLabelPrediction(config, num_labels=config.vocab_size, feature_dict=feature_dict)
+model_config = BertConfig(config)
+model = BertForMultiLabelPrediction(model_config, num_labels=config['vocab_size'], feature_dict=feature_dict)
 optimizer = adam(model.named_parameters())
 
 model.train()
