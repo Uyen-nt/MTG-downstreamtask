@@ -35,11 +35,22 @@ model = BertForMultiLabelPrediction(model_config, num_labels=config['vocab_size'
 optimizer = adam(model.named_parameters())
 
 model.train()
-for e in range(10):
-    for visits, age_ids, seg_ids, pos_ids, attention_mask, labels in loader:                
+for epoch in range(10):
+
+    total_loss = 0
+    for step, batch in enumerate(loader):
+
+        visits, age_ids, seg_ids, pos_ids, attention_mask, labels = batch
+
         loss, logits = model(visits, age_ids, seg_ids, pos_ids, attention_mask, labels)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
-        print("loss =", loss.item())
+        total_loss += loss.item()
+
+        if step % 20 == 0:
+            print(f"Epoch [{epoch+1}/10], Step [{step}/{len(loader)}], Loss: {loss.item():.4f}")
+    
+    print(f"Epoch {epoch+1} avg loss = {total_loss/len(loader):.4f}")
+
