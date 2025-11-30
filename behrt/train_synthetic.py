@@ -5,7 +5,7 @@ from model import BertConfig
 from data_synth_loader import SyntheticBEHRTDataset
 from optimizer import adam
 
-synth_data = SyntheticBEHRTDataset("data/result/synthetic_mimic3.npz")
+synth_data = SyntheticBEHRTDataset("data/result/synthetic_mimic3.npz", max_len=1024)
 loader = DataLoader(synth_data, batch_size=8, shuffle=True, num_workers=2)
 
 config = {
