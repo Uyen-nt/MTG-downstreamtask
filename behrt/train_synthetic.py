@@ -5,7 +5,7 @@ from model import BertConfig
 from data_synth_loader import SyntheticBEHRTDataset
 from optimizer import adam
 
-synth_data = SyntheticBEHRTDataset("data/result/synthetic_mimic3.npz", max_len=1024)
+synth_data = SyntheticBEHRTDataset("data/result/synthetic_mimic3.npz", max_len=512)
 loader = DataLoader(synth_data, batch_size=8, shuffle=True, num_workers=2)
 
 config = {
@@ -15,8 +15,8 @@ config = {
     'age_vocab_size': 2,               # age disabled
     'max_position_embedding': 1500,    # enough tokens
     'hidden_dropout_prob': 0.1,
-    'num_hidden_layers': 6,
-    'num_attention_heads': 12,
+    'num_hidden_layers': 4,
+    'num_attention_heads': 8,
     'attention_probs_dropout_prob': 0.1,
     'intermediate_size': 512,
     'hidden_act': 'gelu',
