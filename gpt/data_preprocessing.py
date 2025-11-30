@@ -6,15 +6,28 @@ import pandas as pd
 from tqdm import tqdm
 from sklearn.model_selection import train_test_split
 
-mimic_dir = "./"
-admissionFile = mimic_dir + "ADMISSIONS.csv"
-diagnosisFile = mimic_dir + "DIAGNOSES_ICD.csv"
+import yaml
+import pickle
+import numpy as np
+import pandas as pd
+from tqdm import tqdm
+from sklearn.model_selection import train_test_split
+
+admissionFile = "data/mimic3/raw/ADMISSIONS.csv"
+diagnosisFile = "data/mimic3/raw/DIAGNOSES_ICD.csv"
+yaml_file      = "data/mimic3/raw/hcup_ccs_2015_definitions_benchmark.yaml"
+
+output_dir = "gpt/result"
+import os
+os.makedirs(output_dir, exist_ok=True)
+
 
 print("Loading CSVs Into Dataframes")
 admissionDf = pd.read_csv(admissionFile, dtype=str)
 admissionDf['ADMITTIME'] = pd.to_datetime(admissionDf['ADMITTIME'])
 admissionDf = admissionDf.sort_values('ADMITTIME')
 admissionDf = admissionDf.reset_index(drop=True)
+
 diagnosisDf = pd.read_csv(diagnosisFile, dtype=str).set_index("HADM_ID")
 diagnosisDf = diagnosisDf[diagnosisDf['ICD9_CODE'].notnull()]
 diagnosisDf = diagnosisDf[['ICD9_CODE']]
@@ -22,17 +35,14 @@ diagnosisDf = diagnosisDf[['ICD9_CODE']]
 print("Building Dataset")
 data = {}
 for row in tqdm(admissionDf.itertuples(), total=admissionDf.shape[0]):          
-    #Extracting Admissions Table Info
     hadm_id = row.HADM_ID
     subject_id = row.SUBJECT_ID
             
-    # Extracting the Diagnoses
     if hadm_id in diagnosisDf.index: 
         diagnoses = list(set(diagnosisDf.loc[[hadm_id]]["ICD9_CODE"]))
     else:
         diagnoses = []
     
-    # Building the hospital admission data point
     if subject_id not in data:
       data[subject_id] = {'visits': [diagnoses]}
     else:
@@ -49,8 +59,9 @@ index_to_code = {v: k for k, v in code_to_index.items()}
 data = list(data.values())
 
 print("Adding Labels")
-with open("hcup_ccs_2015_definitions_benchmark.yaml") as definitions_file:
+with open(yaml_file) as definitions_file:
     definitions = yaml.full_load(definitions_file)
+
 
 code_to_group = {}
 for group in definitions:
@@ -102,10 +113,10 @@ train_dataset, val_dataset = train_test_split(train_dataset, test_size=0.1, rand
 
 # Save Everything
 print("Saving Everything")
-print(len(index_to_code))
-pickle.dump(code_to_index, open("./codeToIndex.pkl", "wb"))
-pickle.dump(index_to_code, open("./indexToCode.pkl", "wb"))
-pickle.dump(id_to_group, open("./idToLabel.pkl", "wb"))
-pickle.dump(train_dataset, open("./trainDataset.pkl", "wb"))
-pickle.dump(val_dataset, open("./valDataset.pkl", "wb"))
-pickle.dump(test_dataset, open("./testDataset.pkl", "wb"))
+pickle.dump(code_to_index, open(f"{output_dir}/codeToIndex.pkl", "wb"))
+pickle.dump(index_to_code, open(f"{output_dir}/indexToCode.pkl", "wb"))
+pickle.dump(id_to_group, open(f"{output_dir}/idToLabel.pkl", "wb"))
+pickle.dump(train_dataset, open(f"{output_dir}/trainDataset.pkl", "wb"))
+pickle.dump(val_dataset, open(f"{output_dir}/valDataset.pkl", "wb"))
+pickle.dump(test_dataset, open(f"{output_dir}/testDataset.pkl", "wb"))
+
