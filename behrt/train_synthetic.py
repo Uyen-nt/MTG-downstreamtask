@@ -1,8 +1,8 @@
 import torch
 from torch.utils.data import DataLoader
-from behrt.model import BertForMultiLabelPrediction
-from behrt.data_synth_loader import SyntheticBEHRTDataset
-from behrt.optimizer import adam
+from model import BertForMultiLabelPrediction
+from data_synth_loader import SyntheticBEHRTDataset
+from optimizer import adam
 
 synth_data = SyntheticBEHRTDataset("data/result/synthetic_mimic3.npz")
 loader = DataLoader(synth_data, batch_size=8, shuffle=True, num_workers=2)
