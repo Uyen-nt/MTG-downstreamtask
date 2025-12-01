@@ -111,7 +111,7 @@ for i, visits in tqdm(enumerate(patient_visits), total=N):
 # ============================
 
 print("🔹 Saving real_from_mtg.npz ...")
-np.savez("real_from_mtg.npz", x=x, lens=lens)
+np.savez("data/result/real_from_mtg.npz", x=x, lens=lens)
 
 print("🎉 DONE!")
 
