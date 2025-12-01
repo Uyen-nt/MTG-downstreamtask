@@ -74,7 +74,7 @@ best_val_loss = float('inf')
 patience = 5
 wait = 0
 
-for epoch in range(50):
+for epoch in range(30):
     # ===== TRAIN =====
     model.train()
     total_loss = 0
