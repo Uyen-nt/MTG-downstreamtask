@@ -37,7 +37,7 @@ optimizer = adam(model.named_parameters())
 best_loss = float('inf')
 
 model.train()
-for epoch in range(10):
+for epoch in range(50):
 
     total_loss = 0
     for step, batch in enumerate(loader):
