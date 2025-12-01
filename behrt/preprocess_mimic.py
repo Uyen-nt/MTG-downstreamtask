@@ -30,13 +30,11 @@ patients = list(pat2adm.keys())
 lens = []
 patient_visits = []
 
-print("🔹 Building patient visit lists...")
 for pid in tqdm(patients):
     adms = pat2adm[pid]
     visits = []
     for adm in adms:
 
-        # ===== Normalize admission ID =====
         # Case 1 — integer
         if isinstance(adm, int):
             HADM = adm
@@ -49,11 +47,25 @@ for pid in tqdm(patients):
         elif isinstance(adm, str) and adm.isnumeric():
             HADM = int(adm)
 
-        # Case 4 — dict:  {HADM_ID: something}
+        # Case 4 — dict
         elif isinstance(adm, dict):
-            HADM = int(list(adm.keys())[0])
 
-        # Case 5 — list or tuple: [HADM_ID, extra]
+            # Case: {'adm_id': 194023}
+            if 'adm_id' in adm:
+                try:
+                    HADM = int(adm['adm_id'])
+                except:
+                    continue
+
+            # Case: {'194023': ...}
+            else:
+                key = list(adm.keys())[0]
+                try:
+                    HADM = int(key)
+                except:
+                    continue
+
+        # Case 5 — list/tuple
         elif isinstance(adm, (list, tuple)):
             try:
                 HADM = int(adm[0])
@@ -61,9 +73,9 @@ for pid in tqdm(patients):
                 continue
 
         else:
-            continue  # skip invalid
+            continue
 
-        # ===== Append visit codes =====
+        # Add code
         if HADM in codes:
             visits.append(codes[HADM])
         else:
@@ -71,6 +83,7 @@ for pid in tqdm(patients):
 
     patient_visits.append(visits)
     lens.append(len(visits))
+
 
 
 lens = np.array(lens)
