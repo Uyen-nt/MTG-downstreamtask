@@ -113,6 +113,8 @@ def main():
     print(f"Val batches: {len(val_loader)}")
 
     model = RETAIN_Diagnosis(n_codes=n_codes, emb_size=256, dropout=0.5)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = model.to(device)
 
      # Train hoặc load model đã train
     model_path = "retain_micron/result/retain_best.pth"
