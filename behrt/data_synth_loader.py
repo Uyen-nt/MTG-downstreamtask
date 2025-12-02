@@ -61,6 +61,8 @@ class SyntheticBEHRTDataset(torch.utils.data.Dataset):
         seg_ids = self.pad(seg_ids)
         pos_ids = self.pad(pos_ids)
         age_ids = self.pad(age_ids)
-        attention_mask = self.pad(attention_mask)
+        #attention_mask = self.pad(attention_mask)
+        attention_mask = torch.cat([torch.ones(len(visits), dtype=torch.long),
+                            torch.zeros(self.max_len - len(visits), dtype=torch.long)])
 
         return visits, age_ids, seg_ids, pos_ids, attention_mask, label_tensor
