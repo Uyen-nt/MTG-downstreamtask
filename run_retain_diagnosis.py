@@ -4,11 +4,11 @@ from sklearn.model_selection import train_test_split
 import os
 import numpy as np
 
-from retain_micron.utils import load_and_preprocess_synthetic
-from retain_micron.model import RETAIN_Diagnosis
-from retain_micron.dataset import EHRDataset, collate_fn
-from retain_micron.train import train_model
-from retain_micron.evaluate import print_final_evaluation
+from retain.utils import load_and_preprocess_synthetic
+from retain.model import RETAIN_Single
+from retain.dataset import EHRDataset, collate_fn
+from retain.train import train_model
+from retain.evaluate import print_final_evaluation
 
 def debug_data_structure(data_path):
     data = np.load(data_path)
