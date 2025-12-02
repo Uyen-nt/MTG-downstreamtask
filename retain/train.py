@@ -4,7 +4,7 @@ import torch.optim as optim
 import torch.nn as nn
 from tqdm import tqdm
 import os
-from retain_micron.evaluate import calculate_class_weights, evaluate_topk_recall, debug_predictions_distribution
+from retain.evaluate import calculate_class_weights, evaluate_topk_recall, debug_predictions_distribution
 
 class FocalLoss(nn.Module):
     """Focal Loss để xử lý class imbalance"""
