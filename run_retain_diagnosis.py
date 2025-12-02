@@ -112,7 +112,7 @@ def main():
     print(f"Train batches: {len(train_loader)}")
     print(f"Val batches: {len(val_loader)}")
 
-    model = RETAIN_Single(n_codes=n_codes, emb_size=256, dropout=0.5)
+    model = RETAIN_Single(n_codes=n_codes, emb_size=256)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
 
